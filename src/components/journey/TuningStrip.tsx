@@ -7,17 +7,15 @@ import { cn } from "../ui/cn";
 import { MessyText, type MessyLook } from "./MessyText";
 
 /*
-  The trip-length picker: a ruler you drag or flick under a fixed marker, like tuning a radio.
-  Each tick is one step of DURATION_STEPS, so the ruler is finer for short trips and coarser
-  for long ones, and a full day is a flick away. Tap the readout to type any length instead
-  (up to MAX_MINUTES); the ruler then rests on the nearest tick. Native scrolling with snap points gives touch
-  momentum for free; a mouse drags it by hand.
+  The trip-length picker: an analog fader, like a channel on a mixing desk. Drag the cap along
+  the slot, or tap the track to jump it there. Each notch is one step of DURATION_STEPS, so it is
+  finer for short trips and coarser for long ones, up to a full day. Tap the readout to type any
+  length instead (up to MAX_MINUTES); the cap then rests on the nearest notch. The cap follows
+  the finger and jumps to new values; it never glides.
 */
 
-const PITCH = 22; // px between ticks; keep in step with .drum-face in globals.css
-const LABELS: Record<number, string> = {
-  30: "30m", 60: "1h", 120: "2h", 180: "3h", 240: "4h", 360: "6h", 480: "8h", 720: "12h", 960: "16h", 1440: "24h",
-};
+const LAST = DURATION_STEPS.length - 1;
+const LABELS: Record<number, string> = { 30: "30m", 60: "1h", 120: "2h", 240: "4h", 480: "8h", 960: "16h", 1440: "24h" };
 
 export type TuningStripProps = {
   minutes: number;
@@ -28,124 +26,92 @@ export type TuningStripProps = {
 };
 
 export function TuningStrip({ minutes, onChange, look = "tidy", className }: TuningStripProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const track = useRef<HTMLDivElement>(null);
   const index = DURATION_STEPS.indexOf(nearestStep(minutes));
-  /** Set while we scroll the strip ourselves, so that scroll doesn't report back as a change. */
-  const steering = useRef(false);
-  const settle = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const drag = useRef<{ x: number; left: number } | null>(null);
-  const last = useRef(index);
+  const dragging = useRef(false);
 
-  // Follow the value when it changes from outside (a quick pick, the drive time).
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || Math.round(el.scrollLeft / PITCH) === index) return;
-    steering.current = true;
-    last.current = index;
-    // The drum clicks straight to the new value; no gliding.
-    el.scrollTo({ left: index * PITCH });
-    setTurn(el);
-  }, [index]);
-
-  const onScroll = () => {
-    const el = ref.current!;
-    setTurn(el);
-    clearTimeout(settle.current);
-    settle.current = setTimeout(() => (steering.current = false), 150);
-    if (steering.current) return;
-    const i = Math.min(DURATION_STEPS.length - 1, Math.max(0, Math.round(el.scrollLeft / PITCH)));
-    if (i === last.current) return;
-    last.current = i;
+  const set = (i: number) => {
+    const next = Math.min(LAST, Math.max(0, i));
+    if (next === index) return;
     play("select", { volume: 0.35 });
-    onChange(DURATION_STEPS[i]);
+    onChange(DURATION_STEPS[next]);
   };
 
-  const step = (by: number) => {
-    const i = Math.min(DURATION_STEPS.length - 1, Math.max(0, index + by));
-    if (i === index) return;
-    last.current = i;
-    play("select", { volume: 0.35 });
-    onChange(DURATION_STEPS[i]);
+  const fromPointer = (clientX: number) => {
+    const box = track.current!.getBoundingClientRect();
+    set(Math.round(((clientX - box.left) / box.width) * LAST));
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const by = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 4, PageDown: -4 }[e.key];
     if (by !== undefined) {
       e.preventDefault();
-      step(by);
+      set(index + by);
     } else if (e.key === "Home" || e.key === "End") {
       e.preventDefault();
-      step(e.key === "Home" ? -index : DURATION_STEPS.length);
+      set(e.key === "Home" ? 0 : LAST);
     }
   };
 
-  // Touch and trackpads scroll natively; a mouse needs dragging by hand.
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== "mouse") return;
-    drag.current = { x: e.clientX, left: e.currentTarget.scrollLeft };
-    e.currentTarget.setPointerCapture(e.pointerId);
-    e.currentTarget.style.scrollSnapType = "none";
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (drag.current) e.currentTarget.scrollLeft = drag.current.left - (e.clientX - drag.current.x);
-  };
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!drag.current) return;
-    drag.current = null;
-    const el = e.currentTarget;
-    el.style.scrollSnapType = "";
-    el.scrollTo({ left: Math.round(el.scrollLeft / PITCH) * PITCH });
-  };
+  const at = (i: number) => `${(i / LAST) * 100}%`;
 
   return (
-    <div className={cn("flex w-full flex-col items-center gap-5", className)}>
+    <div className={cn("flex w-full flex-col items-center gap-6", className)}>
       <TypedDuration minutes={minutes} onChange={onChange} look={look} />
-      {/* The drum sits in a recessed window, lit from above: dark at its rolled-away edges, bright where it faces you. */}
-      <div className="relative w-full overflow-hidden border-y border-border bg-surface shadow-[inset_0_6px_10px_-4px_rgb(0_0_0/0.55),inset_0_-6px_10px_-4px_rgb(0_0_0/0.55)]">
-        <span aria-hidden className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(90deg,var(--background)_0%,transparent_30%,transparent_70%,var(--background)_100%)]" />
-        <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-1/2 bg-gradient-to-b from-foreground/10 to-transparent" />
-        {/* The fixed needle the drum turns under. */}
-        <span aria-hidden className="pointer-events-none absolute left-1/2 top-0 z-20 h-9 w-0.5 -translate-x-1/2 bg-foreground shadow-[2px_0_3px_rgb(0_0_0/0.5)]" />
-        <div
-          ref={ref}
-          role="slider"
-          tabIndex={0}
-          aria-label="Trip length: turn the dial"
-          aria-valuemin={DURATION_STEPS[0]}
-          aria-valuemax={DURATION_STEPS[DURATION_STEPS.length - 1]}
-          aria-valuenow={minutes}
-          aria-valuetext={formatDuration(minutes)}
-          onScroll={onScroll}
-          onKeyDown={onKeyDown}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          className="flex cursor-grab snap-x snap-mandatory overflow-x-auto overscroll-x-contain py-3 outline-none [scrollbar-width:none] focus-visible:outline-1 focus-visible:outline-foreground active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
-        >
-          <span aria-hidden className="shrink-0" style={{ width: `calc(50% - ${PITCH / 2}px)` }} />
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label="Trip length: slide the fader"
+        aria-valuemin={DURATION_STEPS[0]}
+        aria-valuemax={DURATION_STEPS[LAST]}
+        aria-valuenow={minutes}
+        aria-valuetext={formatDuration(minutes)}
+        onKeyDown={onKeyDown}
+        onPointerDown={(e) => {
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          fromPointer(e.clientX);
+        }}
+        onPointerMove={(e) => dragging.current && fromPointer(e.clientX)}
+        onPointerUp={() => (dragging.current = false)}
+        onPointerCancel={() => (dragging.current = false)}
+        className="w-full touch-none select-none px-10 py-1 outline-none focus-visible:outline-1 focus-visible:outline-foreground"
+      >
+        <div ref={track} aria-hidden className="relative h-[72px] cursor-pointer">
+          {/* Notches above and below the slot, one per step; longer at the labelled lengths. */}
           {DURATION_STEPS.map((m, i) => {
-            const label = LABELS[m];
-            const hour = m % 60 === 0;
+            const major = LABELS[m] !== undefined;
             return (
-              <span key={m} aria-hidden className="flex shrink-0 snap-center justify-center" style={{ width: PITCH }}>
-                <span className="drum-face flex flex-col items-center gap-2" style={{ "--i": i } as React.CSSProperties}>
-                  <span className={cn("w-px", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} />
-                  <span className="h-3 text-[10px] leading-3 text-foreground/60">{label}</span>
-                </span>
+              <span key={m} className="absolute inset-y-0 -translate-x-1/2" style={{ left: at(i) }}>
+                <span className={cn("absolute top-2 w-px", major ? "h-3 bg-foreground/70" : "h-1.5 bg-foreground/25")} style={major ? undefined : { top: 14 }} />
+                <span className={cn("absolute bottom-2 w-px", major ? "h-3 bg-foreground/70" : "h-1.5 bg-foreground/25")} style={major ? undefined : { bottom: 14 }} />
               </span>
             );
           })}
-          <span aria-hidden className="shrink-0" style={{ width: `calc(50% - ${PITCH / 2}px)` }} />
+          {/* The slot the cap rides in. */}
+          <span className="absolute inset-x-[-6px] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-background shadow-[inset_0_1px_2px_rgb(0_0_0/0.8),0_1px_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]" />
+          {/* The cap: a chunky ridged block with an index line across its middle. */}
+          <span
+            className="absolute top-1/2 flex h-12 w-7 -translate-x-1/2 -translate-y-1/2 cursor-grab flex-col justify-between rounded-[3px] border border-black/60 bg-[linear-gradient(90deg,var(--surface)_0%,var(--surface-raised)_45%,var(--surface)_100%)] px-1 py-1.5 shadow-[0_6px_8px_-2px_rgb(0_0_0/0.7),inset_0_1px_0_color-mix(in_srgb,var(--foreground)_25%,transparent)] active:cursor-grabbing"
+            style={{ left: at(index) }}
+          >
+            {[0, 1, 2].map((k) => <span key={k} className="h-px bg-black/40 shadow-[0_1px_0_color-mix(in_srgb,var(--foreground)_15%,transparent)]" />)}
+            <span className="h-0.5 bg-foreground" />
+            {[0, 1, 2].map((k) => <span key={k} className="h-px bg-black/40 shadow-[0_1px_0_color-mix(in_srgb,var(--foreground)_15%,transparent)]" />)}
+          </span>
+        </div>
+        <div aria-hidden className="relative mt-1 h-3">
+          {DURATION_STEPS.map((m, i) =>
+            LABELS[m] ? (
+              <span key={m} className="absolute -translate-x-1/2 text-[10px] leading-3 text-foreground/60" style={{ left: at(i) }}>
+                {LABELS[m]}
+              </span>
+            ) : null,
+          )}
         </div>
       </div>
     </div>
   );
-}
-
-/** Tell the ticks how far the drum has turned, so each can wrap itself around it (see .drum-face). */
-function setTurn(el: HTMLDivElement) {
-  el.style.setProperty("--turn", String(el.scrollLeft / PITCH));
 }
 
 /** The big readout. Tap it to type hours and minutes; Enter or tapping away sets them. */
