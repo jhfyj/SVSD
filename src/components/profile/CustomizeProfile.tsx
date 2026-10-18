@@ -81,7 +81,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
             >
               <span
                 className={cn(
-                  "flex h-[75px] w-[79px] items-center justify-center transition-colors group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-foreground",
+                  "flex h-[75px] w-[79px] items-center justify-center transition-colors duration-150 ease-out group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-foreground",
                   on
                     ? "text-character-lit drop-shadow-[0_0_6px_var(--character-lit)]"
                     : "text-character group-hover:text-foreground/40",
@@ -101,7 +101,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
           onClick={() => onSave(picked)}
           data-cuelume-tap="success"
           disabled={saving}
-          className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40"
+          className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40"
         >
           {saving ? "SAVING…" : "SAVE"}
         </button>

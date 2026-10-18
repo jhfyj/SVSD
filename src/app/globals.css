@@ -334,6 +334,13 @@ body {
   }
 }
 
+/* A screen fading out on its way to the next one (the splash, before the radio load-in). */
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 /* The splash spiral draws itself from the centre out. */
 @keyframes spiral-in {
   from {

@@ -30,7 +30,7 @@ export function SegmentedTabs<T extends string>({
             aria-selected={selected}
             onClick={() => onChange(option)}
             className={cn(
-              "min-h-11 flex-1 px-3 py-2 text-sm uppercase transition-colors",
+              "min-h-11 flex-1 px-3 py-2 text-sm uppercase transition-colors duration-150 ease-out",
               selected ? "bg-surface-raised text-foreground" : "text-foreground/70 hover:text-foreground",
             )}
           >

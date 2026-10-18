@@ -18,9 +18,8 @@ const PUSH_TILT = 19;
 /** Thickness of the paddle, seen on its raised end. */
 const DEPTH = 9;
 
-const EASE = "cubic-bezier(0.3,1.4,0.5,1)";
-const DURATION = 160;
-const fade = (prop: string) => `${prop} ${DURATION}ms ${EASE}`;
+/** Hinged part with mass: quick, with a little overshoot (DESIGN.md §9.5). */
+const fade = (prop: string) => `${prop} var(--motion-quick) var(--motion-ease-mechanical)`;
 
 /**
  * The power rocker from the radio console, built like a wall light switch: one solid paddle

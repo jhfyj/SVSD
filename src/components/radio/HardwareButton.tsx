@@ -55,7 +55,7 @@ export function HardwareButton({
       onPointerLeave={release(onPointerLeave)}
       onPointerCancel={release(onPointerCancel)}
       className={cn(
-        "group relative flex h-[70px] touch-manipulation select-none items-center justify-center overflow-hidden transition-[box-shadow,filter] duration-75",
+        "group relative flex h-[70px] touch-manipulation select-none items-center justify-center overflow-hidden transition-[box-shadow,filter] duration-75 ease-out",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:pointer-events-none disabled:opacity-50",
         tone === "end"
           ? down
@@ -70,7 +70,7 @@ export function HardwareButton({
     >
       <span
         className={cn(
-          "flex items-center gap-3 transition-[transform,opacity] duration-75",
+          "flex items-center gap-3 transition-[transform,opacity] duration-75 ease-out",
           down ? "translate-y-px" : "",
           // Held for a moment: dimmed. Latched on: full strength, so the lit icon glows (see .key-lit).
           held && !lit ? "opacity-60" : "opacity-100",

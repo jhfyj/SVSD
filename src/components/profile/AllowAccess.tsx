@@ -49,7 +49,7 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
             type="button"
             onClick={onAllow}
             aria-label={`Allow ${item.label.toLowerCase()}`}
-            className="min-h-11 shrink-0 border border-foreground px-3 text-xs transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+            className="min-h-11 shrink-0 border border-foreground px-3 text-xs transition-colors duration-150 ease-out hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
           >
             ALLOW
           </button>
@@ -121,7 +121,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
           onClick={onDone}
           data-cuelume-tap=""
           data-cuelume-theme="mech"
-          className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
         >
           {firstTime ? (allOn ? "LET'S GO" : "CONTINUE") : "DONE"}
         </button>

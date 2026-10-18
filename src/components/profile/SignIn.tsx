@@ -47,7 +47,7 @@ function SignInScreen({
             disabled={!canSubmit || !!busyLabel}
             aria-busy={!!busyLabel}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center bg-foreground px-6 py-3 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40",
+              "inline-flex min-h-11 items-center justify-center bg-foreground px-6 py-3 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40",
               submitLabel ? "w-[332px]" : "min-w-[125px]",
             )}
           >

@@ -32,7 +32,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
               <label
                 key={item.id}
                 className={cn(
-                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-token border p-4 transition-colors",
+                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-token border p-4 transition-colors duration-150 ease-out",
                   on ? "border-foreground text-foreground" : "border-border text-foreground/70 hover:text-foreground",
                 )}
               >
@@ -67,7 +67,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
         href={`${href}?intent=${intent}`}
         data-cuelume-tap=""
         data-cuelume-theme="mech"
-        className="mx-11 mb-14 mt-auto flex h-12 items-center justify-center rounded-token border border-foreground text-sm transition-colors hover:bg-surface focus-visible:bg-surface"
+        className="mx-11 mb-14 mt-auto flex h-12 items-center justify-center rounded-token border border-foreground text-sm transition-colors duration-150 ease-out hover:bg-surface focus-visible:bg-surface"
       >
         Next
       </Link>

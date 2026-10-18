@@ -70,11 +70,12 @@ export function SettingsPanel({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "absolute inset-x-0 overflow-hidden transition-[height] duration-200 ease-[steps(4)] motion-reduce:transition-none",
+        "absolute inset-x-0 overflow-hidden transition-[clip-path] duration-200 ease-[steps(4)] motion-reduce:transition-none",
         "[background:var(--panel-noise),var(--casing-gradient)] shadow-[var(--panel-highlight)]",
         className,
       )}
-      style={{ height: open ? SETTINGS_HEIGHT : 0 }}
+      // Revealed from the bottom edge up by clipping (not by animating height), in 4 hard steps.
+      style={{ height: SETTINGS_HEIGHT, clipPath: open ? "inset(0)" : "inset(100% 0 0 0)" }}
     >
       {/* Content pinned to the bottom, so it rises into view with the panel's top edge. */}
       <div className="absolute inset-x-[26px] bottom-0 flex flex-col" style={{ height: SETTINGS_HEIGHT }}>

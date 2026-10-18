@@ -42,7 +42,7 @@ export function RouteTrail({ points, stories = 0, questions = 0, className }: Ro
           cx={dot.x}
           cy={dot.y}
           r={dot.kind === "start" || dot.kind === "end" ? 3.5 : 3}
-          className={cn(fills[dot.kind], "[transform-box:fill-box] [transform-origin:center] motion-safe:animate-[trail-in_240ms_ease-out_both]")}
+          className={cn(fills[dot.kind], "[transform-box:fill-box] [transform-origin:center] motion-safe:animate-[trail-in_var(--motion-enter)_var(--motion-ease-out)_both]")}
           style={{ animationDelay: `${i * 35}ms` }}
         />
       ))}

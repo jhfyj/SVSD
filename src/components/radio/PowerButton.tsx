@@ -19,7 +19,7 @@ export function PowerButton({ onClick, className }: { onClick?: () => void; clas
       onPointerLeave={() => setHeld(false)}
       onPointerCancel={() => setHeld(false)}
       className={cn(
-        "flex size-11 touch-manipulation items-center justify-center text-power transition-[filter,transform] duration-75",
+        "flex size-11 touch-manipulation items-center justify-center text-power transition-[filter,transform] duration-75 ease-out",
         held
           ? "translate-y-px [filter:drop-shadow(0_0_1px_var(--power))] opacity-80"
           : "[filter:drop-shadow(0_0_1.6px_var(--power))_drop-shadow(0_0_5.5px_var(--power))_drop-shadow(0_0_11px_color-mix(in_srgb,var(--power)_60%,transparent))]",

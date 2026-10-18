@@ -456,18 +456,18 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 
 | Where | What | Fits? |
 |---|---|---|
-| `HardwareButton`, `PowerButton` | Press 75ms | ✅ |
-| `RockerSwitch` | 160ms `ease-mechanical` tilt + mech sounds | ✅ (use `quick`, 150) |
+| `HardwareButton`, `PowerButton` | Press 75ms `ease-out` | ✅ |
+| `RockerSwitch` | `quick` (150ms) `ease-mechanical` tilt + mech sounds | ✅ |
 | `RadioIntro` | Blueprint edges 140ms linear, parts flash `step-end` 360ms, casing flickers out | ✅ |
 | `RadioLcd`, sprites, pixel icons | Stepped loops | ✅ |
 | `.radio-power-off` | 480ms `steps(8)` | ✅ |
 | `TripSummary`, `TripMap` | Lines and dots per frame, `steps` | ✅ |
 | `JourneyMap` | Zoom 1600ms ease-in-out cubic | ✅ |
-| `RouteTrail` | `trail-in` 240ms | ⚠️ use `var(--motion-ease-out)`, not the `ease-out` keyword |
-| `StartingRadio` | Splash fade-out 400ms `ease-in` | ⚠️ `ease-out` |
-| `RadioSettings` | Panel grows with `transition-[height]` in `steps(4)` | ⚠️ step a `clip-path` or `transform` instead of `height` |
-| `ToggleSwitch` | Animates `left` | ⚠️ animate `transform` |
-| `Button`, `MenuRow`, `SegmentedTabs`, options | Default `transition-colors` | ⚠️ add `duration-150 ease-out` |
+| `RouteTrail` | `trail-in` `enter` (240ms) `var(--motion-ease-out)` | ✅ |
+| `StartingRadio` | Splash `fade-out` 400ms `ease-out` | ✅ |
+| `RadioSettings` | Panel is revealed bottom-up by a `clip-path` transition in `steps(4)` | ✅ |
+| `ToggleSwitch` | Knob slides with `transform`, `quick` `ease-mechanical` | ✅ |
+| `Button`, `MenuRow`, `SegmentedTabs`, options | `transition-colors` / `transition-opacity` `duration-150 ease-out` | ✅ |
 
 ---
 
@@ -551,6 +551,5 @@ Code that predates or differs from this spec. Fix it when you're next in the fil
 - **Icon sizes on console keys:** `SpeakerHigh` is 25 and the icon-only End call's `PhoneDisconnect` is 28 (`RadioScreen`, `RadioConsole`); [§10](#10-iconography) says 24 on console keys. Snap them, or record the End call size as an exception.
 - **Control heights:** primary buttons are `min-h-[45px]` (Start journey, trip Done, Customize profile Save, Allow access) or `min-h-11` (sign-in Next, Profile), and `TextInput` is `h-11`; [§5.4](#54-sizes) says 48 (`h-12`).
 - **Fixed widths on the profile flow:** `SignIn`, `CustomizeProfile` and `AllowAccess` size their fields and buttons with `w-[293px]`…`w-[345px]` instead of filling the 305px column inside the 44px gutter.
-- **Motion:** the ⚠️ rows in [§9.8](#98-current-motion-inventory).
 - **Misc:** `HardwareButton` disabled `opacity-50` → 40; `CalendarDots` active dot → `bg-foreground`; Geist Sans loaded but unused.
 - **Input edge on the phone field:** `SignIn`'s phone number is a filled `bg-surface` box with no edge (about 1.1:1 against the cream background). Give it the input edge ([§3.7](#37-contrast-fixes-for-day)) like the other fields, or record the filled field as a recipe.

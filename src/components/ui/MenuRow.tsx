@@ -18,7 +18,7 @@ export function MenuRow({ icon, label, tone = "default", onClick, sound }: MenuR
       onClick={onClick}
       data-cuelume-tap={sound}
       className={cn(
-        "flex min-h-11 w-full items-center gap-2 border p-3 text-left uppercase transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+        "flex min-h-11 w-full items-center gap-2 border p-3 text-left uppercase transition-colors duration-150 ease-out hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
         tone === "danger" ? "border-danger text-danger" : "border-border text-foreground",
       )}
     >
