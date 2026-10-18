@@ -36,8 +36,8 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
   const item = ITEMS.find((i) => i.kind === kind)!;
   const hint = HINT[state]?.[kind];
   return (
-    <li className="flex flex-col gap-2 border border-border p-3">
-      <div className="flex items-center gap-3">
+    <li className="flex flex-col gap-2">
+      <div className="flex items-center gap-3 border border-border p-3">
         <span aria-hidden className="flex size-11 shrink-0 items-center justify-center bg-lcd text-lcd-ink shadow-[var(--lcd-inset)]">
           <PixelIcon icon={kind} pixel={2} delay={item.delay} />
         </span>
