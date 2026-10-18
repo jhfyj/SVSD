@@ -15,7 +15,8 @@ SVSD is a Next.js (App Router) + React + TypeScript app styled with Tailwind CSS
 ## Layout
 
 - `src/app/` — routes, `layout.tsx`, `globals.css` (design tokens)
-- `src/components/` — shared React components (create as needed)
+- `src/components/` — shared React components: `ui/` (buttons, inputs, cards) and `radio/` (the sync-calling console), each with a `*.stories.tsx`
+- `src/stories/` — Storybook foundations (tokens, type) and full-screen compositions
 - `public/fonts/` — self-hosted fonts
 - `.claude/skills/` — skills pulled from design-to-code
 
@@ -24,6 +25,7 @@ SVSD is a Next.js (App Router) + React + TypeScript app styled with Tailwind CSS
 - `npm run dev` — local dev server at http://localhost:3000
 - `npm run build` — production build (run before pushing)
 - `npm run lint` — ESLint
+- `npm run storybook` — component library at http://localhost:6006 (`npm run build-storybook` to check it builds)
 
 ## Design library
 
