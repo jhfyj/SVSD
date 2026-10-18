@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MOODS, saveRadioSettings, useRadioSettings } from "@/lib/radio-settings";
+import { CALL_INTENTS, saveRadioSettings, useRadioSettings } from "@/lib/radio-settings";
 import { cn } from "../ui/cn";
 import { Row, SettingsPanel } from "./RadioSettings";
 import { ToggleSwitch } from "./ToggleSwitch";
@@ -23,11 +23,12 @@ export type RadioCallSettingsProps = {
 };
 
 /**
- * Settings during a call (copy doc: "hang up any time, report", mood matching, "@Jhfnx is taking a break").
+ * Settings during a call (copy doc: "hang up any time, report", "@Jhfnx is taking a break"), plus
+ * your intent (what you're here for), the same four the radio matches on.
  * Report swaps the panel for a reason picker; picking one confirms, then hangs up.
  */
 export function RadioCallSettings({ open, peer, onBreak, onBreakChange, onReport, className }: RadioCallSettingsProps) {
-  const { mood } = useRadioSettings();
+  const { intent } = useRadioSettings();
   // Which screen of the panel, per call: a new call (or closing the panel) starts back at the main view.
   const [screen, setScreen] = useState<{ peer: string; view: "main" | "report" | ReportReason }>({ peer, view: "main" });
   const view = open && screen.peer === peer ? screen.view : "main";
@@ -90,26 +91,32 @@ export function RadioCallSettings({ open, peer, onBreak, onBreakChange, onReport
       <Row label="Take a break">
         <ToggleSwitch on={onBreak} onChange={onBreakChange} label="Take a break" />
       </Row>
-      <Row label="Mood">
-        <div role="radiogroup" aria-label="Mood" className="flex gap-1">
-          {MOODS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              role="radio"
-              aria-checked={mood === m.id}
-              onClick={() => saveRadioSettings({ mood: m.id })}
-              data-cuelume-select=""
-              className={cn(
-                "h-8 px-2 text-[10px] font-bold uppercase",
-                mood === m.id
-                  ? "[background:var(--button-gradient-pressed)] shadow-[var(--button-pressed-shadow)] opacity-70"
-                  : "[background:var(--button-gradient)] shadow-[var(--button-highlight)] hover:brightness-110",
-              )}
-            >
-              {m.label}
-            </button>
-          ))}
+      <Row label="Here to">
+        {/* Same four intents as matching. Changing it mid-call keeps this call; it's who you meet next. */}
+        <div role="radiogroup" aria-label="What you're here for" className="grid w-[256px] grid-cols-4 gap-1">
+          {CALL_INTENTS.map((t) => {
+            const on = intent === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                aria-label={t.label}
+                onClick={() => saveRadioSettings({ intent: t.id })}
+                data-cuelume-select=""
+                className={cn(
+                  "flex h-10 items-center justify-center px-0.5 text-center text-[9px] font-bold uppercase leading-tight",
+                  // Picked: pressed in and lit, like the console's active keys.
+                  on
+                    ? "text-[var(--key-lit)] [background:var(--button-gradient-pressed)] [filter:var(--key-lit-glow)] shadow-[var(--button-pressed-shadow)]"
+                    : "opacity-80 [background:var(--button-gradient)] shadow-[var(--button-highlight)] hover:brightness-110",
+                )}
+              >
+                {t.key}
+              </button>
+            );
+          })}
         </div>
       </Row>
       <Row label={<span className="normal-case">REPORT {peer}</span>}>
