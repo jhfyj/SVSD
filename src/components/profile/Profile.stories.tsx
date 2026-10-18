@@ -6,6 +6,7 @@ import { sampleProfile } from "@/lib/profile/sample";
 import { CharacterSprite } from "./CharacterSprite";
 import { AllowAccessView } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
+import { LcdIcon } from "./LcdIcon";
 import { CodeStep, PhoneSignIn, PhoneStep } from "./SignIn";
 import { ProfileView } from "./Profile";
 
@@ -90,6 +91,22 @@ export const Characters: StoryObj = {
             </span>
           </div>
           <figcaption className="text-sm text-label">{c.name}</figcaption>
+        </figure>
+      ))}
+    </div>
+  ),
+};
+
+/** Options for the sign-in phone icon; the telephone is the one on screen. */
+export const PhoneIconOptions: StoryObj = {
+  name: "Phone icon options",
+  decorators: [(Story) => <div className="bg-background p-6 text-foreground"><Story /></div>],
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {(["telephone", "handset", "mobile"] as const).map((icon) => (
+        <figure key={icon} className="flex flex-col items-center gap-2">
+          <LcdIcon icon={icon} label={icon} />
+          <figcaption className="text-sm text-label">{icon}</figcaption>
         </figure>
       ))}
     </div>

@@ -78,7 +78,7 @@ export type PhoneStepProps = {
 export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: PhoneStepProps) {
   return (
     <SignInScreen
-      icon={<LcdIcon icon="phone" label="Phone" />}
+      icon={<LcdIcon icon="telephone" label="Phone" />}
       onSubmit={onNext}
       canSubmit={isCompletePhone(digits)}
       busyLabel={sending ? "SENDING…" : undefined}
