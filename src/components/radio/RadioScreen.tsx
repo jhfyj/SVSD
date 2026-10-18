@@ -92,10 +92,9 @@ export function RadioScreen({
 
       {/* Top bar */}
       <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
-        <div className="flex items-center gap-1">
-          <PartlyCloudyNight size={16} aria-label="Partly cloudy" />
-          {/* 20px in Digital-7; the wider DSEG14 fallback is set smaller to match its width */}
-          <span className="font-display text-[15px] leading-none">{time}</span>
+        <div className="flex items-center gap-1.5">
+          <PartlyCloudyNight size={20} aria-label="Partly cloudy" />
+          <span className="font-display text-[20px] leading-none">{time}</span>
         </div>
         <PowerButton onClick={onPower} />
       </header>

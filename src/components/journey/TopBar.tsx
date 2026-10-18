@@ -9,9 +9,9 @@ export function TopBar({ showAccount = true }: { showAccount?: boolean }) {
   const time = useClock();
   return (
     <header className="flex h-14 items-center justify-between pl-4 pr-1.5">
-      <div className="flex items-center gap-1 text-foreground/90">
-        <PartlyCloudyNight size={16} aria-hidden />
-        <time className="min-w-14 font-display text-sm">{time}</time>
+      <div className="flex items-center gap-1.5 text-foreground/90">
+        <PartlyCloudyNight size={20} aria-hidden />
+        <time className="min-w-20 font-display text-[20px] leading-none">{time}</time>
       </div>
       {showAccount && (
         <button type="button" aria-label="Account" className="flex size-11 items-center justify-center">

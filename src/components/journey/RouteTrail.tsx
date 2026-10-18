@@ -33,7 +33,7 @@ export function RouteTrail({ points, stories = 0, questions = 0, className }: Ro
       viewBox={`-6 -6 ${WIDTH + 12} ${HEIGHT + 12}`}
       className={cn("block w-full", className)}
       role="img"
-      aria-label={`Walking route, ${dots.length} steps from your location to the destination`}
+      aria-label={`Driving route, ${dots.length} steps from your location to the destination`}
     >
       {dots.map((dot, i) => (
         <circle
