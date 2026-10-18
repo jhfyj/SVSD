@@ -12,7 +12,9 @@ import { RockerSwitch } from "./RockerSwitch";
 const meta = {
   title: "Radio/RadioScreen",
   component: RadioScreen,
-  args: { onEndCall: fn(), onPower: fn(), onConnected: fn() },
+  // arrived: false keeps the call buttons on every story here; the destination screens live in
+  // Radio/Finished journey, so a trip saved earlier can't flip these to End trip.
+  args: { onEndCall: fn(), onPower: fn(), onConnected: fn(), arrived: false },
 } satisfies Meta<typeof RadioScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -82,13 +84,4 @@ export const LoadIn: Story = {
       <RadioScreen {...args} />
     </RadioIntro>
   ),
-};
-
-/** At the destination: the button row turns into End trip, which opens the trip recap. */
-export const Arrived: Story = { args: { arrived: true, onEndTrip: fn() } };
-
-/** At the destination with the switch flipped on: nobody connects, the LCD thanks you for riding. */
-export const ArrivedThankYou: Story = {
-  name: "Arrived, switch on",
-  args: { arrived: true, defaultState: "thanks", onEndTrip: fn() },
 };

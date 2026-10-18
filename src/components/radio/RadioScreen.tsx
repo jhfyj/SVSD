@@ -76,7 +76,10 @@ export type RadioScreenProps = {
   onEndCall?: () => void;
   /** After the power-off slide finishes: the app goes back to Start your journey. */
   onPower?: () => void;
-  /** Arrive at the destination now (demos, Storybook). Otherwise you arrive once the drive's time is up. */
+  /**
+   * true: at the destination now (the Finished journey stories). false: never arrive, so the
+   * call buttons always show (every other story). Unset: you arrive once the drive's time is up.
+   */
   arrived?: boolean;
   onEndTrip?: () => void;
   className?: string;
@@ -100,7 +103,7 @@ export function RadioScreen({
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
   onPower,
-  arrived: forceArrived = false,
+  arrived: forceArrived,
   onEndTrip,
   className,
 }: RadioScreenProps) {
@@ -120,13 +123,13 @@ export function RadioScreen({
   // Taking a break: your mic is off and they hear you're on a break (mocked).
   const [onBreak, setOnBreak] = useState(false);
   // End call hangs up and goes straight back to Connecting to find you a new person.
-  const endCall = () => {
-    setGreeting(false);
-    setOnBreak(false);
   // The key stays pressed in until that next person connects (or the radio stops), then pops back up.
   const [hangingUp, setHangingUp] = useState(false);
-    setSettingsOpen(false);
+  const endCall = () => {
     setHangingUp(true);
+    setGreeting(false);
+    setOnBreak(false);
+    setSettingsOpen(false);
     setCalls((n) => n + 1);
     setState("connecting");
     onEndCall?.();
@@ -171,10 +174,10 @@ export function RadioScreen({
     if (state !== "connecting") return;
     const t = setTimeout(() => {
       setState(outcome);
+      setHangingUp(false);
       if (outcome === "connected") {
         setGreeting(true);
         cue("ready", { emphasis: "subtle", theme: "mech" });
-      setHangingUp(false);
       } else {
         cue("error", { theme: "mech" });
       }
@@ -274,10 +277,10 @@ export function RadioScreen({
             // After you've arrived, switching on doesn't connect anyone; the LCD just thanks you.
             setState(on ? (arrived ? "thanks" : "connecting") : "off");
             setGreeting(false);
+            setHangingUp(false);
             if (on) setMusicOn(false);
           }}
         />
-            setHangingUp(false);
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
           OFF
         </span>
