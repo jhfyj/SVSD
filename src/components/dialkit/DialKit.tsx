@@ -154,7 +154,15 @@ export function DialKit() {
 
       <Group title="Radio">
         {RADIO.map((r) => (
-          <Chip key={r.label} active={here === r.href} onClick={() => go(r.href)}>
+          <Chip
+            key={r.label}
+            active={here === r.href}
+            onClick={() => {
+              // A radio state shows the usual console, so the drive starts over: no End trip.
+              arrival.reset();
+              go(r.href);
+            }}
+          >
             {r.label}
           </Chip>
         ))}
