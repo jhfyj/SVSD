@@ -23,11 +23,17 @@ export const Connected: Story = { args: { defaultOn: true } };
 /** How the screen opens: radio off, Start story showing. */
 export const RadioOff: Story = {};
 
-/** Figma "Connecting" (node 154:1263): static on the LCD and in the speaker, LED blinking. Holds here. */
+/** Figma "Connecting" (node 154:1263): CONNECTING with dots stepping in, LED blinking. Holds here. */
 export const Connecting: Story = { args: { defaultState: "connecting", connectMs: 600_000 } };
 
-/** Flip the switch on: Connecting..., then "Currently connected to @sunny_side", then the character. */
+/** Flip the switch on: Connecting..., then "Currently connected to @sunny_side", then their character. */
 export const ConnectThenTalk: Story = { name: "Connect, then talk", args: { connectMs: 3000 } };
+
+/** On a call, they're quiet: their character idles with @username underneath. */
+export const InCallIdle: Story = { name: "In call, idle", args: { defaultState: "connected", speaking: false } };
+
+/** On a call, they're talking: their character hops and sound waves pulse beside it. */
+export const InCallSpeaking: Story = { name: "In call, speaking", args: { defaultState: "connected", speaking: true } };
 
 /** The connection drops: red LED, "Connection lost" on the LCD. */
 export const ConnectionLost: Story = { args: { defaultState: "lost" } };

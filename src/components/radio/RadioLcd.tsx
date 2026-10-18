@@ -1,4 +1,5 @@
 import type { CharacterId } from "@/lib/profile/characters";
+import { cn } from "../ui/cn";
 import { CharacterSprite } from "../profile/CharacterSprite";
 
 /** Where a call is: off, finding someone, talking, or dropped. */
@@ -6,25 +7,33 @@ export type CallState = "off" | "connecting" | "connected" | "lost";
 
 export type RadioLcdProps = {
   state: CallState;
-  character: CharacterId;
-  /** The person you're connected to, shown briefly when the call comes through. */
+  /** The other person's character, shown like a profile picture while you're connected. */
+  peerCharacter: CharacterId;
+  /** The other person's username, shown under their character. */
   peer?: string;
   /** Show "Currently connected to" instead of the character. */
   greeting?: boolean;
+  /** The other person is talking. */
+  speaking?: boolean;
 };
 
-/** What the small LCD shows for each radio state (Figma "Connecting", node 154:1263). */
-export function RadioLcd({ state, character, peer, greeting }: RadioLcdProps) {
+/** What the small LCD shows for each radio state. Blank while the radio is off. */
+export function RadioLcd({ state, peerCharacter, peer, greeting, speaking }: RadioLcdProps) {
+  if (state === "off") return null;
   if (state === "connecting") {
     return (
-      <>
-        <Static />
-        <LcdText>CONNECTING...</LcdText>
-      </>
+      <LcdText>
+        CONNECTING
+        <span aria-hidden className="lcd-dots">
+          <span>.</span>
+          <span>.</span>
+          <span>.</span>
+        </span>
+      </LcdText>
     );
   }
   if (state === "lost") return <LcdText>CONNECTION LOST</LcdText>;
-  if (state === "connected" && greeting) {
+  if (greeting) {
     return (
       <LcdText>
         <span className="block text-[11px]">CURRENTLY CONNECTED TO</span>
@@ -32,46 +41,49 @@ export function RadioLcd({ state, character, peer, greeting }: RadioLcdProps) {
       </LcdText>
     );
   }
-  // The account's own character, swapping its two frames like on Customize profile.
-  return <CharacterSprite character={character} pixel={6.5} className="text-lcd-ink" />;
+  return (
+    <figure className="flex flex-col items-center gap-1.5 text-lcd-ink">
+      <div className="relative">
+        {/* Idle: the character's own two frames. Speaking: it hops a pixel and sound waves pulse beside it. */}
+        <CharacterSprite character={peerCharacter} pixel={4} className={cn(speaking && "lcd-hop")} />
+        <SoundWaves on={!!speaking} />
+      </div>
+      <figcaption className="font-mono text-[12px] leading-none">{peer}</figcaption>
+    </figure>
+  );
 }
 
 function LcdText({ children }: { children: React.ReactNode }) {
   return (
-    <p role="status" className="relative bg-lcd px-1.5 text-center font-mono text-[14px] uppercase leading-tight text-lcd-ink">
+    <p role="status" className="px-1.5 text-center font-mono text-[14px] uppercase leading-tight text-lcd-ink">
       {children}
     </p>
   );
 }
 
-/* Radio static: two frames of random LCD pixels that swap, like a set between stations. */
-const COLS = 56;
-const ROWS = 33;
+/* Two 5 × 7 frames of pixel arcs: small, then wide. "#" is an inked pixel. */
+const WAVES = [
+  [".....", "#....", ".#...", ".#...", ".#...", "#....", "....."],
+  ["..#..", "#..#.", ".#..#", ".#..#", ".#..#", "#..#.", "..#.."],
+];
 
-/** A fixed seed so the server and the browser draw the same pixels. */
-function noise(seed: number) {
-  let s = seed;
-  const rand = () => ((s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296);
-  const rects: Array<[number, number]> = [];
-  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (rand() < 0.28) rects.push([x, y]);
-  return rects;
-}
-const FRAMES = [noise(7), noise(42)];
-
-function Static() {
+/** Pixel sound waves that swap between two frames while the other person talks. Hidden when they're quiet. */
+function SoundWaves({ on }: { on: boolean }) {
   return (
     <svg
       aria-hidden
-      viewBox={`0 0 ${COLS} ${ROWS}`}
-      preserveAspectRatio="none"
+      width={5 * 4}
+      height={7 * 4}
+      viewBox="0 0 5 7"
       shapeRendering="crispEdges"
-      className="static-play absolute inset-0 size-full fill-lcd-ink opacity-50"
+      fill="currentColor"
+      className={cn("sprite-fast absolute left-full top-1/2 ml-1 -translate-y-1/2", !on && "invisible")}
     >
-      {FRAMES.map((rects, f) => (
+      {WAVES.map((rows, f) => (
         <g key={f} className={f === 0 ? "sprite-a" : "sprite-b"}>
-          {rects.map(([x, y]) => (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} />
-          ))}
+          {rows.flatMap((row, y) =>
+            [...row].map((c, x) => (c === "#" ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} /> : null)),
+          )}
         </g>
       ))}
     </svg>
