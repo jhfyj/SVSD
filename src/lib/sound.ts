@@ -12,7 +12,7 @@ import { useSyncExternalStore } from "react";
     the tuning strip's detents, the load-in.
 
   Outside the radio, keep sound for major moments only (the main call to action on a screen,
-  sign-in results, saving, deleting); Jennifer found more than that too busy. Everything on the
+  sign-in results, saving, deleting) and typing; Jennifer found more than that too busy. Everything on the
   radio sounds.
 
   Radio hardware uses the "mech" theme (clicks, latches, ratchets); the rest of the app uses the

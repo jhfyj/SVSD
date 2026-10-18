@@ -14,7 +14,7 @@ import { MessyText, type MessyLook } from "./MessyText";
   momentum for free; a mouse drags it by hand.
 */
 
-const PITCH = 22; // px between ticks
+const PITCH = 22; // px between ticks; keep in step with .drum-face in globals.css
 const LABELS: Record<number, string> = {
   30: "30m", 60: "1h", 120: "2h", 180: "3h", 240: "4h", 360: "6h", 480: "8h", 720: "12h", 960: "16h", 1440: "24h",
 };
@@ -35,7 +35,6 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
   const settle = useRef<ReturnType<typeof setTimeout>>(undefined);
   const drag = useRef<{ x: number; left: number } | null>(null);
   const last = useRef(index);
-  const placed = useRef(false);
 
   // Follow the value when it changes from outside (a quick pick, the drive time).
   useEffect(() => {
@@ -43,13 +42,14 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
     if (!el || Math.round(el.scrollLeft / PITCH) === index) return;
     steering.current = true;
     last.current = index;
-    // The first placement jumps; later ones glide.
-    el.scrollTo({ left: index * PITCH, behavior: placed.current ? "smooth" : "auto" });
-    placed.current = true;
+    // The drum clicks straight to the new value; no gliding.
+    el.scrollTo({ left: index * PITCH });
+    setTurn(el);
   }, [index]);
 
   const onScroll = () => {
     const el = ref.current!;
+    setTurn(el);
     clearTimeout(settle.current);
     settle.current = setTimeout(() => (steering.current = false), 150);
     if (steering.current) return;
@@ -94,22 +94,23 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
     drag.current = null;
     const el = e.currentTarget;
     el.style.scrollSnapType = "";
-    el.scrollTo({ left: Math.round(el.scrollLeft / PITCH) * PITCH, behavior: "smooth" });
+    el.scrollTo({ left: Math.round(el.scrollLeft / PITCH) * PITCH });
   };
 
   return (
     <div className={cn("flex w-full flex-col items-center gap-5", className)}>
       <TypedDuration minutes={minutes} onChange={onChange} look={look} />
-      <div className="relative w-full">
-        {/* The fixed marker the ruler slides under. */}
-        <span aria-hidden className="pointer-events-none absolute left-1/2 top-0 z-10 h-8 w-0.5 -translate-x-1/2 bg-foreground" />
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
+      {/* The drum sits in a recessed window, lit from above: dark at its rolled-away edges, bright where it faces you. */}
+      <div className="relative w-full overflow-hidden border-y border-border bg-surface shadow-[inset_0_6px_10px_-4px_rgb(0_0_0/0.55),inset_0_-6px_10px_-4px_rgb(0_0_0/0.55)]">
+        <span aria-hidden className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(90deg,var(--background)_0%,transparent_30%,transparent_70%,var(--background)_100%)]" />
+        <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-1/2 bg-gradient-to-b from-foreground/10 to-transparent" />
+        {/* The fixed needle the drum turns under. */}
+        <span aria-hidden className="pointer-events-none absolute left-1/2 top-0 z-20 h-9 w-0.5 -translate-x-1/2 bg-foreground shadow-[2px_0_3px_rgb(0_0_0/0.5)]" />
         <div
           ref={ref}
           role="slider"
           tabIndex={0}
-          aria-label="Trip length: drag the ruler"
+          aria-label="Trip length: turn the dial"
           aria-valuemin={DURATION_STEPS[0]}
           aria-valuemax={DURATION_STEPS[DURATION_STEPS.length - 1]}
           aria-valuenow={minutes}
@@ -120,16 +121,18 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className="flex cursor-grab snap-x snap-mandatory overflow-x-auto overscroll-x-contain py-2 outline-none [scrollbar-width:none] focus-visible:outline-1 focus-visible:outline-foreground active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
+          className="flex cursor-grab snap-x snap-mandatory overflow-x-auto overscroll-x-contain py-3 outline-none [scrollbar-width:none] focus-visible:outline-1 focus-visible:outline-foreground active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
         >
           <span aria-hidden className="shrink-0" style={{ width: `calc(50% - ${PITCH / 2}px)` }} />
-          {DURATION_STEPS.map((m) => {
+          {DURATION_STEPS.map((m, i) => {
             const label = LABELS[m];
             const hour = m % 60 === 0;
             return (
-              <span key={m} aria-hidden className="flex shrink-0 snap-center flex-col items-center gap-2" style={{ width: PITCH }}>
-                <span className={cn("w-px", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} />
-                <span className="h-3 text-[10px] leading-3 text-foreground/60">{label}</span>
+              <span key={m} aria-hidden className="flex shrink-0 snap-center justify-center" style={{ width: PITCH }}>
+                <span className="drum-face flex flex-col items-center gap-2" style={{ "--i": i } as React.CSSProperties}>
+                  <span className={cn("w-px", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} />
+                  <span className="h-3 text-[10px] leading-3 text-foreground/60">{label}</span>
+                </span>
               </span>
             );
           })}
@@ -138,6 +141,11 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
       </div>
     </div>
   );
+}
+
+/** Tell the ticks how far the drum has turned, so each can wrap itself around it (see .drum-face). */
+function setTurn(el: HTMLDivElement) {
+  el.style.setProperty("--turn", String(el.scrollLeft / PITCH));
 }
 
 /** The big readout. Tap it to type hours and minutes; Enter or tapping away sets them. */

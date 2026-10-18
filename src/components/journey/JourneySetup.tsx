@@ -106,6 +106,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               type="search"
               autoComplete="off"
               enterKeyHint="search"
+              data-cuelume-type=""
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -183,9 +184,10 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
           <p className="mt-8 text-center font-mono text-base uppercase">How long’s your trip</p>
           <TuningStrip minutes={minutes} onChange={setChosenMinutes} className="-mx-9 mt-12 w-[calc(100%+4.5rem)]" />
           <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
-            {routeMinutes !== null && (
+            {/* The drive's own length, shown as just a time: every trip is a drive. */}
+            {routeMinutes !== null && !PRESETS.includes(routeMinutes) && (
               <Chip selected={minutes === routeMinutes} onClick={() => setChosenMinutes(null)}>
-                Drive · {formatDuration(routeMinutes)}
+                {formatDuration(routeMinutes)}
               </Chip>
             )}
             {PRESETS.map((m) => (

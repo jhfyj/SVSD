@@ -90,6 +90,7 @@ export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: Ph
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
+          data-cuelume-type=""
           aria-label="Phone number"
           aria-invalid={!!error}
           autoFocus
@@ -164,6 +165,7 @@ export function CodeStep({
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
+          data-cuelume-type=""
           pattern="[0-9]*"
           maxLength={CODE_LENGTH}
           aria-label="Verification code"
