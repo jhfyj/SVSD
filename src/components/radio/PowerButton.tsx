@@ -21,8 +21,8 @@ export function PowerButton({ onClick, className }: { onClick?: () => void; clas
       className={cn(
         "flex size-11 touch-manipulation items-center justify-center text-power transition-[filter,transform] duration-75",
         held
-          ? "translate-y-px [filter:drop-shadow(0_0_1px_#ff3535)] opacity-80"
-          : "[filter:drop-shadow(0_0_1.6px_#ff3535)_drop-shadow(0_0_5.5px_#ff3535)_drop-shadow(0_0_11px_rgb(255_53_53/0.6))]",
+          ? "translate-y-px [filter:drop-shadow(0_0_1px_var(--power))] opacity-80"
+          : "[filter:drop-shadow(0_0_1.6px_var(--power))_drop-shadow(0_0_5.5px_var(--power))_drop-shadow(0_0_11px_color-mix(in_srgb,var(--power)_60%,transparent))]",
         "focus-visible:outline-2 focus-visible:outline-foreground",
         className,
       )}

@@ -76,14 +76,14 @@ export function RockerSwitch({ on, onChange, label = "Radio power", className }:
         if (e.detail === 0) flip(!on);
       }}
       className={cn(
-        "relative h-[98px] w-[46px] touch-none select-none bg-[#0a0a0a] p-[5px]",
+        "relative h-[98px] w-[46px] touch-none select-none bg-rocker-housing p-[5px]",
         "shadow-[inset_0_2px_3px_rgb(0_0_0/0.9),0_1px_0_rgb(255_255_255/0.08)]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
         className,
       )}
     >
       {/* Housing the paddle rocks in, viewed from a little above */}
-      <span className="relative block h-full w-full overflow-hidden bg-[#050505] shadow-[inset_0_2px_6px_rgb(0_0_0)] [perspective:220px] [perspective-origin:50%_-40%]">
+      <span className="relative block h-full w-full overflow-hidden bg-rocker-well shadow-[inset_0_2px_6px_rgb(0_0_0)] [perspective:220px] [perspective-origin:50%_-40%]">
         {/* The raised half shades the housing around the pressed half */}
         <span
           aria-hidden
@@ -100,12 +100,12 @@ export function RockerSwitch({ on, onChange, label = "Radio power", className }:
         <span aria-hidden className="absolute inset-x-[2px] inset-y-[3px] [transform-style:preserve-3d]" style={paddle}>
           {/* Top end of the paddle, showing its thickness when the top tips out */}
           <span
-            className="absolute inset-x-0 top-0 origin-top bg-[linear-gradient(180deg,#4a4a4a_0%,#2e2e2e_100%)]"
+            className="absolute inset-x-0 top-0 origin-top [background-image:var(--rocker-paddle-edge)]"
             style={{ height: DEPTH, transform: "rotateX(-90deg)" }}
           />
 
           {/* Face */}
-          <span className="absolute inset-0 flex flex-col items-center bg-[linear-gradient(180deg,#232323_0%,#1a1a1a_50%,#141414_100%)] shadow-[inset_0_1px_0_rgb(255_255_255/0.1),inset_0_-1px_0_rgb(0_0_0/0.6)] [backface-visibility:hidden]">
+          <span className="absolute inset-0 flex flex-col items-center [background-image:var(--rocker-paddle)] shadow-[inset_0_1px_0_rgb(255_255_255/0.1),inset_0_-1px_0_rgb(0_0_0/0.6)] [backface-visibility:hidden]">
             {/* Light from above: brighter as the face turns up (top pushed in), darker as it turns down */}
             <span
               className="absolute inset-0 bg-[linear-gradient(180deg,rgb(255_255_255/0.16)_0%,rgb(255_255_255/0.04)_100%)]"
@@ -121,8 +121,8 @@ export function RockerSwitch({ on, onChange, label = "Radio power", className }:
             <span className="absolute inset-x-[3px] top-1/2 h-px bg-black/50 shadow-[0_1px_0_rgb(255_255_255/0.05)]" />
 
             {/* O and | marks, printed on the face */}
-            <span className="relative mt-[13px] size-[11px] rounded-full border-[1.5px] border-[#cfcfcf]" />
-            <span className="relative mt-[29px] h-[9px] w-[2px] bg-[#cfcfcf]" />
+            <span className="relative mt-[13px] size-[11px] rounded-full border-[1.5px] border-rocker-glyph" />
+            <span className="relative mt-[29px] h-[9px] w-[2px] bg-rocker-glyph" />
           </span>
         </span>
       </span>

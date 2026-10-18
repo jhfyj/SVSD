@@ -95,7 +95,7 @@ Non-text shades: `foreground/20` for unlit dots and empty tracks, `foreground/15
 | `question` (= `marker-magenta`) | `#ec6bf2` | `#b01ea8` | **Questions**: anything asking you to reply |
 | `marker-sky`, `marker-orange` | `#7abdf0`, `#e3743d` | `#1f6fb0`, `#b64f1a` | Other **people** on the map only |
 | `key-lit` (+ `key-lit-glow`) | `#6dff5c` | `#1f8a2c` | **On.** A latched console key's icon lights green (mic on, speaker on, the picked intent) |
-| `led` / `led-amber` / LED red | `#6dff5c` / `#ffb020` / `#ff3535` | same | **Connection:** green on a call, amber connecting, red lost, dark when off |
+| `led` / `led-amber` / `led-red` | `#6dff5c` / `#ffb020` / `#ff3535` | same | **Connection:** green on a call, amber connecting, red lost, dark when off. The bulb sits in a `led-ring` (`#bababa`, both themes). |
 | `character` / `character-lit` | white 20% / `#8dff7e` | ink 22% / `#2f8f3a` | Pixel characters: unlit, and the picked one lit |
 | `danger` | `#ff5151` | `#ca3838` | Destructive actions and errors |
 | `power` | `#ff3535` | same | The lit power key (an emitter, not a printed color) |
@@ -121,12 +121,13 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 | End-call key | `--end-call-gradient` / `-pressed` (red in both themes) |
 | Lit key | `.key-lit`: icon in `key-lit` with `--key-lit-glow` |
 | LCD window | `bg-lcd shadow-[var(--lcd-inset)]` |
+| Rocker switch (same in both themes) | `rocker-housing`, `rocker-well`, `--rocker-paddle` + `--rocker-paddle-edge`, `rocker-glyph` |
 
 **Light source:** top-left, and on the radio it **moves with the phone.** `useTilt` turns device tilt into `--tilt-x` / `--tilt-y` (±25° / ±20°, eased toward the target at 0.12 per frame so it feels heavy) and the casing's highlight follows. Glow is only for emitters: LEDs, the power key, lit keys.
 
 ### 3.5 The map
 
-- **With a Google key:** `NavMap` is a Google vector map tilted into a 3D follow view; the route is white (gray once driven), the next turn shows at the top. Tiles go black and white through `--map-lcd-tint`: a slight LCD-green cast at night, plain grayscale by day, so it reads as the same kind of screen as the LCD. Markers are HTML on top and keep their colors.
+- **With a Google key:** `NavMap` is a Google vector map tilted into a 3D follow view; the route is white (gray once driven) on a dark casing (`--route`, `--route-driven`, `--route-casing`, read by `useToken` because Google's polylines take color strings), the next turn shows at the top. Tiles go black and white through `--map-lcd-tint`: a slight LCD-green cast at night, plain grayscale by day, so it reads as the same kind of screen as the LCD. Markers are HTML on top and keep their colors.
 - **Without a key:** the dithered placeholder map ([§7](#7-texture)) and OpenStreetMap search and routes.
 - **Washes:** when a story or question arrives, the map takes a `mix-blend-color` wash of that kind's color, rising from the bottom.
 
@@ -138,10 +139,10 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 | Figma LCD text | `#456d4a` | `lcd-ink` (2.8:1 → 7.1:1) |
 | Text anywhere | `text-muted`, `#696969` | `text-foreground/70` |
 | Figma reply widget (`123:727`) | Blue fills, rounded corners, a sans font | LCD + hardware keys ([§8.3](#83-hardware-components)) |
-| `Led.tsx` | `#55ff60`, `#3a3a3a`, `#aeaeae`, `#ffb020` gradients | `led`, `marker-border`, `label`, `led-amber` |
-| `RockerSwitch.tsx` | `#0a0a0a`, `#050505`, `#cfcfcf` | Night primitives via a token, `label` |
+| `Led.tsx` | `#55ff60`, `#3a3a3a`, `#aeaeae`, `#ffb020` gradients | `led`, `marker-border`, `led-ring`, `led-amber`, `led-red` |
+| `RockerSwitch.tsx` | `#0a0a0a`, `#050505`, `#cfcfcf` | `rocker-housing` (`#111111`), `rocker-well` (`#050505`), `rocker-glyph` (`#bababa`). Not `label`: by day it would be dark on the black paddle. |
 | `PowerButton.tsx` | `#ff3535` in filters | `var(--power)` |
-| `NavMap.tsx` | inline hex | Tokens |
+| `NavMap.tsx` | inline hex | `--route`, `--route-driven`, `--route-casing` |
 
 ### 3.7 Contrast fixes for day
 
@@ -548,7 +549,6 @@ Two families, never mixed in one spot:
 Code that predates or differs from this spec. Fix it when you're next in the file, or in one cleanup pass.
 
 - **Icon sizes on console keys:** `SpeakerHigh` is 25 and the icon-only End call's `PhoneDisconnect` is 28 (`RadioScreen`, `RadioConsole`); [§10](#10-iconography) says 24 on console keys. Snap them, or record the End call size as an exception.
-- **Hex values:** `RockerSwitch`, `Led`, `PowerButton`, `NavMap` → tokens ([§3.6](#36-retired-values)).
 - **Layout:** `px-[31px]`, `mx-[31px]`, `px-[33px]`, `px-[19px]` → the 44px gutter; `h-[47px]` → `h-12`; bottom spacers (`mb-[61px]`, `pb-[77px]`) → `pb-14`.
 - **Motion:** the ⚠️ rows in [§9.8](#98-current-motion-inventory).
 - **Misc:** `HardwareButton` disabled `opacity-50` → 40; `CalendarDots` active dot → `bg-foreground`; Geist Sans loaded but unused.

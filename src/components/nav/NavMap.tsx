@@ -77,6 +77,20 @@ function useJourney(): Journey | null {
   return useMemo(() => (raw ? (JSON.parse(raw) as Journey) : null), [raw]);
 }
 
+/** A color token from globals.css, kept up to date with the theme. Polylines take color strings, not CSS variables. */
+function useToken(name: string) {
+  return useSyncExternalStore(
+    subscribeTheme,
+    () => getComputedStyle(document.documentElement).getPropertyValue(name).trim(),
+    () => "",
+  );
+}
+function subscribeTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => observer.disconnect();
+}
+
 /** ?sim drives the route at 2x, ?sim=5 at 5x. */
 function useSimulation() {
   const sim = useSyncExternalStore(noSubscribe, () => new URLSearchParams(location.search).get("sim"), () => null);
@@ -110,6 +124,9 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
   const route = rerouted ?? journey?.route ?? null;
   const path = useMemo(() => (route && route.points.length > 1 ? measure(route.points) : null), [route]);
   const steps = useMemo(() => (route && path ? stepStarts(route, path) : []), [route, path]);
+  const routeColor = useToken("--route");
+  const drivenColor = useToken("--route-driven");
+  const casingColor = useToken("--route-casing");
 
   const simSpeed = useSimulation();
   const live = useLivePosition(simSpeed === null);
@@ -245,9 +262,9 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
         }}
       >
         {/* The route: a dark casing under a white line, greyed out behind you */}
-        <Polyline path={ahead} strokeColor="#000000" strokeOpacity={0.8} strokeWeight={11} zIndex={1} />
-        <Polyline path={ahead} strokeColor="#ffffff" strokeWeight={7} zIndex={2} />
-        <Polyline path={driven} strokeColor="#8a8a8a" strokeWeight={6} zIndex={2} />
+        <Polyline path={ahead} strokeColor={casingColor} strokeOpacity={0.8} strokeWeight={11} zIndex={1} />
+        <Polyline path={ahead} strokeColor={routeColor} strokeWeight={7} zIndex={2} />
+        <Polyline path={driven} strokeColor={drivenColor} strokeWeight={6} zIndex={2} />
 
         {path &&
           travellers

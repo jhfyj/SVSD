@@ -57,6 +57,16 @@
   --key-lit-glow: drop-shadow(0 0 1.6px #6dff5c) drop-shadow(0 0 5px rgb(109 255 92 / 0.55));
   /* One continuous radio casing behind the map and console. */
   --casing-gradient: linear-gradient(180deg, #2f2f2f 0%, #272727 55%, #1f1e1e 100%);
+  /* Rocker switch (RockerSwitch): a black physical part, so the same in both themes. */
+  --rocker-housing: #111111;
+  --rocker-well: #050505;
+  --rocker-paddle: linear-gradient(180deg, #232323 0%, #1a1a1a 50%, #141414 100%);
+  --rocker-paddle-edge: linear-gradient(180deg, #4a4a4a 0%, #2e2e2e 100%);
+  --rocker-glyph: #bababa;
+  /* The route on the radio's map (NavMap): a white line on a dark casing, gray once driven. Both themes. */
+  --route: #ffffff;
+  --route-driven: #8a8a8a;
+  --route-casing: #000000;
   /* The dithered map is drawn for night; day lifts it toward the light Figma frame. */
   --map-filter: none;
   /* The radio's map: black and white, then a slight cast toward the LCD green (#97bd93). Day drops the green. */
@@ -75,6 +85,9 @@
   --story: var(--marker-lime);
   --question: var(--marker-magenta);
   --led-amber: #ffb020;
+  --led-red: #ff3535;
+  /* The LED's ring: night label gray, kept in both themes because the LED is a physical part. */
+  --led-ring: #bababa;
 
   /* Motion (DESIGN.md §9): the curve comes from what's moving, the duration from its tier. */
   --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -193,6 +206,11 @@
   --color-story: var(--story);
   --color-question: var(--question);
   --color-led-amber: var(--led-amber);
+  --color-led-red: var(--led-red);
+  --color-led-ring: var(--led-ring);
+  --color-rocker-housing: var(--rocker-housing);
+  --color-rocker-well: var(--rocker-well);
+  --color-rocker-glyph: var(--rocker-glyph);
   --radius-token: var(--radius);
   --ease-out: var(--motion-ease-out);
   --ease-in-out: var(--motion-ease-in-out);
