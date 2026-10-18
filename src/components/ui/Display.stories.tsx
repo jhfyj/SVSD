@@ -7,7 +7,7 @@ import { StatCard } from "./StatCard";
 const meta: Meta = { title: "Components/Display" };
 export default meta;
 
-export const Stat: StoryObj = { render: () => <StatCard className="w-40" value={602} label="Total calls" /> };
+export const Stat: StoryObj = { render: () => <StatCard className="w-[305px]" value={602} label="total calls" /> };
 
 export const RouteProgress: StoryObj = {
   name: "Dot trail",
@@ -21,7 +21,7 @@ export const RouteProgress: StoryObj = {
 };
 
 export const Calendar: StoryObj = {
-  render: () => <CalendarDots className="w-72" days={31} startOffset={2} active={[1, 2, 5, 8, 9, 12, 15, 16, 20, 22, 23, 28]} />,
+  render: () => <div className="border border-border px-[33px] pb-7 pt-[39px]"><CalendarDots days={31} startOffset={4} label="October 2026" active={[1, 2, 5, 8, 9, 12, 15, 16, 20, 22, 23, 28]} /></div>,
 };
 
 export const Markers: StoryObj = {
