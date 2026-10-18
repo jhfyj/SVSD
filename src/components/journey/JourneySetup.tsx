@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
+import { parseCoordinates, routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration } from "@/lib/journey/duration";
 import { saveJourney } from "@/lib/journey/session";
 import { recordJourney } from "@/lib/journey/history";
@@ -12,7 +12,7 @@ import { cn } from "../ui/cn";
 import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
 import { useCountUp } from "./useCountUp";
-import { saveTrip } from "@/lib/trip/trip";
+import { placeName, saveTrip } from "@/lib/trip/trip";
 import { useCurrentLocation } from "./useCurrentLocation";
 import { plural } from "@/lib/plural";
 
@@ -26,9 +26,36 @@ export function JourneySetup() {
   const [results, setResults] = useState<{ query: string; places: Place[]; error?: string }>({ query: "", places: [] });
   const [destination, setDestination] = useState<Place | null>(null);
   const searching = !destination && query.trim().length > 0;
+  // Typed coordinates skip the address search: they're the destination as they are.
+  const point = searching ? parseCoordinates(query) : null;
+  const pointKey = point && `${point.lat},${point.lng}`;
+  const typedPoint = point !== null;
+  const [town, setTown] = useState<{ key: string; name: string } | null>(null);
+  const coordinates: Place | null = point && {
+    id: `pin:${pointKey}`,
+    name: `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`,
+    detail: town?.key === pointKey && town.name ? town.name : "Coordinates",
+    ...point,
+  };
+
+  // Name the town at typed coordinates, so the pin reads as a place (same lookup as the trip recap).
+  useEffect(() => {
+    if (!pointKey) return;
+    const [lat, lng] = pointKey.split(",").map(Number);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      placeName({ lat, lng }, controller.signal)
+        .then((name) => setTown({ key: pointKey, name }))
+        .catch(() => {});
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pointKey]);
 
   useEffect(() => {
-    if (!searching) return;
+    if (!searching || typedPoint) return;
     const q = query.trim();
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -42,7 +69,7 @@ export function JourneySetup() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [searching, query, here]);
+  }, [searching, typedPoint, query, here]);
 
   // The driving route from here to the destination
   const routeKey = destination && here ? `${here.lat},${here.lng}>${destination.id}` : null;
@@ -76,7 +103,7 @@ export function JourneySetup() {
   };
 
   // The dropdown opens on the first keystroke. While a search runs it keeps the last places it found.
-  const loading = searching && results.query !== query.trim();
+  const loading = searching && !typedPoint && results.query !== query.trim();
 
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
@@ -101,7 +128,7 @@ export function JourneySetup() {
               setQuery(e.target.value);
               setDestination(null);
             }}
-            placeholder={here ? "Search an address" : ""}
+            placeholder={here ? "Search an address or coordinates" : ""}
             className="h-[47px] w-full truncate rounded-token border border-foreground/60 bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
@@ -117,7 +144,9 @@ export function JourneySetup() {
           {/* Suggestions drop down right under the box */}
           {searching && (
             <div className="absolute inset-x-0 top-full z-20 mt-1 bg-background">
-              {results.places.length ? (
+              {coordinates ? (
+                <AddressList items={[coordinates]} onSelect={() => pick(coordinates)} />
+              ) : results.places.length ? (
                 <>
                   <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
                   {results.places[0].google && (

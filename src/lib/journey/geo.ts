@@ -119,6 +119,29 @@ export async function searchPlaces(query: string, near: LatLng | null, signal?: 
   return data.features.map(toPlace).filter((p) => !seen.has(p.id) && seen.add(p.id));
 }
 
+/** One number of a coordinate pair, with an optional degree sign and hemisphere letter. */
+const COORD = String.raw`(-?\d{1,3}(?:\.\d+)?)\s*°?\s*([NSEW])?`;
+const COORD_PAIR = new RegExp("^" + COORD + String.raw`\s*[,\s]\s*` + COORD + "$", "i");
+
+/**
+ * Reads typed coordinates as a place: "37.7749, -122.4194", "37.7749 -122.4194" or
+ * "37.7749° N, 122.4194° W" (latitude first, as Google Maps copies them). Null when it isn't coordinates.
+ */
+export function parseCoordinates(text: string): LatLng | null {
+  const m = text.trim().match(COORD_PAIR);
+  // Two bare whole numbers ("1 5", on the way to "1 5th Ave") are still an address being typed.
+  if (!m || !/[.,°NSEW]/i.test(text)) return null;
+  const signed = (value: string, hemi: string | undefined, negative: string) =>
+    hemi?.toUpperCase() === negative ? -Math.abs(Number(value)) : Number(value);
+  // Hemisphere letters can put longitude first ("122.4 W, 37.7 N").
+  const lngFirst = /[EW]/i.test(m[2] ?? "") || /[NS]/i.test(m[4] ?? "");
+  const [a, ah, b, bh] = lngFirst ? [m[3], m[4], m[1], m[2]] : [m[1], m[2], m[3], m[4]];
+  const lat = signed(a, ah, "S");
+  const lng = signed(b, bh, "W");
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
 /** Great-circle distance in metres. */
 export function distanceBetween(a: LatLng, b: LatLng) {
   const R = 6371e3;
