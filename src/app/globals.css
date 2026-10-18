@@ -321,7 +321,7 @@ body {
     opacity: 0;
   }
 }
-/* A part becoming real: blueprint off, back with a lime flare, then gone for good. */
+/* A part becoming real: blueprint off, back with a light flare, then gone for good. */
 @keyframes intro-flash {
   0% {
     opacity: 1;
@@ -375,7 +375,7 @@ body {
     animation: intro-flare 360ms step-end var(--flash) both;
   }
   .radio-intro-line {
-    background: var(--marker-lime);
+    background: var(--muted);
   }
   .radio-intro-top {
     transform-origin: left;
@@ -394,11 +394,31 @@ body {
     animation: intro-y 140ms linear calc(var(--at) + 420ms) both;
   }
   .radio-intro-hatch {
-    background: repeating-linear-gradient(-45deg, rgb(212 236 33 / 0.14) 0 1px, transparent 1px 7px);
+    background: repeating-linear-gradient(-45deg, rgb(var(--grid-ink) / 0.12) 0 1px, transparent 1px 7px);
     animation: intro-pop 200ms steps(3) calc(var(--at) + 420ms) both;
   }
   .radio-intro-handle,
   .radio-intro-tag {
     animation: intro-pop 120ms steps(2) calc(var(--at) + 560ms) both;
+  }
+}
+
+/* Power off: the radio drops out the bottom of the screen in 8 hard steps. */
+@keyframes radio-power-off {
+  to {
+    transform: translateY(100%);
+  }
+}
+.radio-power-off {
+  animation: radio-power-off 480ms steps(8, end) forwards;
+}
+
+/* Radio static on the LCD while connecting: the two noise frames swap fast. Still for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .static-play .sprite-a {
+    animation: sprite-a 160ms steps(1) infinite;
+  }
+  .static-play .sprite-b {
+    animation: sprite-b 160ms steps(1) infinite;
   }
 }
