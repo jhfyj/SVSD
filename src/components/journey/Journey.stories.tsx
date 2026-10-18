@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
+import { JourneyMap } from "./JourneyMap";
 import { JourneySetup } from "./JourneySetup";
 import { RouteTrail } from "./RouteTrail";
 import { StartJourney } from "./StartJourney";
 import { TuningStrip } from "./TuningStrip";
-import { WorldDotMap } from "./WorldDotMap";
 
 /** The "getting set up" flow (Figma iPhone 16 - 50 to 58). */
 const meta: Meta = { title: "Journey", parameters: { layout: "centered" } };
@@ -46,7 +46,28 @@ export const Trail: StoryObj = {
 export const EarthMap: StoryObj = {
   render: () => (
     <div className="w-[393px] bg-background">
-      <WorldDotMap pins={[{ id: "you", tone: "you", lat: 40.73, lng: -73.99 }]} centerLng={50} />
+      <JourneyMap here={{ lat: 40.7359, lng: -73.9911 }} destination={null} route={null} />
     </div>
   ),
+};
+
+/** Toggle the route to watch the map zoom from the earth into the trail and back. */
+export const EarthToTrail: StoryObj = {
+  render: function Render() {
+    const [on, setOn] = useState(false);
+    return (
+      <div className="flex w-[393px] flex-col gap-4 bg-background py-4">
+        <JourneyMap
+          here={SAMPLE_ROUTE[0]}
+          destination={SAMPLE_ROUTE[SAMPLE_ROUTE.length - 1]}
+          route={on ? SAMPLE_ROUTE : null}
+          stories={24}
+          questions={6}
+        />
+        <button type="button" onClick={() => setOn(!on)} className="mx-auto border border-border px-3 py-2 text-xs uppercase">
+          {on ? "Zoom out" : "Zoom in"}
+        </button>
+      </div>
+    );
+  },
 };

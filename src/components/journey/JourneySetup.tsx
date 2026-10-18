@@ -8,11 +8,10 @@ import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
 import { cn } from "../ui/cn";
-import { RouteTrail } from "./RouteTrail";
+import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
 import { TuningStrip } from "./TuningStrip";
 import { useCurrentLocation } from "./useCurrentLocation";
-import { WorldDotMap } from "./WorldDotMap";
 
 const TABS = ["Destination", "Duration"] as const;
 type Tab = (typeof TABS)[number];
@@ -120,58 +119,55 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
           </div>
           <LocationNote location={location} onRetry={retry} />
 
-          {destination ? (
-            <div className="flex flex-1 flex-col px-[44px]">
-              <div className="mt-10 flex h-40 items-center justify-center">
-                {currentRoute ? (
-                  <RouteTrail points={currentRoute.points} stories={stories} questions={questions} />
-                ) : here ? (
-                  <p className="text-sm text-foreground/60">Drawing your trail…</p>
-                ) : null}
+          <div className="relative mt-12">
+            <JourneyMap
+              here={here}
+              destination={destination}
+              route={currentRoute?.points ?? null}
+              stories={stories}
+              questions={questions}
+            />
+            {shownResults && (
+              <div className="absolute inset-x-[31px] top-0 z-10 bg-background">
+                {shownResults.error ? (
+                  <p className="text-sm text-danger">{shownResults.error}</p>
+                ) : shownResults.places.length ? (
+                  <AddressList
+                    items={shownResults.places}
+                    onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
+                  />
+                ) : (
+                  <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
+                )}
               </div>
-              {currentRoute && (
-                <dl className="mt-10 grid grid-cols-2 gap-y-2 text-base">
-                  <div>
-                    <dt className="sr-only">Trip</dt>
-                    <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
-                  </div>
-                  <div className="text-right">
-                    <dt className="sr-only">Stories</dt>
-                    <dd className="text-marker-lime">{stories} stories</dd>
-                  </div>
-                  <div className="text-[11px] text-foreground/40">
-                    <dt className="sr-only">Distance</dt>
-                    <dd>
-                      {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "walk"}
-                    </dd>
-                  </div>
-                  <div className="text-right">
-                    <dt className="sr-only">Questions</dt>
-                    <dd className="text-marker-magenta">{questions} questions</dd>
-                  </div>
-                </dl>
-              )}
-            </div>
-          ) : shownResults ? (
-            <div className="mx-[31px] mt-4">
-              {shownResults.error ? (
-                <p className="text-sm text-danger">{shownResults.error}</p>
-              ) : shownResults.places.length ? (
-                <AddressList
-                  items={shownResults.places}
-                  onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
-                />
-              ) : (
-                <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
-              )}
-            </div>
-          ) : (
-            <div className="mt-auto mb-24 -mx-4 overflow-hidden">
-              <WorldDotMap
-                centerLng={here ? here.lng + 60 : -10}
-                pins={here ? [{ id: "you", tone: "you", ...here }] : []}
-              />
-            </div>
+            )}
+          </div>
+          {destination && here && !currentRoute && (
+            <p role="status" className="mt-4 text-center text-sm text-foreground/60">
+              Drawing your trail…
+            </p>
+          )}
+          {currentRoute && (
+            <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base motion-safe:animate-[trail-in_400ms_ease-out_1.6s_both]">
+              <div>
+                <dt className="sr-only">Trip</dt>
+                <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+              </div>
+              <div className="text-right">
+                <dt className="sr-only">Stories</dt>
+                <dd className="text-marker-lime">{stories} stories</dd>
+              </div>
+              <div className="text-[11px] text-foreground/40">
+                <dt className="sr-only">Distance</dt>
+                <dd>
+                  {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "walk"}
+                </dd>
+              </div>
+              <div className="text-right">
+                <dt className="sr-only">Questions</dt>
+                <dd className="text-marker-magenta">{questions} questions</dd>
+              </div>
+            </dl>
           )}
         </section>
       ) : (
