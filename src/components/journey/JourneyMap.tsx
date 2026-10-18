@@ -40,7 +40,8 @@ function landPath(west: number) {
     for (let x = west + DEG / 2; x < west + 360; x += DEG) {
       let hits = 0;
       for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) hits += landAt(lat + (a * DEG) / 3, x + (b * DEG) / 3);
-      if (hits >= 3) d += `M${(x - DOT / 2).toFixed(2)} ${(-lat - DOT / 2).toFixed(2)}h${DOT}v${DOT}h-${DOT}z`;
+      // A round dot: two half-circle arcs.
+      if (hits >= 3) d += `M${(x - DOT / 2).toFixed(2)} ${(-lat).toFixed(2)}a${DOT / 2} ${DOT / 2} 0 1 0 ${DOT} 0a${DOT / 2} ${DOT / 2} 0 1 0 -${DOT} 0`;
     }
   }
   return d;
