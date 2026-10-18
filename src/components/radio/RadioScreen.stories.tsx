@@ -5,6 +5,7 @@ import { Microphone } from "@carbon/icons-react";
 import { PhoneDisconnect } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { PowerButton } from "./PowerButton";
+import { RadioIntro } from "./RadioIntro";
 import { RadioScreen } from "./RadioScreen";
 import { RockerSwitch } from "./RockerSwitch";
 
@@ -53,5 +54,14 @@ export const ButtonStates: Story = {
       </HardwareButton>
       <HardwareButton className="w-[70px]" pressed><Microphone size={24} className="opacity-60" /></HardwareButton>
     </div>
+  ),
+};
+
+/** The load-in after the splash: blueprint frames, then the radio sweeps in. Reload the story to replay. */
+export const LoadIn: Story = {
+  render: (args) => (
+    <RadioIntro>
+      <RadioScreen {...args} />
+    </RadioIntro>
   ),
 };
