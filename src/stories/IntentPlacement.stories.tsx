@@ -19,6 +19,11 @@ import { cn } from "@/components/ui/cn";
     leave your own, or take calls?'"
   - Matching: "Optionally shares a journey type: heading home, on the clock, moving, last run."
   - Mood: "Laugh, Company or Something real decides what plays."
+
+  Team note (Oct 18): intent is mainly for matching. A match is distance (shared stretch of
+  road) plus intent, so E asks for intent only when you flip the radio on to take a call.
+  Intents: connect with someone new, just chit-chat, share a story, get something off my
+  chest. They line up with the artifact's moods (Company, Laugh, Something real).
 */
 
 const meta: Meta = {
@@ -441,7 +446,43 @@ export const D_MoodInProfile: StoryObj = {
   },
 };
 
-type MatchIntent = (typeof JOURNEY_TYPES)[number];
+/**
+ * What you're on the radio for: the team's intents, each tied to the artifact's moods
+ * ("Laugh, Company or Something real") and its storytelling layer ("Stories told together").
+ * `key` is the short label that fits a console key; the rest is LCD copy.
+ */
+const MATCH_INTENTS = [
+  {
+    id: "new",
+    key: "Meet someone",
+    label: "Connect with someone new",
+    looking: "Looking for someone new on your road",
+    match: "also here to meet someone",
+  },
+  {
+    id: "chat",
+    key: "Chit-chat",
+    label: "Just here to chit-chat",
+    looking: "Looking for someone up for a chat",
+    match: "also up for a chat",
+  },
+  {
+    id: "story",
+    key: "Share a story",
+    label: "Share a story",
+    looking: "Looking for someone swapping stories",
+    match: "also swapping stories",
+  },
+  {
+    id: "chest",
+    key: "Off my chest",
+    label: "Get something off my chest",
+    looking: "Looking for someone who'll listen",
+    match: "also up for something real",
+  },
+] as const;
+
+type MatchIntent = (typeof MATCH_INTENTS)[number];
 
 /**
  * E. Intent at the radio switch. Intent is what matches you (with distance), so only people who
@@ -482,9 +523,9 @@ export const E_IntentAtRadioSwitch: StoryObj = {
         note={
           <Note
             title="E. Intent at the radio switch"
-            source={`"Flipping the radio on means I'll take a call. The match is the driver who shares the longest stretch of your upcoming route... optionally shares a journey type." Shown as one line: "You share 84 miles of I-40 with @Hufflepuff23."`}
+            source={`"Flipping the radio on means I'll take a call." "Calls cross types through route overlap and mood." Moods: "Laugh, Company or Something real." Motives include "Humour, shared experience" and "Catharsis, being seen."`}
             pros="Intent only exists for matching, so it's only asked of people who get matched. Drivers who never flip the radio on never see it. After the first time it's remembered, so turning on is one motion again."
-            cons="The first pick happens while driving (four big keys, one tap). Distance should mean shared stretch of road, not how close someone is: the artifact never shows live location or distance."
+            cons="The first pick happens while driving (four big keys, one tap). 'Off my chest' needs the most care: the artifact calls catharsis 'low, but most valued', and it's where crisis routing matters."
           />
         }
       >
@@ -509,14 +550,14 @@ export const E_IntentAtRadioSwitch: StoryObj = {
                 <>
                   <span>WHAT ARE YOU UP FOR?</span>
                   <span className="text-[11px] normal-case">
-                    {last ? `Keeping ${last.toLowerCase()} in 3 s` : "Helps us find your match"}
+                    {last ? `Keeping "${last.key}" in 3 s` : "Helps us find your match"}
                   </span>
                 </>
               )}
               {phase === "connecting" && (
                 <>
                   <span>CONNECTING…</span>
-                  <span className="text-[11px] normal-case">Looking for someone {intent?.toLowerCase()} on your road</span>
+                  <span className="text-[11px] normal-case">{intent?.looking}</span>
                 </>
               )}
               {phase === "call" && (
@@ -524,15 +565,21 @@ export const E_IntentAtRadioSwitch: StoryObj = {
                   <span>
                     YOU SHARE 84 MILES OF <span className="whitespace-nowrap">I-40</span>
                   </span>
-                  <span className="text-[11px] normal-case">@Hufflepuff23 · also {intent?.toLowerCase()}</span>
+                  <span className="text-[11px] normal-case">@Hufflepuff23 · {intent?.match}</span>
                 </>
               )}
             </Lcd>
             <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
               {phase === "pick" ? (
-                JOURNEY_TYPES.map((t) => (
-                  <HardwareButton key={t} className="flex-1" pressed={t === last} onClick={() => choose(t)}>
-                    <span className="text-[10px] font-bold uppercase leading-tight opacity-80">{t}</span>
+                MATCH_INTENTS.map((t) => (
+                  <HardwareButton
+                    key={t.id}
+                    className="flex-1"
+                    pressed={t.id === last?.id}
+                    onClick={() => choose(t)}
+                    aria-label={t.label}
+                  >
+                    <span className="text-[10px] font-bold uppercase leading-tight opacity-80">{t.key}</span>
                   </HardwareButton>
                 ))
               ) : (
