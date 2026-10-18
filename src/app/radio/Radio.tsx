@@ -22,6 +22,9 @@ const handle = (text: string | null) => (text ? (text.startsWith("@") ? text : `
  * sets who the radio introduces and how much road you share.
  * `?timeout=on` is the dial kit's Hang-up timeout flow: 3 hang-ups within a minute = a 20-second
  * break. Without it hang-ups don't count, so trying other things never locks you out.
+ * `?messages=off&sim` is Planting your answer: nothing comes in, and the map drives the demo route.
+ * A new `?load=` value plays the load-in again: the page is kept alive between visits, so without
+ * it the radio comes back already loaded.
  */
 export function Radio() {
   const router = useRouter();
@@ -42,7 +45,7 @@ export function Radio() {
   const tripMiles = journey?.route ? Math.max(1, Math.round(journey.route.distance / METRES_PER_MILE)) : undefined;
   const miles = Number(params.get("miles")) || tripMiles;
   return (
-    <RadioIntro>
+    <RadioIntro key={params.get("load") ?? "radio"}>
       <RadioScreen
         // A new state from the dial kit starts the radio over in it.
         key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}`}

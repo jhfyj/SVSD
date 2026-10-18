@@ -42,6 +42,8 @@ type Step = {
   note?: string;
   /** Points at a step in another flow, so it isn't counted twice. */
   repeat?: boolean;
+  /** When the step is showing, for steps that don't have a fixed href to compare. */
+  active?: boolean;
 };
 
 type Flow = { /** Order in the video; empty for groups outside the script. */ n: string; title: string; time?: string; note?: string; steps: Step[] };
@@ -57,6 +59,9 @@ function subscribe(listener: () => void) {
     window.removeEventListener("storage", onStorage);
   };
 }
+
+/** The radio with a fresh ?load=, so its load-in plays again. */
+const loadIn = () => `/radio?load=${Date.now()}`;
 
 /** The stand-in for a screen that isn't built yet. */
 const blank = (screen: string) => `/blank?${new URLSearchParams({ screen })}`;
@@ -165,9 +170,12 @@ export function DialKit() {
         { label: "Destination", href: "/journey" },
         {
           label: "Radio loads in",
-          href: "/radio",
+          // Already on the radio: change the URL in the browser (Next keeps useSearchParams in step)
+          // so the load-in restarts at once, without a round trip for the same page.
+          go: () => (path === "/radio" ? window.history.pushState(null, "", loadIn()) : router.push(loadIn())),
           radio: true,
-          note: "The blueprint load-in: the start of every journey, for everyone.",
+          active: path === "/radio" && params.has("load"),
+          note: "The blueprint load-in: the start of every journey, for everyone. Plays again on every click.",
         },
         {
           label: "Tracking the road",
@@ -396,7 +404,7 @@ export function DialKit() {
                 key={step.label}
                 step={step}
                 showTodos={showTodos}
-                active={!!step.href && !step.go && here === step.href}
+                active={step.active ?? (!!step.href && !step.go && here === step.href)}
                 onClick={() => run(step)}
               />
             ))}
