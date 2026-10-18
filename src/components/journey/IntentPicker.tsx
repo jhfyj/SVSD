@@ -22,7 +22,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
-      <fieldset className="mx-12 mt-[218px] flex flex-col">
+      <fieldset className="mx-12 mt-16 flex flex-col">
         <legend className="mb-9 text-sm tracking-wide"><ScrambleText>What brings you here today</ScrambleText></legend>
         <div className="flex flex-col gap-[18px]">
           {INTENTS.map((item) => {
