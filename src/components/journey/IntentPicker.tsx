@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { ScrambleText } from "../ui/ScrambleText";
 import { TopBar } from "./TopBar";
@@ -22,7 +23,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
-      <fieldset className="mx-12 mt-16 flex flex-col">
+      <fieldset className="mx-11 mt-16 flex flex-col">
         <legend className="mb-9 text-sm tracking-wide"><ScrambleText>What brings you here today</ScrambleText></legend>
         <div className="flex flex-col gap-[18px]">
           {INTENTS.map((item) => {
@@ -31,7 +32,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
               <label
                 key={item.id}
                 className={cn(
-                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-token border px-[23px] py-2.5 transition-colors",
+                  "flex min-h-12 cursor-pointer items-center gap-3 rounded-token border p-4 transition-colors",
                   on ? "border-foreground text-foreground" : "border-border text-muted hover:text-label",
                 )}
               >
@@ -40,7 +41,10 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
                   name="intent"
                   value={item.id}
                   checked={on}
-                  onChange={() => setIntent(item.id)}
+                  onChange={() => {
+                    setIntent(item.id);
+                    cue("select");
+                  }}
                   className="peer sr-only"
                 />
                 <span
