@@ -34,7 +34,9 @@ export type RadioScreenProps = {
   className?: string;
 };
 
-const panel = "[background:var(--panel-noise),var(--panel-gradient)] shadow-[var(--panel-highlight)]";
+/** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
+const casing =
+  "[background:var(--panel-noise),linear-gradient(180deg,#2f2f2f_0%,#272727_55%,#1f1e1e_100%)] shadow-[var(--panel-highlight)]";
 
 /** The "Connected" radio screen (Figma node 123:246): map on an inset screen above the radio console. */
 export function RadioScreen({
@@ -53,13 +55,11 @@ export function RadioScreen({
   return (
     <div
       className={cn(
-        "relative h-[852px] w-[393px] overflow-hidden bg-background font-sans text-foreground",
+        "relative h-[852px] w-[393px] overflow-hidden font-sans text-foreground",
+        casing,
         className,
       )}
     >
-      {/* Device body, behind the inner screen */}
-      <div className={cn("absolute inset-x-0 top-[52px] h-[533px]", panel)} />
-
       {/* Inner screen: the dithered map, recessed into the body */}
       <section
         aria-label="Route map"
@@ -90,7 +90,7 @@ export function RadioScreen({
       </section>
 
       {/* Top bar */}
-      <header className={cn("absolute inset-x-0 top-0 flex h-[52px] items-center justify-between pl-[17px] pr-[3px]", panel)}>
+      <header className="absolute inset-x-0 top-0 flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
         <div className="flex items-center gap-1">
           <PartlyCloudyNight size={16} aria-label="Partly cloudy" />
           {/* 20px in Digital-7; the wider DSEG14 fallback is set smaller to match its width */}
@@ -100,7 +100,7 @@ export function RadioScreen({
       </header>
 
       {/* Console */}
-      <div className={cn("absolute inset-x-0 top-[585px] h-[267px]", panel)}>
+      <div className="absolute inset-x-0 top-[585px] h-[267px]">
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[13px] font-bold text-label/80">RADIO</span>
           <Led on={live} />
