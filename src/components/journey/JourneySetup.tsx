@@ -89,7 +89,11 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
 
       {tab === "Destination" ? (
         <section aria-label="Destination" className="flex flex-1 flex-col">
-          <label htmlFor="destination" className="mt-6 block text-center font-mono text-base uppercase">
+          {/* The prompt fades once you start typing; it stays as the field's label for screen readers. */}
+          <label
+            htmlFor="destination"
+            className={cn("mt-6 block text-center font-mono text-base uppercase transition-opacity", query && "opacity-0")}
+          >
             Enter your destination
           </label>
           <div className="relative mx-[31px] mt-4">
