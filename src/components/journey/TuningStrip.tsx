@@ -1,19 +1,22 @@
 "use client";
 
 import { play } from "cuelume";
-import { useEffect, useRef } from "react";
-import { DURATION_STEPS, formatDuration, nearestStep } from "@/lib/journey/duration";
+import { useEffect, useRef, useState } from "react";
+import { DURATION_STEPS, MAX_MINUTES, formatDuration, nearestStep } from "@/lib/journey/duration";
 import { cn } from "../ui/cn";
 
 /*
   The trip-length picker: a ruler you drag or flick under a fixed marker, like tuning a radio.
   Each tick is one step of DURATION_STEPS, so the ruler is finer for short trips and coarser
-  for long ones, and 8 hours is a flick away. Native scrolling with snap points gives touch
+  for long ones, and a full day is a flick away. Tap the readout to type any length instead
+  (up to MAX_MINUTES); the ruler then rests on the nearest tick. Native scrolling with snap points gives touch
   momentum for free; a mouse drags it by hand.
 */
 
 const PITCH = 22; // px between ticks
-const LABELS: Record<number, string> = { 30: "30m", 60: "1h", 120: "2h", 180: "3h", 240: "4h", 360: "6h", 480: "8h" };
+const LABELS: Record<number, string> = {
+  30: "30m", 60: "1h", 120: "2h", 180: "3h", 240: "4h", 360: "6h", 480: "8h", 720: "12h", 960: "16h", 1440: "24h",
+};
 
 export type TuningStripProps = {
   minutes: number;
@@ -93,9 +96,7 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
 
   return (
     <div className={cn("flex w-full flex-col items-center gap-5", className)}>
-      <output aria-hidden className="font-display text-4xl uppercase tabular-nums">
-        {formatDuration(DURATION_STEPS[index])}
-      </output>
+      <TypedDuration minutes={minutes} onChange={onChange} />
       <div className="relative w-full">
         {/* The fixed marker the ruler slides under. */}
         <span aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-0.5 -translate-x-1/2 bg-marker-lime" />
@@ -108,8 +109,8 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
           aria-label="Trip length: drag the ruler"
           aria-valuemin={DURATION_STEPS[0]}
           aria-valuemax={DURATION_STEPS[DURATION_STEPS.length - 1]}
-          aria-valuenow={DURATION_STEPS[index]}
-          aria-valuetext={formatDuration(DURATION_STEPS[index])}
+          aria-valuenow={minutes}
+          aria-valuetext={formatDuration(minutes)}
           onScroll={onScroll}
           onKeyDown={onKeyDown}
           onPointerDown={onPointerDown}
@@ -133,5 +134,76 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
         </div>
       </div>
     </div>
+  );
+}
+
+/** The big readout. Tap it to type hours and minutes; Enter or tapping away sets them. */
+function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minutes: number) => void }) {
+  const [draft, setDraft] = useState<{ h: string; m: string } | null>(null);
+  const hours = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (draft) hours.current?.select();
+    // Only when editing starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft !== null]);
+
+  if (!draft) {
+    return (
+      <button
+        type="button"
+        onClick={() => setDraft({ h: String(Math.floor(minutes / 60)), m: String(minutes % 60) })}
+        aria-label={`Trip length ${formatDuration(minutes)}. Tap to type your own`}
+        className="flex flex-col items-center gap-1"
+      >
+        <span className="font-display text-4xl uppercase tabular-nums">{formatDuration(minutes)}</span>
+        <span className="text-[11px] text-foreground/50">Tap to type your own</span>
+      </button>
+    );
+  }
+
+  const commit = () => {
+    const total = (parseInt(draft.h, 10) || 0) * 60 + (parseInt(draft.m, 10) || 0);
+    setDraft(null);
+    if (total > 0) onChange(Math.min(MAX_MINUTES, total));
+  };
+  const field = "w-[2.6ch] border-b border-foreground/40 bg-transparent text-center font-display text-4xl tabular-nums outline-none focus:border-marker-lime";
+  const digits = (v: string) => v.replace(/\D/g, "").slice(0, 2);
+
+  return (
+    <form
+      className="flex flex-col items-center gap-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        commit();
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) commit();
+      }}
+      onKeyDown={(e) => e.key === "Escape" && setDraft(null)}
+    >
+      <div className="flex items-baseline gap-2">
+        <input
+          ref={hours}
+          inputMode="numeric"
+          aria-label="Hours"
+          value={draft.h}
+          onChange={(e) => setDraft({ ...draft, h: digits(e.target.value) })}
+          className={field}
+        />
+        <span className="font-display text-xl uppercase">hr</span>
+        <input
+          inputMode="numeric"
+          aria-label="Minutes"
+          value={draft.m}
+          onChange={(e) => setDraft({ ...draft, m: digits(e.target.value) })}
+          className={field}
+        />
+        <span className="font-display text-xl uppercase">min</span>
+      </div>
+      <button type="submit" className="text-[11px] text-marker-lime">
+        Set
+      </button>
+    </form>
   );
 }

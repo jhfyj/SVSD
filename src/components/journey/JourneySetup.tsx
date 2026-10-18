@@ -83,13 +83,17 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   return (
     <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
-      <div className="px-9 pt-14">
+      <div className="px-9 pt-4">
         <SegmentedTabs label="Trip setup" options={TABS} value={tab} onChange={setTab} className="p-2 [&>button]:text-xl" />
       </div>
 
       {tab === "Destination" ? (
         <section aria-label="Destination" className="flex flex-1 flex-col">
-          <label htmlFor="destination" className="mt-6 block text-center font-mono text-base uppercase">
+          {/* The prompt fades once you start typing; it stays as the field's label for screen readers. */}
+          <label
+            htmlFor="destination"
+            className={cn("mt-6 block text-center font-mono text-base uppercase transition-opacity", query && "opacity-0")}
+          >
             Enter your destination
           </label>
           <div className="relative mx-[31px] mt-4">
@@ -116,19 +120,9 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 ×
               </button>
             )}
-          </div>
-          <LocationNote location={location} onRetry={retry} />
-
-          <div className="relative mt-12">
-            <JourneyMap
-              here={here}
-              destination={destination}
-              route={currentRoute?.points ?? null}
-              stories={stories}
-              questions={questions}
-            />
+            {/* Suggestions drop down right under the box */}
             {shownResults && (
-              <div className="absolute inset-x-[31px] top-0 z-10 bg-background">
+              <div className="absolute inset-x-0 top-full z-20 mt-1 bg-background">
                 {shownResults.error ? (
                   <p className="text-sm text-danger">{shownResults.error}</p>
                 ) : shownResults.places.length ? (
@@ -141,6 +135,17 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 )}
               </div>
             )}
+          </div>
+          <LocationNote location={location} onRetry={retry} />
+
+          <div className="relative mt-12">
+            <JourneyMap
+              here={here}
+              destination={destination}
+              route={currentRoute?.points ?? null}
+              stories={stories}
+              questions={questions}
+            />
           </div>
           {destination && here && !currentRoute && (
             <p role="status" className="mt-4 text-center text-sm text-foreground/60">
@@ -172,7 +177,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
         </section>
       ) : (
         <section aria-label="Duration" className="flex flex-1 flex-col items-center px-9">
-          <p className="mt-8 text-center font-display text-base">How long’s your trip</p>
+          <p className="mt-8 text-center font-mono text-base uppercase">How long’s your trip</p>
           <TuningStrip minutes={minutes} onChange={setChosenMinutes} className="-mx-9 mt-12 w-[calc(100%+4.5rem)]" />
           <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
             {routeMinutes !== null && (
@@ -194,7 +199,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
 
       <div className="px-[44px] pb-14 pt-6">
         <Link
-          href="/radio"
+          href="/journey/starting"
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(

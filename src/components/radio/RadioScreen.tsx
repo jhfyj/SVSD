@@ -29,6 +29,8 @@ export const DEFAULT_TRAVELLERS: Traveller[] = [
 export type RadioScreenProps = {
   time?: string;
   connected?: boolean;
+  /** Whether the radio switch starts on. It starts off, with Start story showing. */
+  defaultOn?: boolean;
   travellers?: Traveller[];
   onEndCall?: () => void;
   /** The wide button while the radio is off: play a story instead of calling. */
@@ -45,13 +47,14 @@ const casing =
 export function RadioScreen({
   time = "3:30 AM",
   connected = true,
+  defaultOn = false,
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
   onStartStory,
   onPower,
   className,
 }: RadioScreenProps) {
-  const [radioOn, setRadioOn] = useState(connected);
+  const [radioOn, setRadioOn] = useState(defaultOn);
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const live = radioOn && connected;
@@ -117,10 +120,9 @@ export function RadioScreen({
           ON
         </span>
 
-        <LcdScreen className={cn("absolute left-[156px] top-[18px] h-[130px] w-[221px] transition-[filter]", !radioOn && "brightness-[0.55]")}>
-          {radioOn && (
-            <Mascot className="text-[#1f2b1e]" />
-          )}
+        {/* The screen stays lit whether or not the radio is on; only the story stops. */}
+        <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
+          <Mascot className="text-[#1f2b1e]" />
         </LcdScreen>
 
         <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">

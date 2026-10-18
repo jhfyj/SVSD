@@ -91,3 +91,13 @@ body {
     transform: scale(0.2);
   }
 }
+
+/* The splash spiral draws itself from the centre out. */
+@keyframes spiral-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
