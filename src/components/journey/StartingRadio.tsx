@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { TopBar } from "./TopBar";
 
@@ -46,6 +47,8 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   useEffect(() => {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
+    // One breath that rises with the dial.
+    if (!still) cue("count", { duration: TUNE_MS });
     let frame = 0;
     const tick = (now: number) => {
       const t = still ? 1 : Math.min(1, (now - start) / TUNE_MS);

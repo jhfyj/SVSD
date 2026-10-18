@@ -4,6 +4,7 @@ import { Microphone, PartlyCloudyNight } from "@carbon/icons-react";
 import { PhoneDisconnect, Play, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useRef, useState } from "react";
+import { cue } from "@/lib/sound";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
@@ -65,6 +66,8 @@ export function RadioScreen({
   return (
     <div
       ref={root}
+      // Radio hardware sounds mechanical: clicks, latches, detents.
+      data-cuelume-theme="mech"
       className={cn(
         "relative h-[852px] w-[393px] overflow-hidden font-sans text-foreground",
         casing,
@@ -117,7 +120,13 @@ export function RadioScreen({
           <Led on={live} />
         </div>
 
-        <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn} onChange={setRadioOn} />
+        <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
+          onChange={(on) => {
+            setRadioOn(on);
+            // The LED comes up with a soft note when the radio goes live.
+            if (on && connected) setTimeout(() => cue("ready", { emphasis: "subtle", theme: "mech" }), 200);
+          }}
+        />
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
           OFF
         </span>
@@ -135,12 +144,19 @@ export function RadioScreen({
 
         <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
           {radioOn ? (
-            <HardwareButton tone="end" className="flex-1" onClick={onEndCall} disabled={!live}>
+            <HardwareButton
+              tone="end"
+              className="flex-1"
+              onClick={onEndCall}
+              disabled={!live}
+              data-cuelume-tap="close"
+              data-cuelume-emphasis="strong"
+            >
               <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
               <span className="text-base font-bold opacity-80">END CALL</span>
             </HardwareButton>
           ) : (
-            <HardwareButton className="flex-1" onClick={onStartStory}>
+            <HardwareButton className="flex-1" onClick={onStartStory} data-cuelume-emphasis="strong">
               <Play size={22} weight="fill" className="opacity-60" aria-hidden />
               <span className="text-base font-bold opacity-60">START STORY</span>
             </HardwareButton>

@@ -7,7 +7,7 @@ export function StartJourney({ href = "/intents" }: { href?: string }) {
     <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
       <div className="flex flex-1 flex-col items-center pt-[220px]">
-        <Link href={href} className="group flex flex-col items-center gap-[22px] uppercase">
+        <Link href={href} data-cuelume-navigate="" className="group flex flex-col items-center gap-[22px] uppercase">
           <span className="text-xl">Start your journey</span>
           <span className="flex size-[247px] items-center justify-center border border-foreground/80 transition-colors group-hover:bg-surface group-focus-visible:bg-surface">
             <svg aria-hidden viewBox="0 0 64 64" className="size-16 stroke-foreground" strokeWidth={3}>

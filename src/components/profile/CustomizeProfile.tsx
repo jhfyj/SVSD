@@ -3,6 +3,7 @@
 import { ArrowLeft } from "@carbon/icons-react";
 import { useState } from "react";
 import { CHARACTERS, DEFAULT_CHARACTER, getCharacter, type CharacterId } from "@/lib/profile/characters";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "./CharacterSprite";
 
@@ -34,7 +35,10 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
         {onBack && (
           <button
             type="button"
-            onClick={onBack}
+            onClick={() => {
+              cue("navigate", { direction: "back" });
+              onBack();
+            }}
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
@@ -76,6 +80,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               onClick={() => setPicked(c.id)}
+              data-cuelume-select=""
               className="group flex w-[83px] flex-col items-center gap-[5px] focus-visible:outline-none"
             >
               <span
@@ -96,6 +101,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
         <button
           type="button"
           onClick={() => onSave(picked)}
+          data-cuelume-tap="success"
           disabled={saving}
           className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40"
         >

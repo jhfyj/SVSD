@@ -40,6 +40,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
                   value={item.id}
                   checked={on}
                   onChange={() => setIntent(item.id)}
+                  data-cuelume-select=""
                   className="peer sr-only"
                 />
                 <span
@@ -60,6 +61,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
       </fieldset>
       <Link
         href={`${href}?intent=${intent}`}
+        data-cuelume-navigate=""
         className="mx-11 mb-[61px] mt-auto flex h-[47px] items-center justify-center rounded-token border border-foreground text-sm tracking-wide transition-colors hover:bg-surface focus-visible:bg-surface"
       >
         Next

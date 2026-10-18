@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/nextjs-vite";
 import { Geist_Mono } from "next/font/google";
 import { useEffect } from "react";
+import { startSound } from "../src/lib/sound";
 import { pickTheme, type ThemeChoice } from "../src/lib/theme";
 import "../src/app/globals.css";
 
@@ -38,6 +39,8 @@ const preview: Preview = {
   decorators: [
     (Story, { globals }) => {
       const choice = (globals.theme ?? "dark") as ThemeChoice;
+      // Stories play the same interaction sounds as the app.
+      useEffect(() => startSound(), []);
       useEffect(() => {
         document.documentElement.dataset.theme = choice === "auto" ? pickTheme() : choice;
       }, [choice]);

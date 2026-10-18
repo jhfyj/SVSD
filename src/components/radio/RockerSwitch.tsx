@@ -2,6 +2,7 @@
 
 import type { CSSProperties, PointerEvent } from "react";
 import { useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 
 export type RockerSwitchProps = {
@@ -37,6 +38,11 @@ export function RockerSwitch({ on, onChange, label = "Radio power", className }:
   const tilt = (shown ? -1 : 1) * (pushing === null ? REST_TILT : PUSH_TILT);
   const lean = tilt / PUSH_TILT; // -1 (top out) … 1 (bottom out)
 
+  const flip = (next: boolean) => {
+    cue("toggle", { direction: next ? "forward" : "back", emphasis: "strong", theme: "mech" });
+    onChange(next);
+  };
+
   const sideOf = (e: PointerEvent<HTMLButtonElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     return e.clientY - box.top > box.height / 2;
@@ -59,13 +65,15 @@ export function RockerSwitch({ on, onChange, label = "Radio power", className }:
         setPushing(sideOf(e));
       }}
       onPointerUp={() => {
-        if (pushing !== null && pushing !== on) onChange(pushing);
+        if (pushing !== null && pushing !== on) flip(pushing);
+        // Pushing the side that's already down still knocks.
+        else if (pushing !== null) cue("tap", { emphasis: "subtle", theme: "mech" });
         setPushing(null);
       }}
       onPointerCancel={() => setPushing(null)}
       onClick={(e) => {
         // Pointer presses are handled above; this is for keyboard (Space / Enter).
-        if (e.detail === 0) onChange(!on);
+        if (e.detail === 0) flip(!on);
       }}
       className={cn(
         "relative h-[98px] w-[46px] touch-none select-none bg-[#0a0a0a] p-[5px]",
