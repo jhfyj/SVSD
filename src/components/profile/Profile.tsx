@@ -3,15 +3,20 @@
 import { IncidentReporter, Settings } from "@carbon/icons-react";
 import { useState } from "react";
 import { formatDuration } from "@/lib/journey/duration";
+import type { CharacterId } from "@/lib/profile/characters";
 import type { Journey } from "@/lib/profile/sample";
 import { TopBar } from "../journey/TopBar";
-import { Mascot } from "../radio/Mascot";
 import { CalendarDots } from "../ui/CalendarDots";
 import { MenuRow } from "../ui/MenuRow";
 import { StatCard } from "../ui/StatCard";
+import { CharacterSprite } from "./CharacterSprite";
 
 export type ProfileViewProps = {
   handle: string;
+  /** The account's LCD pet; Freddie when left out. */
+  character?: CharacterId;
+  /** Tapping the avatar opens Customize profile. */
+  onEditCharacter?: () => void;
   joinedAt: Date;
   totalCalls: number;
   /** Any date in the month the activities calendar shows. */
@@ -80,6 +85,8 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
 /** Profile (Figma node 123:541): avatar, stats, activity calendar, history and account actions. */
 export function ProfileView({
   handle,
+  character = "freddie",
+  onEditCharacter,
   joinedAt,
   totalCalls,
   month,
@@ -100,9 +107,15 @@ export function ProfileView({
       <TopBar />
       <div className="flex flex-col px-11 pb-[77px] pt-[79px]">
         <div className="flex flex-col items-center">
-          <div className="relative flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd shadow-[var(--lcd-inset)]">
-            <Mascot pixel={70 / 24} className="text-lcd-ink opacity-60 mix-blend-hard-light" />
-          </div>
+          <button
+            type="button"
+            onClick={onEditCharacter}
+            disabled={!onEditCharacter}
+            aria-label="Change character"
+            className="relative flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd text-lcd-ink shadow-[var(--lcd-inset)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          >
+            <CharacterSprite character={character} pixel={4.4} className="opacity-80" />
+          </button>
           <h1 className="mt-[18px] text-xl">{handle}</h1>
           <p className="mt-1 text-base text-foreground/50">Joined {monthYear(joinedAt)}</p>
         </div>

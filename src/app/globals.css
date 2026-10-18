@@ -26,6 +26,11 @@
   --lcd: #97bd93;
   --lcd-ink: #1e2a1d;
   --led: #6dff5c;
+  /* Character tiles on Customize profile (Figma 154:1304): a dim LCD, lit green when picked. */
+  --tile: #1b2c2b;
+  --tile-ink: #0e1515;
+  --tile-active: #2f8f3a;
+  --tile-active-ink: #8dff7e;
   --marker-lime: #d4ec21;
   --marker-sky: #7abdf0;
   --marker-magenta: #ec6bf2;
@@ -78,6 +83,10 @@
   --danger: #d23a3a;
   --lcd: #b5b3a8;
   --lcd-ink: #2b2a27;
+  --tile: #dcd8cf;
+  --tile-ink: #a39e94;
+  --tile-active: #97bd93;
+  --tile-active-ink: #1e2a1d;
   --marker-border: #393939;
 
   --panel-gradient: linear-gradient(180deg, #f7f2eb 0%, #c9c2b9 100%);
@@ -119,6 +128,10 @@
   --color-lcd: var(--lcd);
   --color-lcd-ink: var(--lcd-ink);
   --color-led: var(--led);
+  --color-tile: var(--tile);
+  --color-tile-ink: var(--tile-ink);
+  --color-tile-active: var(--tile-active);
+  --color-tile-active-ink: var(--tile-active-ink);
   --color-marker-lime: var(--marker-lime);
   --color-marker-sky: var(--marker-sky);
   --color-marker-magenta: var(--marker-magenta);
@@ -146,6 +159,29 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .caret-blink {
     animation: caret-blink 1s steps(1) infinite;
+  }
+}
+
+/* Profile characters: two frames that swap like an LCD pet. Still (frame A) for reduced motion. */
+.sprite-b {
+  visibility: hidden;
+}
+@keyframes sprite-a {
+  50% {
+    visibility: hidden;
+  }
+}
+@keyframes sprite-b {
+  50% {
+    visibility: visible;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sprite-play .sprite-a {
+    animation: sprite-a 1s steps(1) infinite;
+  }
+  .sprite-play .sprite-b {
+    animation: sprite-b 1s steps(1) infinite;
   }
 }
 

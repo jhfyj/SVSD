@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { RadioScreen } from "@/components/radio";
-import { CodeStep, PhoneStep, ProfileView } from "@/components/profile";
+import { CodeStep, CustomizeProfile, PhoneStep, ProfileView } from "@/components/profile";
 import { AddressList, Button, DotTrail, SegmentedTabs, StatusBar, TextInput } from "@/components/ui";
 import { sampleProfile } from "@/lib/profile/sample";
 
@@ -64,4 +64,10 @@ export const Profile: StoryObj = {
     const now = new Date(2026, 9, 18, 9, 30);
     return <div className="flex w-[393px] [&>div]:min-h-[852px]"><ProfileView handle="@traveller7890" joinedAt={new Date(2026, 4, 2)} now={now} {...sampleProfile(now)} /></div>;
   },
+};
+
+/** Figma node 154:1304: a new account picks its character after signing up. */
+export const CustomizeProfileScreen: StoryObj = {
+  name: "Customize profile",
+  render: () => <div className="flex w-[393px] [&>div]:min-h-[852px]"><CustomizeProfile onSave={() => {}} onBack={() => {}} /></div>,
 };
