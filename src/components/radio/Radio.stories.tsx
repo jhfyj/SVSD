@@ -6,7 +6,7 @@ import { LcdScreen, PixelMascot } from "./LcdScreen";
 import { Led } from "./Led";
 import { RadioConsole } from "./RadioConsole";
 import { ToggleSwitch } from "./ToggleSwitch";
-import { MicIcon } from "../ui/icons";
+import { Microphone } from "@phosphor-icons/react";
 
 const meta = {
   title: "Radio/RadioConsole",
@@ -31,7 +31,7 @@ export const Parts: Story = {
         <ToggleSwitch on={on} onChange={setOn} />
         <LcdScreen className="size-24 rounded-full"><PixelMascot size={5} /></LcdScreen>
         <div className="flex gap-2">
-          <HardwareButton><MicIcon /> Mic</HardwareButton>
+          <HardwareButton><Microphone size={24} aria-hidden /> Mic</HardwareButton>
           <HardwareButton tone="end">End call</HardwareButton>
         </div>
       </div>

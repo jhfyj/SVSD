@@ -1,6 +1,6 @@
 "use client";
 
-import { IncidentReporter, Settings } from "@carbon/icons-react";
+import { Flag, GearSix } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
 import { formatDuration } from "@/lib/journey/duration";
@@ -147,8 +147,8 @@ export function ProfileView({
         </div>
 
         <div className="mt-[29px] flex flex-col gap-[17px]">
-          <MenuRow icon={<Settings size={16} />} label="Settings" onClick={onSettings} />
-          <MenuRow icon={<IncidentReporter size={16} />} label="Report" onClick={onReport} />
+          <MenuRow icon={<GearSix size={16} aria-hidden />} label="Settings" onClick={onSettings} />
+          <MenuRow icon={<Flag size={16} aria-hidden />} label="Report" onClick={onReport} />
           <SoundToggle />
         </div>
 

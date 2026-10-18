@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "@carbon/icons-react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { useState } from "react";
 import { CHARACTERS, DEFAULT_CHARACTER, getCharacter, type CharacterId } from "@/lib/profile/characters";
 import { cn } from "../ui/cn";
@@ -39,7 +39,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={16} aria-hidden />
           </button>
         )}
         <h1 className="text-xl"><ScrambleText>CUSTOMIZE PROFILE</ScrambleText></h1>

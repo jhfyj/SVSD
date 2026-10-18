@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "../ui/cn";
-import { Microphone } from "@carbon/icons-react";
-import { PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
+import { Microphone, MicrophoneSlash, PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen, PixelMascot } from "./LcdScreen";
 import { Led } from "./Led";
@@ -63,7 +62,11 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
           onClick={() => setMicMuted(!micMuted)}
           aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}
         >
-          <Microphone size={24} className="opacity-60" aria-hidden />
+          {micMuted ? (
+            <MicrophoneSlash size={24} className="opacity-60" aria-hidden />
+          ) : (
+            <Microphone size={24} className="opacity-60" aria-hidden />
+          )}
         </HardwareButton>
         <HardwareButton
           className="w-[70px]"

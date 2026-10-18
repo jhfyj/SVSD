@@ -1,6 +1,6 @@
 "use client";
 
-import { VolumeMute, VolumeUp } from "@carbon/icons-react";
+import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import { unlock } from "cuelume";
 import { cue, setSoundOn, useSoundOn } from "@/lib/sound";
 import { MenuRow } from "../ui/MenuRow";
@@ -10,7 +10,7 @@ export function SoundToggle() {
   const on = useSoundOn();
   return (
     <MenuRow
-      icon={on ? <VolumeUp size={16} /> : <VolumeMute size={16} />}
+      icon={on ? <SpeakerHigh size={16} aria-hidden /> : <SpeakerSlash size={16} aria-hidden />}
       label={on ? "Sound: on" : "Sound: off"}
       onClick={async () => {
         setSoundOn(!on);

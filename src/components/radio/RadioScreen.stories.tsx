@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
 import { fn } from "storybook/test";
-import { Microphone } from "@carbon/icons-react";
-import { PhoneDisconnect } from "@phosphor-icons/react";
+import { Microphone, PhoneDisconnect } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { PowerButton } from "./PowerButton";
 import { RadioIntro } from "./RadioIntro";
@@ -65,14 +64,14 @@ export const ButtonStates: Story = {
         <PhoneDisconnect size={24} className="opacity-80" />
         <span className="text-base font-bold opacity-80">END CALL</span>
       </HardwareButton>
-      <HardwareButton className="w-[70px]"><Microphone size={24} className="opacity-60" /></HardwareButton>
+      <HardwareButton className="w-[70px]"><Microphone size={24} className="opacity-60" aria-hidden /></HardwareButton>
       <PowerButton />
       <span>DOWN (HELD OR LATCHED)</span><span /><span />
       <HardwareButton tone="end" pressed>
         <PhoneDisconnect size={24} className="opacity-80" />
         <span className="text-base font-bold opacity-80">END CALL</span>
       </HardwareButton>
-      <HardwareButton className="w-[70px]" pressed><Microphone size={24} className="opacity-60" /></HardwareButton>
+      <HardwareButton className="w-[70px]" pressed><Microphone size={24} className="opacity-60" aria-hidden /></HardwareButton>
     </div>
   ),
 };

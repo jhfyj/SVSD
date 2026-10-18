@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "@carbon/icons-react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { PixelIcon } from "./LcdIcon";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
 
@@ -101,7 +101,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={16} aria-hidden />
           </button>
         )}
         <h1 className="text-xl">{firstTime ? "BEFORE YOU GO" : "SETTINGS"}</h1>

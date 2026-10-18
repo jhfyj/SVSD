@@ -1,6 +1,6 @@
 "use client";
 
-import { Power } from "@carbon/icons-react";
+import { Power } from "@phosphor-icons/react";
 import { useState } from "react";
 import { cn } from "../ui/cn";
 
@@ -27,7 +27,7 @@ export function PowerButton({ onClick, className }: { onClick?: () => void; clas
         className,
       )}
     >
-      <Power size={20} />
+      <Power size={20} aria-hidden />
     </button>
   );
 }

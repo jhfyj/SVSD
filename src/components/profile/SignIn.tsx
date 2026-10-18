@@ -2,7 +2,7 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { ArrowRight } from "@carbon/icons-react";
+import { ArrowRight } from "@phosphor-icons/react";
 import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } from "@/lib/auth/phone";
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
 import { cue } from "@/lib/sound";

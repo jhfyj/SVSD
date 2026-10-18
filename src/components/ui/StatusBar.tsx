@@ -1,5 +1,6 @@
+import { UserCircle } from "@phosphor-icons/react/ssr";
+import { WeatherIcon } from "../journey/WeatherIcon";
 import { cn } from "./cn";
-import { AccountIcon, CloudIcon } from "./icons";
 
 export type StatusBarProps = { time: string; className?: string; onAccount?: () => void };
 
@@ -7,10 +8,10 @@ export type StatusBarProps = { time: string; className?: string; onAccount?: () 
 export function StatusBar({ time, className, onAccount }: StatusBarProps) {
   return (
     <header className={cn("flex items-center justify-between px-4 py-2", className)}>
-      <CloudIcon className="text-foreground/70" />
+      <WeatherIcon className="text-foreground/70" />
       <span className="font-display text-2xl tracking-wider">{time}</span>
       <button type="button" aria-label="Account" onClick={onAccount} className="-m-3 flex size-11 items-center justify-center">
-        <AccountIcon className="size-6 text-foreground/70" />
+        <UserCircle size={20} className="text-foreground/70" aria-hidden />
       </button>
     </header>
   );

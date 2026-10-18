@@ -1,7 +1,7 @@
 "use client";
 
-import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
-import { FlagCheckered, PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, Microphone, MicrophoneSlash, MusicNotes, PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
+import { WeatherIcon } from "../journey/WeatherIcon";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { setMusicSpeaker, startMusic, stopMusic } from "@/lib/music";
@@ -288,7 +288,7 @@ export function RadioScreen({
       {/* Top bar */}
       <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
         <div className="flex items-center gap-1.5">
-          <PartlyCloudyNight size={20} aria-label="Partly cloudy" />
+          <WeatherIcon />
           <span className="font-display text-[20px] leading-none">{time}</span>
         </div>
         <PowerButton onClick={powerOff} />
@@ -381,7 +381,11 @@ export function RadioScreen({
                 onClick={() => (onBreak ? setOnBreak(false) : setMicMuted(!micMuted))}
                 aria-label={micMuted || onBreak ? "Unmute microphone" : "Mute microphone"}
               >
-                <Microphone size={24} className="opacity-60" aria-hidden />
+                {micMuted || onBreak ? (
+                  <MicrophoneSlash size={24} className="opacity-60" aria-hidden />
+                ) : (
+                  <Microphone size={24} className="opacity-60" aria-hidden />
+                )}
               </HardwareButton>
             </>
           ) : (
@@ -392,7 +396,7 @@ export function RadioScreen({
                 onClick={() => setMusicOn(!musicOn)}
                 aria-label={musicOn ? "Stop music" : "Play music"}
               >
-                <Music size={24} className="opacity-60" aria-hidden />
+                <MusicNotes size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
             </>
           )}
@@ -413,7 +417,7 @@ export function RadioScreen({
             aria-label={settingsOpen ? "Close settings" : "Settings"}
             aria-expanded={settingsOpen}
           >
-            <Settings size={24} className="opacity-60" aria-hidden />
+            <GearSix size={24} className="opacity-60" aria-hidden />
           </HardwareButton>
         </div>
       </div>
