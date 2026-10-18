@@ -12,6 +12,7 @@ import { TopBar } from "./TopBar";
 import { useCountUp } from "./useCountUp";
 import { saveTrip } from "@/lib/trip/trip";
 import { useCurrentLocation } from "./useCurrentLocation";
+import { plural } from "@/lib/plural";
 
 /** Destination (iPhone 16 - 50 to 58): pick where you're going; the drive sets the trip's length. */
 export function JourneySetup() {
@@ -149,7 +150,7 @@ export function JourneySetup() {
           </div>
           <div className="text-right">
             <dt className="sr-only">Stories</dt>
-            <dd className="text-marker-lime">{shownStories} stories</dd>
+            <dd className="text-marker-lime">{plural(shownStories, "story", "stories")}</dd>
           </div>
           <div className="text-[10px] text-foreground/40">
             <dt className="sr-only">Distance</dt>
@@ -160,7 +161,7 @@ export function JourneySetup() {
           </div>
           <div className="text-right">
             <dt className="sr-only">Questions</dt>
-            <dd className="text-marker-magenta">{shownQuestions} questions</dd>
+            <dd className="text-marker-magenta">{plural(shownQuestions, "question")}</dd>
           </div>
         </dl>
       </section>

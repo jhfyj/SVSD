@@ -7,6 +7,7 @@ import { loadTrip, placeName, SAMPLE_TRIP, savedTripRaw, sharedMiles, tripEvents
 import { TopBar } from "../journey/TopBar";
 import { cn } from "../ui/cn";
 import { TripMap } from "./TripMap";
+import { plural } from "@/lib/plural";
 
 const noop = () => () => {};
 
@@ -58,9 +59,9 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
 
           <div className="mt-8 space-y-2 text-sm normal-case">
             <p className={appear} style={at(0)}>
-              You passed <span className="text-marker-lime">{trip.stories} stories</span> and answered{" "}
+              You passed <span className="text-marker-lime">{plural(trip.stories, "story", "stories")}</span> and answered{" "}
               <span className="text-marker-magenta">
-                {answered} {answered === 1 ? "question" : "questions"}
+                {plural(answered, "question")}
               </span>
               .
             </p>
