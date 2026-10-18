@@ -83,10 +83,10 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   );
 }
 
-/** The dial window: a ruler of ticks sliding under a fixed needle, centred on `frequency`. */
+/** The dial: a ruler of ticks sliding under a fixed needle, centred on `frequency`, fading out at the ends. */
 function Dial({ frequency }: { frequency: number }) {
   return (
-    <div aria-hidden className="relative h-12 w-[297px] overflow-hidden rounded-token border border-border">
+    <div aria-hidden className="relative h-12 w-[297px] overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_20%,black_80%,transparent)]">
       <div
         className="absolute inset-y-0 left-1/2 flex items-center"
         style={{ transform: `translateX(${-(frequency - BAND_FROM) * 10 * PX}px)` }}
