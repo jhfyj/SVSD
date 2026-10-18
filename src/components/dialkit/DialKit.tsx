@@ -27,6 +27,8 @@ const RADIO = [
   { label: "Connected", href: "/radio?call=connected" },
   { label: "Connect, then lost", href: "/radio?call=connecting&outcome=lost" },
   { label: "Connection lost", href: "/radio?call=lost" },
+  { label: "Message on the road", href: "/radio?message=message" },
+  { label: "Question on the road", href: "/radio?message=question" },
 ];
 
 const listeners = new Set<() => void>();

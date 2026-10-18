@@ -8,6 +8,7 @@ import { PowerButton } from "./PowerButton";
 import { RadioIntro } from "./RadioIntro";
 import { RadioScreen } from "./RadioScreen";
 import { RockerSwitch } from "./RockerSwitch";
+import { SAMPLE_MESSAGES } from "@/lib/radio/messages";
 
 const meta = {
   title: "Radio/RadioScreen",
@@ -42,6 +43,28 @@ export const ConnectionLost: Story = { args: { defaultState: "lost" } };
 
 /** Flip the switch on and it fails after Connecting... */
 export const ConnectThenFail: Story = { name: "Connect, then fail", args: { outcome: "lost" } };
+
+/**
+ * Figma "Message" (node 116:91): you pass a magenta marker with the radio off. Static, then their
+ * voice; the map glows with it. Press RESPOND within 5 seconds and you record a reply when they finish.
+ * (Click the canvas once if the browser held the audio back.)
+ */
+export const MessageOnTheRoad: Story = {
+  name: "Message on the road",
+  args: { defaultMessage: SAMPLE_MESSAGES[0], messageEveryMs: 600_000 },
+};
+
+/** Figma "Question" (node 116:131): the same, in sky blue, asking you something. */
+export const QuestionOnTheRoad: Story = {
+  name: "Question on the road",
+  args: { defaultMessage: SAMPLE_MESSAGES[1], messageEveryMs: 600_000 },
+};
+
+/** Leave the radio off and messages arrive on their own: the first after 6 seconds, then every 20. */
+export const MessagesAlongTheDrive: Story = {
+  name: "Messages along the drive",
+  args: { messageEveryMs: 20_000 },
+};
 
 export const Switch: Story = {
   name: "Rocker switch",

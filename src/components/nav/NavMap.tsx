@@ -47,8 +47,24 @@ export type NavTraveller = {
   ahead: number;
 };
 
+/** Something left on the road (a message or a question) that plays as you pass it. */
+export type NavRoadMessage = {
+  id: string;
+  color: MarkerColor;
+  label: string;
+  /** Share of the way along the route, 0–1. */
+  at: number;
+};
+
+/** Whether the live Google map is set up; without it the radio fakes passing messages on a timer. */
+export const hasLiveMap = Boolean(API_KEY);
+
 export type NavMapProps = {
   travellers: NavTraveller[];
+  /** Messages along the route that haven't played yet. */
+  messages?: NavRoadMessage[];
+  /** You've driven past a message. */
+  onReach?: (id: string) => void;
   /** Shown instead of the map when there's no Google Maps key (Storybook, a fresh checkout). */
   fallback: ReactNode;
   className?: string;
@@ -103,7 +119,7 @@ const turn = (a: number, b: number, k: number) => (a + ((((b - a + 540) % 360) -
 
 type Progress = { along: number; at: LatLng; now: number };
 
-function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
+function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMapProps, "fallback">) {
   const map = useMap();
   const journey = useJourney();
   const [rerouted, setRerouted] = useState<Route | null>(null);
@@ -197,6 +213,16 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
     return () => cancelAnimationFrame(frame);
   }, [map, you, path, simulate, speed]);
 
+  // Passing a message: checked whenever your progress updates, a couple of times a second.
+  const reach = useRef(onReach);
+  useEffect(() => {
+    reach.current = onReach;
+  }, [onReach]);
+  useEffect(() => {
+    if (!path || !progress) return;
+    for (const m of messages) if (progress.along >= m.at * path.length) reach.current?.(m.id);
+  }, [path, progress, messages]);
+
   // The banner, route split and travellers update a couple of times a second.
   useEffect(() => {
     const id = setInterval(() => {
@@ -255,6 +281,15 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
             .map((t) => (
               <AdvancedMarker key={t.id} position={pointAt(path, along + t.ahead)} anchorLeft="-50%" anchorTop="-50%" zIndex={5}>
                 <MapMarker color={t.color} label={t.label} className="size-[20px]" />
+              </AdvancedMarker>
+            ))}
+        {/* Messages ahead, slightly smaller than travellers so they read as places, not people */}
+        {path &&
+          messages
+            .filter((m) => m.at * path.length > along)
+            .map((m) => (
+              <AdvancedMarker key={m.id} position={pointAt(path, m.at * path.length)} anchorLeft="-50%" anchorTop="-50%" zIndex={4}>
+                <MapMarker color={m.color} label={m.label} className="size-[14px]" />
               </AdvancedMarker>
             ))}
         {path && arrived === false && (

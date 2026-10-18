@@ -3,12 +3,12 @@
 import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
 import { FlagCheckered, PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setMusicSpeaker, startMusic, stopMusic } from "@/lib/music";
 import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
-import { NavMap } from "../nav/NavMap";
+import { hasLiveMap, NavMap } from "../nav/NavMap";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
@@ -19,7 +19,10 @@ import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, useRadioSettings } from "@/lib/radio-settings";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
+import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/messages";
 import { PowerButton } from "./PowerButton";
+import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
+import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
 import { useTilt } from "./useTilt";
 
@@ -85,8 +88,20 @@ export type RadioScreenProps = {
   onEndTrip?: () => void;
   /** How many hang-ups, how fast, set off the timeout and how long it lasts (short ones for Storybook). */
   hangUpRule?: HangUpRule;
+  /** Messages and questions left along the route. They play as you pass them, while the radio's off. */
+  messages?: RouteMessage[];
+  /** Play this message as soon as the screen opens (Storybook, the dial kit). */
+  defaultMessage?: RouteMessage;
+  /**
+   * Without the live map, how often you "pass" the next message, in ms. The first comes sooner.
+   * (On real roads they're sparse: one every 20–30 minutes by day, 8–10 at night.)
+   */
+  messageEveryMs?: number;
   className?: string;
 };
+
+/** A beat of quiet between one message ending and the next one tuning in. */
+const MESSAGE_GAP_MS = 2500;
 
 /** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
 const casing =
@@ -109,6 +124,9 @@ export function RadioScreen({
   arrived: forceArrived,
   onEndTrip,
   hangUpRule = HANG_UP_RULE,
+  messages = SAMPLE_MESSAGES,
+  defaultMessage,
+  messageEveryMs = 30_000,
   className,
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
@@ -176,8 +194,51 @@ export function RadioScreen({
   // At the destination the button row becomes a single End trip.
   const arrived = useArrived(forceArrived);
 
-  // Music only plays while the radio is off; turning the radio on or leaving the screen stops it.
-  const playing = musicOn && !radioOn;
+  // Messages on the road. Each plays once, as you pass it, and only while the radio's off: they never
+  // talk over a live call. Pass one mid-call and it's gone; pass two close together and they queue.
+  const message = useRouteMessage({ speaker: speakerOn });
+  const messageOn = message.phase !== "idle" && !radioOn;
+  // Your reply glows in your own marker's colour.
+  const youColor = travellers.find((t) => t.ahead === 0)?.color ?? "lime";
+  const [passed, setPassed] = useState<string[]>(() => (defaultMessage ? [defaultMessage.id] : []));
+  const [queue, setQueue] = useState<RouteMessage[]>(() => (defaultMessage ? [defaultMessage] : []));
+  const ahead = useMemo(
+    () =>
+      messages
+        .filter((m) => !passed.includes(m.id))
+        .map((m) => ({ id: m.id, at: m.at, color: MESSAGE_COLOR[m.kind], label: `${m.kind === "question" ? "Question" : "Message"} from ${m.from}` })),
+    [messages, passed],
+  );
+  const listening = state === "off" && !arrived && !leaving;
+  const reach = useCallback(
+    (id: string) => {
+      const m = messages.find((x) => x.id === id);
+      if (!m || passed.includes(id)) return;
+      setPassed((p) => [...p, id]);
+      if (listening) setQueue((q) => [...q, m]);
+    },
+    [messages, passed, listening],
+  );
+  // No live map to drive past them: pass the next one every so often instead.
+  const nextAhead = ahead[0]?.id;
+  useEffect(() => {
+    if (hasLiveMap || !nextAhead || !listening || messageOn) return;
+    const t = setTimeout(() => reach(nextAhead), passed.length ? messageEveryMs : Math.min(messageEveryMs, 6000));
+    return () => clearTimeout(t);
+  }, [nextAhead, listening, messageOn, reach, passed.length, messageEveryMs]);
+  // Next in the queue tunes in once the radio's quiet. The first one opening the screen goes straight away.
+  const { play } = message;
+  useEffect(() => {
+    if (!queue.length || messageOn || !listening) return;
+    const t = setTimeout(() => {
+      play(queue[0]);
+      setQueue((q) => q.slice(1));
+    }, message.message ? MESSAGE_GAP_MS : 0);
+    return () => clearTimeout(t);
+  }, [queue, messageOn, listening, play, message.message]);
+
+  // Music only plays while the radio is off and quiet; a message, the radio, or leaving the screen stops it.
+  const playing = musicOn && !radioOn && !messageOn;
   useEffect(() => {
     if (!playing) return;
     startMusic();
@@ -277,8 +338,16 @@ export function RadioScreen({
       >
         <NavMap
           travellers={travellers}
+          messages={ahead}
+          onReach={reach}
           className="absolute inset-0"
           fallback={<PlaceholderMap travellers={travellers} />}
+        />
+        {/* A message playing: their voice glows in from the edges; your reply rises from the bottom in your colour. */}
+        <MessageGlow
+          mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
+          color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
+          level={message.level}
         />
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
@@ -323,7 +392,12 @@ export function RadioScreen({
             setState(on ? (arrived ? "thanks" : until ? "timeout" : "connecting") : "off");
             setGreeting(false);
             setHangingUp(false);
-            if (on) setMusicOn(false);
+            if (on) {
+              setMusicOn(false);
+              // Going live ends whatever message was playing, and drops any waiting.
+              message.skip();
+              setQueue([]);
+            }
           }}
         />
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
@@ -335,7 +409,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+          {messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -384,6 +458,8 @@ export function RadioScreen({
                 <Microphone size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
             </>
+          ) : messageOn && message.message ? (
+            <MessageKeys controls={message} color={MESSAGE_COLOR[message.message.kind]} squareKey={CALL_KEY} />
           ) : (
             <>
               <HardwareButton
@@ -397,7 +473,7 @@ export function RadioScreen({
             </>
           )}
           <HardwareButton
-            className={radioOn ? CALL_KEY : "flex-1"}
+            className={radioOn || messageOn ? CALL_KEY : "flex-1"}
             // Speakerphone: starts up (on the phone, held to your ear); pressed in and lit = on speaker.
             pressed={speakerOn}
             onClick={() => setSpeakerOn(!speakerOn)}
@@ -407,7 +483,7 @@ export function RadioScreen({
           </HardwareButton>
           {/* Settings stays on the console during a call too, square like Mic and Speaker. */}
           <HardwareButton
-            className={radioOn ? CALL_KEY : "flex-1"}
+            className={radioOn || messageOn ? CALL_KEY : "flex-1"}
             pressed={settingsOpen}
             onClick={() => setSettingsOpen(!settingsOpen)}
             aria-label={settingsOpen ? "Close settings" : "Settings"}

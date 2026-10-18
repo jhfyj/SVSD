@@ -475,3 +475,17 @@ body {
   .sprite-fast .sprite-a { animation: sprite-a 400ms steps(1) infinite; }
   .sprite-fast .sprite-b { animation: sprite-b 400ms steps(1) infinite; }
 }
+
+/*
+  Message on the road: the RESPOND key's strip. Each segment goes out at the end of its own
+  duration (set inline), one a second, like the LCD's hard steps. It's a countdown, not decoration,
+  so it runs for reduced motion too.
+*/
+@keyframes respond-segment {
+  to {
+    visibility: hidden;
+  }
+}
+.respond-segment {
+  animation: respond-segment 5s linear forwards;
+}
