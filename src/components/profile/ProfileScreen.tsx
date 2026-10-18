@@ -4,23 +4,28 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { deleteAccount, signOut, useSession } from "@/lib/auth/session";
 import { forgetCharacter, saveCharacter, useCharacter } from "@/lib/profile/avatar";
+import { forgetOnboarded, markOnboarded, useOnboarded } from "@/lib/profile/onboarding";
 import { sampleProfile } from "@/lib/profile/sample";
 import { TopBar } from "../journey/TopBar";
+import { AllowAccess } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
 import { ProfileView } from "./Profile";
 import { PhoneSignIn } from "./SignIn";
 
 /**
  * /profile: the phone sign-in until there's a session, then the profile. A new account (no
- * character yet) picks its character on Customize profile first.
+ * character yet) picks its character on Customize profile, then sees Allow access (mic,
+ * notifications, location) once. Settings on the profile opens Allow access again.
  */
 export function ProfileScreen() {
   const session = useSession();
   const router = useRouter();
   const character = useCharacter(session?.phone);
+  const onboarded = useOnboarded(session?.phone);
   const [editing, setEditing] = useState(false);
+  const [settings, setSettings] = useState(false);
 
-  if (session === undefined || (session && character === undefined)) {
+  if (session === undefined || (session && (character === undefined || onboarded === undefined))) {
     return (
       <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background">
         <TopBar />
@@ -43,12 +48,16 @@ export function ProfileScreen() {
     );
   }
 
+  if (!onboarded) return <AllowAccess onDone={() => markOnboarded(session.phone)} />;
+  if (settings) return <AllowAccess firstTime={false} onDone={() => setSettings(false)} onBack={() => setSettings(false)} />;
+
   const { totalCalls, month, activeDays, history } = sampleProfile();
   return (
     <ProfileView
       handle={`@traveller${session.phone.slice(-4)}`}
       character={character}
       onEditCharacter={() => setEditing(true)}
+      onSettings={() => setSettings(true)}
       joinedAt={new Date(session.joinedAt)}
       totalCalls={totalCalls}
       month={month}
@@ -60,6 +69,7 @@ export function ProfileScreen() {
       }}
       onDeleteAccount={() => {
         forgetCharacter(session.phone);
+        forgetOnboarded(session.phone);
         deleteAccount();
         router.push("/");
       }}

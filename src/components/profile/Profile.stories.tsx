@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
 import { CHARACTERS, type CharacterId } from "@/lib/profile/characters";
+import type { PermissionKind, PermissionState } from "@/lib/permissions";
 import { sampleProfile } from "@/lib/profile/sample";
 import { CharacterSprite } from "./CharacterSprite";
+import { AllowAccessView } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
 import { CodeStep, PhoneSignIn, PhoneStep } from "./SignIn";
 import { ProfileView } from "./Profile";
@@ -134,5 +136,42 @@ export const ProfileNew: StoryObj = {
   name: "Profile, new account",
   render: () => (
     <ProfileView handle="@traveller7890" joinedAt={NOW} now={NOW} totalCalls={0} month={NOW} activeDays={[]} history={[]} />
+  ),
+};
+
+/** After Customize profile, once per account. Tap ALLOW to see each row turn on. */
+export const AllowAccessFirstTime: StoryObj = {
+  name: "Allow access",
+  render: function Render() {
+    const [states, setStates] = useState<Record<PermissionKind, PermissionState>>({ microphone: "prompt", notifications: "prompt", location: "prompt" });
+    return (
+      <AllowAccessView
+        states={states}
+        onAllow={(kind) => setStates((s) => ({ ...s, [kind]: "granted" }))}
+        onDone={() => {}}
+      />
+    );
+  },
+};
+
+export const AllowAccessMixed: StoryObj = {
+  name: "Allow access, blocked and unsupported",
+  render: () => (
+    <AllowAccessView
+      states={{ microphone: "granted", notifications: "unsupported", location: "denied" }}
+      onDone={() => {}}
+    />
+  ),
+};
+
+export const AllowAccessAllOn: StoryObj = {
+  name: "Allow access, from Settings",
+  render: () => (
+    <AllowAccessView
+      firstTime={false}
+      states={{ microphone: "granted", notifications: "granted", location: "granted" }}
+      onDone={() => {}}
+      onBack={() => {}}
+    />
   ),
 };
