@@ -2,8 +2,8 @@ import type { CharacterId } from "@/lib/profile/characters";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "../profile/CharacterSprite";
 
-/** Where a call is: off, finding someone, talking, or dropped. */
-export type CallState = "off" | "connecting" | "connected" | "lost";
+/** Where a call is: off, finding someone, talking, or dropped. `thanks` is the switch flipped on after you've arrived: no call, just a thank-you. */
+export type CallState = "off" | "connecting" | "connected" | "lost" | "thanks";
 
 export type RadioLcdProps = {
   state: CallState;
@@ -33,6 +33,8 @@ export function RadioLcd({ state, peerCharacter, peer, greeting, speaking }: Rad
     );
   }
   if (state === "lost") return <LcdText>CONNECTION LOST</LcdText>;
+  // Copy is Jennifer's own wording until it's checked against the copy doc.
+  if (state === "thanks") return <LcdText>THANK YOU SO MUCH FOR RIDING WITH US</LcdText>;
   if (greeting) {
     return (
       <LcdText>

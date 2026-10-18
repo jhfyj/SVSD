@@ -86,3 +86,9 @@ export const LoadIn: Story = {
 
 /** At the destination: the button row turns into End trip, which opens the trip recap. */
 export const Arrived: Story = { args: { arrived: true, onEndTrip: fn() } };
+
+/** At the destination with the switch flipped on: nobody connects, the LCD thanks you for riding. */
+export const ArrivedThankYou: Story = {
+  name: "Arrived, switch on",
+  args: { arrived: true, defaultState: "thanks", onEndTrip: fn() },
+};
