@@ -65,7 +65,14 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   }, [onDone]);
 
   return (
-    <div className={cn("relative flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground", className)}>
+    <div
+      className={cn(
+        "relative flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
+        // Fades out just before the radio's blueprint takes over.
+        onDone && "motion-safe:animate-[intro-pop_400ms_ease-in_3000ms_reverse_both]",
+        className,
+      )}
+    >
       <svg aria-hidden viewBox="0 0 393 852" preserveAspectRatio="xMidYMid slice" className="pointer-events-none absolute inset-0 h-full w-full">
         <path
           d={SPIRAL}
