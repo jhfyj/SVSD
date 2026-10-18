@@ -3,7 +3,6 @@
 import { ArrowLeft } from "@carbon/icons-react";
 import { PixelIcon } from "./LcdIcon";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
-import { cue } from "@/lib/sound";
 
 const ITEMS: { kind: PermissionKind; label: string; why: string; delay: number }[] = [
   { kind: "microphone", label: "MICROPHONE", why: "Talk on the radio and say a word to reply.", delay: 0 },
@@ -49,7 +48,6 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
           <button
             type="button"
             onClick={onAllow}
-            data-cuelume-tap=""
             aria-label={`Allow ${item.label.toLowerCase()}`}
             className="min-h-11 shrink-0 border border-foreground px-3 text-xs transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
           >
@@ -99,10 +97,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         {onBack && (
           <button
             type="button"
-            onClick={() => {
-              cue("navigate", { direction: "back" });
-              onBack();
-            }}
+            onClick={onBack}
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
