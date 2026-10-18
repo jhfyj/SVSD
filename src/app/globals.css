@@ -26,11 +26,9 @@
   --lcd: #97bd93;
   --lcd-ink: #1e2a1d;
   --led: #6dff5c;
-  /* Character tiles on Customize profile (Figma 154:1304): a dim LCD, lit green when picked. */
-  --tile: #1b2c2b;
-  --tile-ink: #0e1515;
-  --tile-active: #2f8f3a;
-  --tile-active-ink: #8dff7e;
+  /* Characters on Customize profile: unlit pixels, and the picked one lit green with a glow. */
+  --character: rgb(255 255 255 / 0.2);
+  --character-lit: #8dff7e;
   --marker-lime: #d4ec21;
   --marker-sky: #7abdf0;
   --marker-magenta: #ec6bf2;
@@ -54,6 +52,8 @@
   --casing-gradient: linear-gradient(180deg, #2f2f2f 0%, #272727 55%, #1f1e1e 100%);
   /* The dithered map is drawn for night; day lifts it toward the light Figma frame. */
   --map-filter: none;
+  /* Land dots on the Destination earth map. */
+  --land-dot: rgb(255 255 255 / 0.25);
   /* Splash spiral and the blueprint grid in the radio load-in (grid ink is rgb channels). */
   --spiral: #7a2d58;
   --grid-ink: 255 255 255;
@@ -87,10 +87,8 @@
   --danger: #d23a3a;
   --lcd: #b5b3a8;
   --lcd-ink: #2b2a27;
-  --tile: #dcd8cf;
-  --tile-ink: #a39e94;
-  --tile-active: #97bd93;
-  --tile-active-ink: #1e2a1d;
+  --character: rgb(29 28 26 / 0.22);
+  --character-lit: #2f8f3a;
   --marker-border: #393939;
 
   --panel-gradient: linear-gradient(180deg, #f7f2eb 0%, #c9c2b9 100%);
@@ -103,6 +101,7 @@
   --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --casing-gradient: linear-gradient(180deg, #f6f1ea 0%, #e4ddd4 55%, #cbc3b9 100%);
   --map-filter: brightness(1.3) contrast(0.82) sepia(0.1);
+  --land-dot: rgb(29 28 26 / 0.4);
   --spiral: #c98bb0;
   --grid-ink: 60 50 40;
   --rain: rgb(70 82 100 / 0.12);
@@ -149,16 +148,15 @@
   --color-lcd: var(--lcd);
   --color-lcd-ink: var(--lcd-ink);
   --color-led: var(--led);
-  --color-tile: var(--tile);
-  --color-tile-ink: var(--tile-ink);
-  --color-tile-active: var(--tile-active);
-  --color-tile-active-ink: var(--tile-active-ink);
+  --color-character: var(--character);
+  --color-character-lit: var(--character-lit);
   --color-marker-lime: var(--marker-lime);
   --color-marker-sky: var(--marker-sky);
   --color-marker-magenta: var(--marker-magenta);
   --color-marker-orange: var(--marker-orange);
   --color-marker-border: var(--marker-border);
   --color-power: var(--power);
+  --color-land-dot: var(--land-dot);
   --radius-token: var(--radius);
   --font-sans: var(--font-geist-mono), ui-monospace, monospace;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;

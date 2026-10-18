@@ -17,7 +17,7 @@ export type CustomizeProfileProps = {
 
 /**
  * Customize profile (Figma node 154:1304): pick one of eight LCD pets. The picked one lights up
- * green and plays its two-frame loop, in the tile and in the avatar up top.
+ * green and plays its two-frame loop, in the grid and in the avatar up top. The others stay unlit pixels.
  */
 export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, saving }: CustomizeProfileProps) {
   const [picked, setPicked] = useState<CharacterId>(initial);
@@ -82,7 +82,9 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
               <span
                 className={cn(
                   "flex h-[75px] w-[79px] items-center justify-center transition-colors group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-foreground",
-                  on ? "bg-tile-active text-tile-active-ink" : "bg-tile text-tile-ink group-hover:text-tile-active",
+                  on
+                    ? "text-character-lit drop-shadow-[0_0_6px_var(--character-lit)]"
+                    : "text-character group-hover:text-foreground/40",
                 )}
               >
                 <CharacterSprite character={c.id} pixel={4} playing={on} />

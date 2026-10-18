@@ -160,7 +160,7 @@ export function JourneyMap({ here, destination, route, stories = 0, questions = 
         style={{ opacity: landOpacity }}
         aria-hidden
       >
-        <path d={land} className="fill-foreground/25" />
+        <path d={land} className="fill-land-dot" />
       </svg>
 
       {!arrived && (

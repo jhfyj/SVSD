@@ -79,9 +79,9 @@ export const Characters: StoryObj = {
     <div className="grid grid-cols-4 gap-6">
       {CHARACTERS.map((c) => (
         <figure key={c.id} className="flex flex-col items-center gap-2">
-          <div className="flex gap-1 text-tile-active-ink">
+          <div className="flex gap-1 text-character-lit">
             {c.frames.map((_, f) => (
-              <span key={f} className="bg-tile-active p-1">
+              <span key={f} className="p-1">
                 <CharacterSprite character={c.id} pixel={3} playing={false} className={f ? "[&>.sprite-a]:invisible [&>.sprite-b]:visible" : undefined} />
               </span>
             ))}
