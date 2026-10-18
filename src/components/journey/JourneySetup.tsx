@@ -11,6 +11,7 @@ import { cn } from "../ui/cn";
 import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
 import { TuningStrip } from "./TuningStrip";
+import { useCountUp } from "./useCountUp";
 import { useCurrentLocation } from "./useCurrentLocation";
 
 const TABS = ["Destination", "Duration"] as const;
@@ -68,6 +69,9 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const minutes = chosenMinutes ?? routeMinutes ?? DEFAULT_MINUTES;
   const { stories, questions } = contentFor(minutes);
   const ready = destination ? currentRoute !== null : chosenMinutes !== null;
+  // The summary shows from the start; stories and questions count up from 0 once a route is picked.
+  const shownStories = useCountUp(currentRoute ? stories : 0);
+  const shownQuestions = useCountUp(currentRoute ? questions : 0);
 
   const pick = (place: Place) => {
     setDestination(place);
@@ -152,28 +156,27 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               Drawing your trail…
             </p>
           )}
-          {currentRoute && (
-            <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base motion-safe:animate-[trail-in_400ms_ease-out_1.6s_both]">
-              <div>
-                <dt className="sr-only">Trip</dt>
-                <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
-              </div>
-              <div className="text-right">
-                <dt className="sr-only">Stories</dt>
-                <dd className="text-marker-lime">{stories} stories</dd>
-              </div>
-              <div className="text-[10px] text-foreground/40">
-                <dt className="sr-only">Distance</dt>
-                <dd>
-                  {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "drive"}
-                </dd>
-              </div>
-              <div className="text-right">
-                <dt className="sr-only">Questions</dt>
-                <dd className="text-marker-magenta">{questions} questions</dd>
-              </div>
-            </dl>
-          )}
+          <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base">
+            <div>
+              <dt className="sr-only">Trip</dt>
+              <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+            </div>
+            <div className="text-right">
+              <dt className="sr-only">Stories</dt>
+              <dd className="text-marker-lime">{shownStories} stories</dd>
+            </div>
+            <div className="text-[10px] text-foreground/40">
+              <dt className="sr-only">Distance</dt>
+              <dd>
+                {currentRoute ? (currentRoute.distance / 1000).toFixed(1) : "0.0"} km{" "}
+                {currentRoute?.straight ? "as the crow flies" : "drive"}
+              </dd>
+            </div>
+            <div className="text-right">
+              <dt className="sr-only">Questions</dt>
+              <dd className="text-marker-magenta">{shownQuestions} questions</dd>
+            </div>
+          </dl>
         </section>
       ) : (
         <section aria-label="Duration" className="flex flex-1 flex-col items-center px-9">
