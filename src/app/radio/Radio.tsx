@@ -9,7 +9,8 @@ const CALL_STATES: CallState[] = ["off", "connecting", "connected", "lost"];
 /**
  * The radio with the app's navigation wired in, so RadioScreen itself stays router-free for Storybook.
  * `?call=connecting|connected|lost` opens the radio in that state (the dial kit uses it), and
- * `?outcome=lost` makes connecting end in Connection lost.
+ * `?outcome=lost` makes connecting end in Connection lost. A new `?load=` value plays the load-in
+ * again: the page is kept alive between visits, so without it the radio comes back already loaded.
  */
 export function Radio() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function Radio() {
   const state = call && CALL_STATES.includes(call) ? call : "off";
   const outcome = params.get("outcome") === "lost" ? "lost" : "connected";
   return (
-    <RadioIntro>
+    <RadioIntro key={params.get("load") ?? "radio"}>
       <RadioScreen
         // A new state from the dial kit starts the radio over in it.
         key={`${state}-${outcome}`}
