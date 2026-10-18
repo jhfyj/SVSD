@@ -8,6 +8,8 @@ export type HardwareButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: "default" | "end";
   /** Latched down, for toggles like Mic and Speaker. Leave undefined for momentary buttons. */
   pressed?: boolean;
+  /** Held down without lighting up, e.g. End call staying in until the next person connects. */
+  sunk?: boolean;
 };
 
 /**
@@ -19,6 +21,7 @@ export type HardwareButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 export function HardwareButton({
   tone = "default",
   pressed,
+  sunk,
   className,
   children,
   type = "button",
@@ -29,7 +32,7 @@ export function HardwareButton({
   ...props
 }: HardwareButtonProps) {
   const [held, setHeld] = useState(false);
-  const down = held || pressed === true;
+  const down = held || pressed === true || sunk === true;
   // Latched on (Music playing, Settings open...): the key stays down and its icon lights up like the power key.
   const lit = pressed === true;
   const release = (handler?: (e: PointerEvent<HTMLButtonElement>) => void) => (e: PointerEvent<HTMLButtonElement>) => {

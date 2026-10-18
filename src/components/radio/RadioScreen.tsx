@@ -123,7 +123,10 @@ export function RadioScreen({
   const endCall = () => {
     setGreeting(false);
     setOnBreak(false);
+  // The key stays pressed in until that next person connects (or the radio stops), then pops back up.
+  const [hangingUp, setHangingUp] = useState(false);
     setSettingsOpen(false);
+    setHangingUp(true);
     setCalls((n) => n + 1);
     setState("connecting");
     onEndCall?.();
@@ -171,6 +174,7 @@ export function RadioScreen({
       if (outcome === "connected") {
         setGreeting(true);
         cue("ready", { emphasis: "subtle", theme: "mech" });
+      setHangingUp(false);
       } else {
         cue("error", { theme: "mech" });
       }
@@ -273,6 +277,7 @@ export function RadioScreen({
             if (on) setMusicOn(false);
           }}
         />
+            setHangingUp(false);
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
           OFF
         </span>
@@ -306,7 +311,11 @@ export function RadioScreen({
               <HardwareButton
                 tone="end"
                 className="flex-1"
-                onClick={state === "connecting" ? () => setState("off") : endCall}
+                // Pressed in while it finds you the next person, so pressing again does nothing
+                // (the radio switch still turns it all off); it pops back up when they connect.
+                sunk={hangingUp && state === "connecting"}
+                onClick={hangingUp && state === "connecting" ? undefined : state === "connecting" ? () => setState("off") : endCall}
+                aria-disabled={hangingUp && state === "connecting"}
                 disabled={state === "lost"}
                 aria-label={state === "connecting" ? "Stop connecting" : "End call"}
                 data-cuelume-tap="close"
