@@ -6,3 +6,4 @@ export * from "./TopBar";
 export * from "./JourneyMap";
 export * from "./StartingRadio";
 export * from "./IntentPicker";
+export * from "./WeatherIcon";

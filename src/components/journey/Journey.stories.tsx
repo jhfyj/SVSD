@@ -8,6 +8,8 @@ import { StartJourney } from "./StartJourney";
 import type { MessyLook } from "./MessyText";
 import { StartingRadio } from "./StartingRadio";
 import { TuningStrip } from "./TuningStrip";
+import { WeatherSprite } from "./WeatherIcon";
+import type { Sky } from "@/lib/weather";
 
 /** The "getting set up" flow (Figma iPhone 16 - 50 to 58). */
 const meta: Meta = { title: "Journey", parameters: { layout: "centered" } };
@@ -93,4 +95,17 @@ export const EarthToTrail: StoryObj = {
       </div>
     );
   },
+};
+
+const SKIES: Sky[] = ["clear", "partly", "cloudy", "fog", "rain", "snow", "storm"];
+
+/** Every top-bar weather sprite, day and night, at 4× so the two frames are easy to see. */
+export const Weather: StoryObj = {
+  render: () => (
+    <div className="grid grid-cols-7 gap-6 bg-background p-6 text-foreground">
+      {[false, true].flatMap((night) =>
+        SKIES.map((sky) => <WeatherSprite key={`${sky}-${night}`} weather={{ sky, night }} pixel={4} />),
+      )}
+    </div>
+  ),
 };
