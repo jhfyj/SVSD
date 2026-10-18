@@ -93,8 +93,10 @@ Non-text shades: `foreground/20` for unlit dots and empty tracks, `foreground/15
 |---|---|---|---|
 | `story` (= `marker-lime`) | `#d4ec21` | `#5f7300` | **Stories**, and what you're tuned into: story dots, “24 STORIES”, the tuner needle, focus on readouts |
 | `question` (= `marker-magenta`) | `#ec6bf2` | `#b01ea8` | **Questions**: anything asking you to reply |
+| `tip` | `#4fd8c4` | `#0f7a6c` | **Tips**: a drop sorted as advice about the road (a lane, a gas stop). Teal: not a person hue, not an LED |
+| `drop-ink` | `#111111` | `#ffffff` | The icon inside a drop pin: dark on the bright night colours, white on the deeper day ones |
 | `marker-sky`, `marker-orange` | `#7abdf0`, `#e3743d` | `#1f6fb0`, `#b64f1a` | Other **people** on the map only |
-| `key-lit` (+ `key-lit-glow`) | `#6dff5c` | `#1f8a2c` | **On.** A latched console key's icon lights green (mic on, speaker on, the picked intent) |
+| `key-lit` (+ `key-lit-glow`) | `#6dff5c` | `#19752a` | **On.** A latched console key's icon lights green (mic on, recording a drop, the picked intent). Day is a deep green with only a faint halo: an LED doesn't glow in daylight, and a bright glow smears thin icons into a blob on the cream keys. |
 | `led` / `led-amber` / `led-red` | `#6dff5c` / `#ffb020` / `#ff3535` | same | **Connection:** green on a call, amber connecting, red lost, dark when off. The bulb sits in a `led-ring` (`#bababa`, both themes). |
 | `character` / `character-lit` | white 20% / `#8dff7e` | ink 22% / `#2f8f3a` | Pixel characters: unlit, and the picked one lit |
 | `danger` | `#ff5151` | `#ca3838` | Destructive actions and errors |
@@ -254,11 +256,13 @@ The radio is an object with fixed geometry on a 393×852 artboard. Don't respace
 |---|---|---|---|
 | Clock | 17, 26, 116×20 | LCD | 156, 603, 221×130 |
 | Power key | 346, 14, 44×44 | Music key (off) | 26, 751, 112×70 |
-| Map window | 14, 64, 365×509 | Settings key | 146, 751, 111×70 |
-| RADIO label | 30, 605, 55×20 | Speaker key | 266, 751, 111×70 |
+| Map window | 14, 64, 365×509 | Drop key | 146, 751, 111×70 |
+| RADIO label | 30, 605, 55×20 | Settings key | 266, 751, 111×70 |
 | Rocker switch | 26, 629, 46×98 | Key gap | 8 |
 
-Off, the key row is Music · Settings · Speaker. On a call it becomes square call keys with an icon-only End call. Settings opens a panel that grows up out of the console.
+Off, the key row is Music · Drop · Settings. On a call it becomes End call (wide, icon only) · Mic · Settings: no Drop on a call, you're talking to someone. Settings opens a panel that grows up out of the console.
+
+**Drop** (Phosphor `MapPinPlus`, 24) replaced Speaker. Tap to record (pressed in and lit, the icon turns to a send arrow, `PaperPlaneRight`, and YOUR DROP shows on the LCD with a 6px blinking square over a counter going up from `00:00`, no time limit), tap send to leave it on the road. The hint reads “Tap send or stop speaking for 10 sec”: go quiet for 10 s and it sends itself (the hint turns to “Sending in 5…” for the last 5 s; talking again cancels it). Nothing said at all and it's thrown away (“Nothing heard”). It's sorted into a question, a story or a tip and lands on the map where you dropped it as a 22px **drop pin** (`DropPin`): a content circle in the kind's colour with a 12px bold Phosphor icon in `drop-ink`. Question = `QuestionMark` on `question`, story = `EnvelopeSimple` on `story`, tip = `Note` on `tip`. Landing: it falls 28px onto the road, squashes and settles (560ms), and as it hits, a soft flash of its colour and two rings ripple out to about 6x the pin (the second trailing by 200ms, 1.1s each); reduced motion fades it in. The LCD shows the same icon beside “Question dropped”. Disabled while a route message plays (that has Respond). There's no speakerphone toggle now: audio plays at the phone level.
 
 ### 5.4 Sizes
 
@@ -482,7 +486,7 @@ Two families, never mixed in one spot:
 | Weight | `regular`. `fill` only for media glyphs (Play, Pause, Stop, Record). No thin, light, bold or duotone. |
 | Sizes | 16 next to 10–13px text, 20 in the top bar and next to 16px text, 24 on console keys. |
 | Color | `currentColor`; on keys it follows the key's opacity, and `.key-lit` turns it green. |
-| Gap | 8 between icon and label (12 on console keys). |
+| Gap | 8 between icon and label, console keys too (LISTENING, SEND, END TRIP). |
 | A11y | Decorative icons `aria-hidden`; icon-only buttons need an `aria-label`. |
 
 | Carbon / current | Phosphor |

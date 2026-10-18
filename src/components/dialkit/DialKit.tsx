@@ -6,6 +6,7 @@ import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { markOnboarded } from "@/lib/profile/onboarding";
+import { clearHangUps } from "@/lib/radio/hangups";
 import { setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
 import { cn } from "../ui/cn";
@@ -23,6 +24,10 @@ const TODOS_KEY = "svsd-dialkit-todos";
 const DEMO_PHONE = "5550100100";
 
 const THEMES: ThemeChoice[] = ["auto", "light", "dark"];
+
+/** The Hang-up timeout flow: a call in progress, with hang-ups counting. */
+const TIMEOUT_HREF = "/radio?call=connected&timeout=on";
+const TIMEOUT_SKIP_HREF = "/radio?call=connecting&timeout=on";
 
 type Step = {
   label: string;
@@ -182,11 +187,18 @@ export function DialKit() {
           note: "Needs a scripted LA route (I-10) that drives without location, so the map tracks the road on camera.",
         },
         {
-          label: "Message unlocks",
+          label: "Message unlocks · 3D story",
           go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
           radio: true,
           active: path === "/radio" && params.get("demo") === "story",
           note: "Prototype: about 5 s down the I-10, a story waits off the road; the car pulls it in, it pops and flies into the LCD. Plays again on every click.",
+        },
+        {
+          label: "Message unlocks · Angelina's",
+          href: "/radio?message=message",
+          radio: true,
+          todo: "change",
+          note: "Built (Angelina): static, then the station locks, the map glows in the message's color. Plays a sample from @Hufflepuff23; the script's @NightOwl unlock isn't recorded yet.",
         },
         {
           label: "@NightOwl's voice message",
@@ -196,9 +208,10 @@ export function DialKit() {
         },
         {
           label: "Reply?",
-          href: blank("Reply?"),
-          todo: "new",
-          note: "AI voice: “Do you want to reply to this message?”",
+          href: "/radio?message=message",
+          radio: true,
+          todo: "change",
+          note: "Built: RESPOND for the first 5 s of their voice, then your reply records. Script has an AI voice asking “Do you want to reply to this message?”",
         },
       ],
     },
@@ -215,17 +228,17 @@ export function DialKit() {
           note: "Engraved RADIO; the script calls it Company. Skip the load-in here: it belongs to 2 · Radio loads in.",
         },
         {
-          label: "Mood: Something real",
-          todo: "change",
-          note: "Picked when you flip the switch on. Moods are Meet someone, Chit-chat, Share a story, Off my chest; add or rename one to Something real.",
+          label: "Mood: pick an intent",
+          href: "/radio?call=pick",
+          radio: true,
+          note: "Built: flip the switch on and the four keys ask what you're up for (Meet someone, Chit-chat, Share a story, Off my chest). The script's Something real is this pick.",
         },
         { label: "Connecting", href: "/radio?call=connecting", radio: true },
         {
           label: "Meet @Mothlight",
-          href: "/radio?call=connected",
+          href: "/radio?me=NightOwl&peer=Mothlight&miles=84",
           radio: true,
-          todo: "change",
-          note: "LCD says CURRENTLY CONNECTED TO. Script: “@NightOwl, meet @Mothlight. You've got 84 miles of road together. Where are you both headed tonight?”",
+          note: "Flip on and pick an intent: the radio says “@NightOwl, meet @Mothlight. You've got 84 miles of road together. To start, where are you both headed tonight?”, a page on the LCD per line.",
         },
         {
           label: "@Mothlight speaking",
@@ -250,9 +263,10 @@ export function DialKit() {
       steps: [
         {
           label: "Question unlocks",
-          href: blank("Question unlocks"),
-          todo: "new",
-          note: "“A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
+          href: "/radio?message=question",
+          radio: true,
+          todo: "change",
+          note: "Built: plays a sample question (@urmom2424, favorite song). Script: “A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
         },
         {
           label: "Answering",
@@ -262,9 +276,9 @@ export function DialKit() {
         },
         {
           label: "Planting your answer",
-          href: blank("Planting your answer"),
-          todo: "new",
-          note: "Your answer gets planted on the road for whoever passes next.",
+          href: "/radio?messages=off&sim",
+          radio: true,
+          note: "Built as Drop (Jen): planting your own thing, radio off, nothing coming in, the map driving the route. Tap the pin key, talk, tap send. It's sorted into a message or a question and pinned on the map where you are. No pin key on a call.",
         },
       ],
     },
@@ -322,9 +336,19 @@ export function DialKit() {
       title: "Not in the script",
       steps: [
         { label: "Profile", href: "/profile", go: signedIn },
-        { label: "Intents", href: "/intents" },
         { label: "Connect, then lost", href: "/radio?call=connecting&outcome=lost", radio: true },
         { label: "Connection lost", href: "/radio?call=lost", radio: true },
+      ],
+    },
+    {
+      n: "",
+      title: "Hang-up timeout",
+      note: "3 hang-ups in a minute = a 20 s break here (5 min in the real rule). Every other flow ignores hang-ups.",
+      steps: [
+        // Start clean on a call, then hang up 3 times to see it.
+        { label: "Try it", href: TIMEOUT_HREF, radio: true, go: clearHangUps },
+        // Clears the count and the break, then reopens the radio (a new address so it starts over).
+        { label: "Skip the wait", href: here === TIMEOUT_HREF ? TIMEOUT_SKIP_HREF : TIMEOUT_HREF, go: clearHangUps },
       ],
     },
   ];

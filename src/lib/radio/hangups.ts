@@ -21,6 +21,9 @@ export type HangUpRule = {
 /** 3 hang-ups within 2 minutes = 5 minutes off the air. */
 export const HANG_UP_RULE: HangUpRule = { limit: 3, windowMs: 2 * 60_000, timeoutMs: 5 * 60_000 };
 
+/** The dial kit's Hang-up timeout flow: same 3 hang-ups, but a 20-second break so it's quick to try. */
+export const DEMO_HANG_UP_RULE: HangUpRule = { limit: 3, windowMs: 60_000, timeoutMs: 20_000 };
+
 const KEY = "svsd-hangups";
 
 type Saved = { times: number[]; until: number | null };

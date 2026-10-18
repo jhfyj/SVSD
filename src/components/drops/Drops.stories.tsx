@@ -5,7 +5,7 @@ import { DropMarker } from "./DropMarker";
 import type { DropKind } from "./glyphs";
 import { PixelGlyph, VoxelIcon } from "./VoxelIcon";
 
-const KINDS: DropKind[] = ["story", "note", "question"];
+const KINDS: DropKind[] = ["story", "tip", "question"];
 
 const meta = {
   title: "Drops/Drops on the road",
@@ -20,7 +20,7 @@ type Story = StoryObj<typeof meta>;
 /** One block, big, spinning: play with the cell size and depth. */
 export const Block: Story = {};
 
-/** The three kinds side by side: stories purple, notes yellow, questions blue. */
+/** The three kinds side by side: stories purple, tips yellow, questions blue. */
 export const AllKinds: Story = {
   render: () => (
     <div className="flex items-end gap-12 bg-[#111] p-10">

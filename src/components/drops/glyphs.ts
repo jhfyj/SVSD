@@ -5,7 +5,10 @@
   light accent (a label, a ribbon); "." is empty. All three solid marks count as the block.
 */
 
-export type DropKind = "story" | "question" | "note";
+import type { DropKind } from "@/lib/radio/drops";
+
+/** The same kinds as the Drop key's: a question, a story, or a tip about this stretch of road. */
+export type { DropKind };
 
 export const GLYPHS: Record<DropKind, string[]> = {
   /**
@@ -50,8 +53,8 @@ export const GLYPHS: Record<DropKind, string[]> = {
     "................",
     "................",
   ],
-  /** A note with a folded corner and its lines cut through. */
-  note: [
+  /** A tip: a note with a folded corner and its lines cut through. */
+  tip: [
     "................",
     "...#######......",
     "...########.....",
@@ -72,12 +75,12 @@ export const GLYPHS: Record<DropKind, string[]> = {
 };
 
 /**
- * Each kind's color on the map: stories purple, notes yellow, questions blue.
+ * Each kind's color on the map: stories purple, tips yellow, questions blue.
  * People keep the square markers, so a colored block never reads as a person.
  */
 export const DROP_COLOR: Record<DropKind, string> = {
   story: "var(--marker-magenta)",
-  note: "var(--marker-lime)",
+  tip: "var(--marker-lime)",
   question: "var(--marker-sky)",
 };
 
@@ -96,7 +99,7 @@ export const DROP_PAINT: Partial<Record<DropKind, { shade?: string; accent?: str
 export const DROP_NAME: Record<DropKind, [one: string, many: string]> = {
   story: ["story", "stories"],
   question: ["question", "questions"],
-  note: ["note", "notes"],
+  tip: ["tip", "tips"],
 };
 
 /** A cell that's part of the block, whatever its paint. */

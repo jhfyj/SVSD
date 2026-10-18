@@ -70,7 +70,7 @@ export function HardwareButton({
     >
       <span
         className={cn(
-          "flex items-center gap-3 transition-[transform,opacity] duration-75 ease-out",
+          "flex items-center gap-2 transition-[transform,opacity] duration-75 ease-out",
           down ? "translate-y-px" : "",
           // Held for a moment: dimmed. Latched on: full strength, so the lit icon glows (see .key-lit).
           held && !lit ? "opacity-60" : "opacity-100",

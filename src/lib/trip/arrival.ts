@@ -2,7 +2,7 @@ import { loadTrip, SAMPLE_TRIP, saveTrip } from "./trip";
 
 /*
   Where "you've arrived" comes from. For now it's the drive's time running out (useArrived), and
-  the dial kit can skip to the end. When Google Maps is wired in, replace `mockArrival` with one
+  the dial kit can skip to the end. To use the live map, replace `mockArrival` with one
   that watches your position against the destination and calls `announce(true)` when you get there.
 */
 

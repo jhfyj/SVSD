@@ -41,3 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 storybook-static/
+
+# MapLibre worker, copied from node_modules before dev and build (scripts/copy-map-worker.mjs)
+/public/map/maplibre/
