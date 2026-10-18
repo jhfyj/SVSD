@@ -50,7 +50,7 @@ function Note({ title, source, pros, cons }: { title: string; source: string; pr
   return (
     <aside className="w-[300px] space-y-3 text-sm normal-case text-foreground">
       <h2 className="text-base font-bold">{title}</h2>
-      <p className="text-foreground/60">
+      <p className="text-foreground/70">
         <span className="text-marker-sky">From the artifact: </span>
         {source}
       </p>
@@ -253,7 +253,7 @@ export const B_AtFirstArrival: StoryObj = {
           <TopBar />
           <div className="flex flex-1 flex-col px-[31px]">
             <p className="mt-6 text-center text-xl">Barstow → Memphis</p>
-            <p className="mt-2 text-center text-sm text-foreground/60">1,820 miles · 2 nights</p>
+            <p className="mt-2 text-center text-sm text-foreground/70">1,820 miles · 2 nights</p>
             <div className="mt-8 flex h-[200px] items-center justify-center border border-dashed border-border text-[10px] text-foreground/40">
               Your route, drawn
             </div>
@@ -278,7 +278,7 @@ export const B_AtFirstArrival: StoryObj = {
             {step === "verify" && (
               <div className="mt-10 flex flex-col gap-3 text-center">
                 <p className="text-base">Verify to speak</p>
-                <p className="text-[11px] normal-case text-foreground/60">
+                <p className="text-[11px] normal-case text-foreground/70">
                   Phone number and a one-time code, then confirm you&apos;re 18 or older. Your number is never shown.
                 </p>
                 <div className="mt-2 flex h-[47px] items-center rounded-token border border-foreground/60 px-3 text-left text-xl text-foreground/40">
@@ -292,7 +292,7 @@ export const B_AtFirstArrival: StoryObj = {
             {step === "listen" && (
               <div className="mt-10 flex flex-col gap-3 text-center">
                 <p className="text-base">Welcome to the road</p>
-                <p className="text-[11px] normal-case text-foreground/60">
+                <p className="text-[11px] normal-case text-foreground/70">
                   Stories will keep finding you. Flip the radio on any time you want company.
                 </p>
                 <button type="button" onClick={() => setStep("ask")} className="min-h-11 text-sm uppercase text-muted">
@@ -335,7 +335,7 @@ export const C_JourneyType: StoryObj = {
             Memphis, TN
           </div>
           <fieldset className="mx-[31px] mt-5">
-            <legend className="mb-2 text-[10px] text-foreground/60">What kind of drive? · optional</legend>
+            <legend className="mb-2 text-[10px] text-foreground/70">What kind of drive? · optional</legend>
             <div className="grid grid-cols-2 gap-1.5">
               {JOURNEY_TYPES.map((t) => {
                 const on = t === type;
@@ -355,7 +355,7 @@ export const C_JourneyType: StoryObj = {
                 );
               })}
             </div>
-            <p className="mt-2 text-[10px] normal-case text-foreground/60">
+            <p className="mt-2 text-[10px] normal-case text-foreground/70">
               {type ? "We'll try to pair you with someone on the same kind of drive." : "Skip it and you'll still hear stories."}
             </p>
           </fieldset>
@@ -404,11 +404,11 @@ export const D_MoodInProfile: StoryObj = {
         <Phone>
           <TopBar />
           <div className="flex flex-1 flex-col px-[31px]">
-            <p className="mt-6 text-sm text-foreground/60">Profile · Settings</p>
+            <p className="mt-6 text-sm text-foreground/70">Profile · Settings</p>
             <div className="mt-6 border-y border-border">
               <div className="py-4">
                 <p className="text-sm">What are you in the mood for?</p>
-                <p className="mt-1 text-[10px] normal-case text-foreground/60">Decides which stories play and who you&apos;re matched with</p>
+                <p className="mt-1 text-[10px] normal-case text-foreground/70">Decides which stories play and who you&apos;re matched with</p>
                 <div className="mt-3 grid grid-cols-3 gap-1.5">
                   {MOODS.map((m) => (
                     <button
@@ -428,15 +428,15 @@ export const D_MoodInProfile: StoryObj = {
               </div>
               <div className="flex items-center justify-between border-t border-border py-4 text-sm">
                 <span>Story pacing</span>
-                <span className="text-[11px] normal-case text-foreground/60">About 1 every 20–30 min</span>
+                <span className="text-[11px] normal-case text-foreground/70">About 1 every 20–30 min</span>
               </div>
               <div className="flex items-center justify-between border-t border-border py-4 text-sm">
                 <span>Handle</span>
-                <span className="text-[11px] normal-case text-foreground/60">@NightOwl</span>
+                <span className="text-[11px] normal-case text-foreground/70">@NightOwl</span>
               </div>
               <div className="flex items-center justify-between border-t border-border py-4 text-sm">
                 <span>Sound</span>
-                <span className="text-[11px] text-foreground/60">On</span>
+                <span className="text-[11px] text-foreground/70">On</span>
               </div>
             </div>
           </div>
@@ -618,7 +618,7 @@ export const E_IntentAtRadioSwitch: StoryObj = {
         {/* The listener's side of an Off my chest match: they're told first and can pass. */}
         {intent?.id === "chest" && phase !== "off" && phase !== "pick" && (
           <aside className="w-[221px] self-end">
-            <p className="mb-2 text-[10px] uppercase text-foreground/60">Meanwhile, @Hufflepuff23&apos;s radio</p>
+            <p className="mb-2 text-[10px] uppercase text-foreground/70">Meanwhile, @Hufflepuff23&apos;s radio</p>
             <LcdScreen className="h-[130px] w-[221px] flex-col gap-1.5 px-3 text-center font-mono text-[13px] leading-tight">
               <span>SOMEONE ON YOUR ROAD HAS SOMETHING ON THEIR MIND</span>
               <span className="text-[11px] normal-case">Up for listening? Connecting in 5 s</span>

@@ -11,7 +11,7 @@ export function StatCard({ value, label, className }: StatCardProps) {
   return (
     <div className={cn("flex items-end justify-between bg-surface p-3", className)}>
       <span className="text-2xl">{value}</span>
-      <span className="text-xs text-foreground/60">{label}</span>
+      <span className="text-xs text-foreground/70">{label}</span>
     </div>
   );
 }

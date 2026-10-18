@@ -84,7 +84,7 @@ export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: Ph
     >
       <h1 className="mt-[85px] w-[293px] text-center text-xl"><ScrambleText>SIGN IN OR SIGN UP WITH YOUR PHONE NUMBER.</ScrambleText></h1>
       <label className="mt-[28px] flex h-[49px] w-[325px] items-center gap-3 bg-surface px-2.5 text-xl focus-within:outline focus-within:outline-1 focus-within:outline-foreground/60">
-        <span className={digits ? "text-foreground" : "text-muted"}>{COUNTRY_CODE}</span>
+        <span className={digits ? "text-foreground" : "text-foreground/40"}>{COUNTRY_CODE}</span>
         <input
           type="tel"
           inputMode="tel"
@@ -96,7 +96,7 @@ export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: Ph
           placeholder="123-456-7890"
           value={formatPhone(digits)}
           onChange={(e) => onDigitsChange(phoneDigits(e.target.value))}
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted"
+          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground/40"
         />
       </label>
       {error && <p role="alert" className="mt-3 w-[325px] text-xs text-danger">{error}</p>}
@@ -187,7 +187,7 @@ export function CodeStep({
         />
       </div>
       {error && <p role="alert" className="mt-3 w-[345px] text-xs text-danger">{error}</p>}
-      <div className="mt-6 flex w-[345px] justify-between text-xs text-foreground/60">
+      <div className="mt-6 flex w-[345px] justify-between text-xs text-foreground/70">
         <button type="button" onClick={onChangeNumber} className="min-h-11 uppercase underline-offset-4 hover:underline">
           Change number
         </button>

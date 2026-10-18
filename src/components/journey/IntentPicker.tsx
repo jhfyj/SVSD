@@ -33,7 +33,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
                 key={item.id}
                 className={cn(
                   "flex min-h-12 cursor-pointer items-center gap-3 rounded-token border p-4 transition-colors",
-                  on ? "border-foreground text-foreground" : "border-border text-muted hover:text-label",
+                  on ? "border-foreground text-foreground" : "border-border text-foreground/70 hover:text-foreground",
                 )}
               >
                 <input
@@ -53,7 +53,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
                 />
                 <span className="flex flex-col gap-0.5 peer-focus-visible:underline">
                   <span className="text-xs tracking-wide">{item.label}</span>
-                  <span className="text-[10px] normal-case tracking-normal opacity-70">
+                  <span className={cn("text-[10px] normal-case tracking-normal", on && "text-foreground/70")}>
                     {item.line}
                     {"verified" in item && " · needs a verified phone, 18+"}
                   </span>

@@ -19,7 +19,7 @@ export function TextInput({ label, className, id, ...props }: TextInputProps) {
       <input
         id={inputId}
         data-cuelume-type=""
-        className="h-11 rounded-token border border-border-input bg-transparent px-3 text-sm uppercase text-foreground placeholder:text-foreground/50 focus:border-foreground focus:outline-none"
+        className="h-11 rounded-token border border-border-input bg-transparent px-3 text-sm uppercase text-foreground placeholder:text-foreground/40 focus:border-foreground focus:outline-none"
         {...props}
       />
     </div>

@@ -28,7 +28,7 @@ export const Colors: StoryObj = {
         <div key={token} className="flex flex-col gap-2">
           <div className="h-16 border border-border" style={{ background: `var(--${token})` }} />
           <span className="text-xs">{name}</span>
-          <code className="text-[10px] text-foreground/60">--{token}</code>
+          <code className="text-[10px] text-foreground/70">--{token}</code>
         </div>
       ))}
     </div>
@@ -57,7 +57,7 @@ export const Typography: StoryObj = {
       <span className="text-[11px] font-bold">Geist Mono Bold 11px · Label</span>
       <span className="font-display text-5xl">89.9</span>
       <span className="font-display text-2xl">Enter your destination</span>
-      <p className="max-w-md text-xs normal-case text-foreground/60">
+      <p className="max-w-md text-xs normal-case text-foreground/70">
         The display face is Digital-7 (personal-use license, not bundled). Until its file is added to public/fonts, it
         falls back to Geist Mono.
       </p>

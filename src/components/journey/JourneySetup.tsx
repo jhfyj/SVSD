@@ -136,7 +136,7 @@ export function JourneySetup() {
               type="button"
               aria-label="Clear destination"
               onClick={clear}
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/60 hover:text-foreground"
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/70 hover:text-foreground"
             >
               ×
             </button>
@@ -150,15 +150,15 @@ export function JourneySetup() {
                 <>
                   <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
                   {results.places[0].google && (
-                    <p className="px-3 py-1 text-right text-[10px] normal-case text-foreground/40">Results from Google Maps</p>
+                    <p className="px-3 py-1 text-right text-[10px] normal-case text-foreground/70">Results from Google Maps</p>
                   )}
                 </>
               ) : loading ? (
-                <p className="text-sm text-foreground/60">Searching…</p>
+                <p className="text-sm text-foreground/70">Searching…</p>
               ) : results.error ? (
                 <p className="text-sm text-danger">{results.error}</p>
               ) : (
-                <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
+                <p className="text-sm text-foreground/70">No places match “{query.trim()}”</p>
               )}
             </div>
           )}
@@ -175,20 +175,20 @@ export function JourneySetup() {
           />
         </div>
         {destination && here && !currentRoute && (
-          <p role="status" className="mt-4 text-center text-sm text-foreground/60">
+          <p role="status" className="mt-4 text-center text-sm text-foreground/70">
             Drawing your trail…
           </p>
         )}
         <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base">
           <div>
             <dt className="sr-only">Trip</dt>
-            <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+            <dd className="text-foreground/70">{formatDuration(minutes)} trip</dd>
           </div>
           <div className="text-right">
             <dt className="sr-only">Stories</dt>
             <dd className="text-marker-lime">{plural(shownStories, "story", "stories")}</dd>
           </div>
-          <div className="text-[10px] text-foreground/40">
+          <div className="text-[10px] text-foreground/70">
             <dt className="sr-only">Distance</dt>
             <dd>
               {currentRoute ? (currentRoute.distance / 1000).toFixed(1) : "0.0"} km{" "}
@@ -248,7 +248,7 @@ function LocationNote({
 }) {
   if (location.status === "ok") return null;
   return (
-    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/60">
+    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/70">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
         <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">

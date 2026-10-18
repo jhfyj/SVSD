@@ -277,7 +277,7 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
               <p className="text-[22px] leading-tight">
                 {arrived ? "Arrived" : formatDistance((next?.along ?? path.length) - along)}
               </p>
-              <p className="truncate text-[11px] text-foreground/60">
+              <p className="truncate text-[11px] text-foreground/70">
                 {arrived || !next ? journey?.destination.name ?? "Destination" : next.instruction ?? "Continue"}
               </p>
             </div>
@@ -289,7 +289,7 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
       )}
 
       {!progress && (
-        <p role="status" className="absolute inset-x-0 top-3 text-center text-[11px] uppercase text-foreground/60">
+        <p role="status" className="absolute inset-x-0 top-3 text-center text-[11px] uppercase text-foreground/70">
           {live.status === "error" && !path ? live.message : "Finding you…"}
         </p>
       )}
@@ -319,7 +319,7 @@ function Eta({ remaining, length, duration, now }: { remaining: number; length: 
   const seconds = length ? (duration * remaining) / length : 0;
   const eta = new Date(now + seconds * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   return (
-    <p className="flex justify-between border-t border-foreground/15 px-3 py-1.5 text-[11px] text-foreground/60">
+    <p className="flex justify-between border-t border-foreground/15 px-3 py-1.5 text-[11px] text-foreground/70">
       <span>{Math.max(1, Math.round(seconds / 60))} min · {formatDistance(remaining)}</span>
       <span>ETA {eta}</span>
     </p>

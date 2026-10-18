@@ -42,7 +42,7 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-base leading-5">{item.label}</span>
-          <span className="text-xs text-foreground/60">{item.why}</span>
+          <span className="text-xs text-foreground/70">{item.why}</span>
         </div>
         {state === "prompt" && (
           <button
@@ -67,14 +67,14 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
           </span>
         )}
         {state === "unsupported" && (
-          <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground/50">
+          <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground/70">
             <span aria-hidden className="size-2 rounded-full border border-current" />
             N/A
           </span>
         )}
-        {state === "checking" && <span className="shrink-0 text-xs text-foreground/50">…</span>}
+        {state === "checking" && <span className="shrink-0 text-xs text-foreground/70">…</span>}
       </div>
-      {hint && <p className="text-xs text-foreground/60">{hint}</p>}
+      {hint && <p className="text-xs text-foreground/70">{hint}</p>}
     </li>
   );
 }
@@ -106,7 +106,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         )}
         <h1 className="text-xl">{firstTime ? "BEFORE YOU GO" : "SETTINGS"}</h1>
       </header>
-      <p className="mx-auto mt-3 w-[260px] text-center text-xs leading-relaxed text-foreground/60">
+      <p className="mx-auto mt-3 w-[260px] text-center text-xs leading-relaxed text-foreground/70">
         Turn on your microphone, notifications and location so the radio can work on the road.
       </p>
       <ul className="mx-11 mt-[29px] flex flex-col gap-[17px]">
@@ -114,7 +114,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
           <AccessRow key={kind} kind={kind} state={states[kind]} onAllow={() => onAllow?.(kind)} />
         ))}
       </ul>
-      <p className="mx-11 mt-4 text-xs text-foreground/50">You can change these anytime in your phone&apos;s Settings.</p>
+      <p className="mx-11 mt-4 text-xs text-foreground/70">You can change these anytime in your phone&apos;s Settings.</p>
       <div className="mt-auto flex flex-col items-center gap-2 pb-[33px] pt-8">
         <button
           type="button"
@@ -125,7 +125,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         >
           {firstTime ? (allOn ? "LET'S GO" : "CONTINUE") : "DONE"}
         </button>
-        {firstTime && !allOn && <span className="text-xs text-foreground/50">You can skip and turn them on later.</span>}
+        {firstTime && !allOn && <span className="text-xs text-foreground/70">You can skip and turn them on later.</span>}
       </div>
     </div>
   );

@@ -83,7 +83,7 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
     >
       <div role="status" className="relative flex flex-1 flex-col items-center justify-center gap-10 pb-24">
         <p className="flex items-baseline gap-2 font-display">
-          <span className="text-xl text-foreground/50">FM</span>
+          <span className="text-xl text-foreground/70">FM</span>
           <span className="text-5xl tabular-nums">{frequency.toFixed(1)}</span>
         </p>
         <Dial frequency={frequency} />

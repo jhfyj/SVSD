@@ -65,7 +65,7 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
       <div tabIndex={0} aria-label="Journey history" className="h-full overflow-y-auto px-[19px] pb-[84px] pt-4 focus-visible:outline-2 focus-visible:outline-foreground">
         {groups.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-4 pb-8 text-center">
-            <p className="text-sm text-foreground/60">NO JOURNEYS YET</p>
+            <p className="text-sm text-foreground/70">NO JOURNEYS YET</p>
             <Link
               href="/intents"
               className="inline-flex min-h-11 items-center justify-center gap-2 bg-foreground px-5 text-sm text-accent-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
@@ -82,8 +82,8 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
               <ul className="flex flex-col divide-y divide-foreground/15">
                 {g.journeys.map((j) => (
                   <li key={j.id} className="flex items-end justify-between py-3 first:pt-0 last:pb-0">
-                    <time dateTime={j.startedAt.toISOString()} className="text-sm leading-[18px] text-foreground/85">{clockTime(j.startedAt)}</time>
-                    <span className="text-[10px] text-foreground/40">{formatDuration(j.minutes).toUpperCase()}</span>
+                    <time dateTime={j.startedAt.toISOString()} className="text-sm leading-[18px] text-foreground">{clockTime(j.startedAt)}</time>
+                    <span className="text-[10px] text-foreground/70">{formatDuration(j.minutes).toUpperCase()}</span>
                   </li>
                 ))}
               </ul>
@@ -131,17 +131,17 @@ export function ProfileView({
             <CharacterSprite character={character} pixel={4.4} className="opacity-80" />
           </button>
           <h1 className="mt-[18px] text-xl"><ScrambleText>{handle}</ScrambleText></h1>
-          <p className="mt-1 text-base text-foreground/50">Joined {monthYear(joinedAt)}</p>
+          <p className="mt-1 text-base text-foreground/70">Joined {monthYear(joinedAt)}</p>
         </div>
 
         <StatCard className="mt-[29px]" value={totalCalls} label="total calls" />
 
-        <h2 className="mt-[37px] text-sm text-foreground/60">ACTIVITIES</h2>
+        <h2 className="mt-[37px] text-sm text-foreground/70">ACTIVITIES</h2>
         <div className="mt-[7px] flex min-h-[218px] justify-center border border-border pb-[31px] pt-[39px]">
           <CalendarDots days={days} startOffset={first.getDay()} active={activeDays} label={monthYear(first)} />
         </div>
 
-        <h2 className="mt-[14px] text-sm text-foreground/60">HISTORY</h2>
+        <h2 className="mt-[14px] text-sm text-foreground/70">HISTORY</h2>
         <div className="mt-[7px]">
           <HistoryList history={history} now={now} />
         </div>
@@ -153,7 +153,7 @@ export function ProfileView({
         </div>
 
         <div className="mt-[19px] flex flex-col items-start gap-2 text-xs">
-          <button type="button" onClick={onSignOut} className="text-foreground/80 underline-offset-4 hover:underline">
+          <button type="button" onClick={onSignOut} className="text-foreground/70 underline-offset-4 hover:underline">
             SIGN OUT
           </button>
           <button

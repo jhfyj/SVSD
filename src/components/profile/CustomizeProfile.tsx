@@ -50,7 +50,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
           <CharacterSprite key={picked} character={picked} pixel={4.4} className="opacity-80" />
         </div>
       </div>
-      <p aria-live="polite" className="mt-3 text-center text-base text-foreground/60">
+      <p aria-live="polite" className="mt-3 text-center text-base text-foreground/70">
         {getCharacter(picked).name}
       </p>
 

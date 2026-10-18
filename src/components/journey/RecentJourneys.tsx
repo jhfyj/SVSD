@@ -39,7 +39,7 @@ export function RecentJourneys({ journeys: given, limit = 3, className }: Recent
 
   return (
     <section aria-labelledby="recent-journeys" className={cn("w-full px-[44px] uppercase", className)}>
-      <h2 id="recent-journeys" className="text-sm text-muted">
+      <h2 id="recent-journeys" className="text-sm text-foreground/70">
         Recent journeys
       </h2>
       <ul className="mt-3 divide-y divide-border border-y border-border">
@@ -47,9 +47,9 @@ export function RecentJourneys({ journeys: given, limit = 3, className }: Recent
           <li key={past.id} className="py-3">
             <div className="flex items-baseline justify-between gap-3">
               <span className="truncate text-base">{past.trip.to || past.journey.destination.name}</span>
-              <span className="shrink-0 text-[10px] text-foreground/60">{day.format(past.trip.startedAt)}</span>
+              <span className="shrink-0 text-[10px] text-foreground/70">{day.format(past.trip.startedAt)}</span>
             </div>
-            <p className="mt-1 text-[10px] text-foreground/60">
+            <p className="mt-1 text-[10px] text-foreground/70">
               {past.trip.miles.toLocaleString()} mi · {formatDuration(past.trip.minutes)}
             </p>
             <div className="mt-3 flex gap-2">

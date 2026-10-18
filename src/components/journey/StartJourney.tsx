@@ -21,7 +21,7 @@ export function StartJourney({ href = "/intents", journeys }: { href?: string; j
         <RecentJourneys journeys={journeys} />
       </div>
       {/* The way into /profile now that the top bar is only time and weather. */}
-      <Link href="/profile" className="self-center pb-10 text-sm uppercase text-muted hover:text-foreground">
+      <Link href="/profile" className="self-center pb-10 text-sm uppercase text-foreground/70 hover:text-foreground">
         Profile
       </Link>
     </div>

@@ -51,7 +51,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
           <h1 className="mt-6 text-center text-xl">
             {trip.from || "…"} → {trip.to}
           </h1>
-          <p className="mt-2 text-center text-sm text-foreground/60">
+          <p className="mt-2 text-center text-sm text-foreground/70">
             {trip.miles.toLocaleString()} miles · {formatDuration(trip.minutes)}
           </p>
 
@@ -78,7 +78,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
             )}
           </div>
 
-          <h2 className="mt-10 text-sm text-foreground/60">Questions on the way</h2>
+          <h2 className="mt-10 text-sm text-foreground/70">Questions on the way</h2>
           {trip.questions.length ? (
             <ol className="mt-3 divide-y divide-border border-y border-border">
               {trip.questions.map((q, i) => (
@@ -91,7 +91,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm normal-case">{q.text}</p>
-                    <p className="mt-1 text-[10px] text-foreground/60">
+                    <p className="mt-1 text-[10px] text-foreground/70">
                       {q.from} · near {q.near} · <span className={cn(!q.answered && "text-foreground/40")}>{q.answered ? "Answered" : "Not answered"}</span>
                     </p>
                   </div>
@@ -99,24 +99,24 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
               ))}
             </ol>
           ) : (
-            <p className="mt-3 text-sm text-foreground/60">No questions came up.</p>
+            <p className="mt-3 text-sm text-foreground/70">No questions came up.</p>
           )}
 
-          <h2 className="mt-8 text-sm text-foreground/60">Calls</h2>
+          <h2 className="mt-8 text-sm text-foreground/70">Calls</h2>
           {trip.calls.length ? (
             <ul className="mt-3 divide-y divide-border border-y border-border">
               {trip.calls.map((call) => (
                 <li key={call.id} className="flex items-center gap-3 py-3">
                   <span aria-hidden className="size-3 shrink-0 rounded-full bg-marker-sky" />
                   <span className="flex-1 text-sm normal-case">{call.with}</span>
-                  <span className="text-[10px] text-foreground/60">
+                  <span className="text-[10px] text-foreground/70">
                     {sharedMiles(trip, call)} mi · {formatDuration(call.minutes)}
                   </span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-foreground/60">You didn&apos;t take any calls.</p>
+            <p className="mt-3 text-sm text-foreground/70">You didn&apos;t take any calls.</p>
           )}
         </section>
       )}
