@@ -1,0 +1,21 @@
+import Link from "next/link";
+import { TopBar } from "./TopBar";
+
+/** The first screen (iPhone 16 - 55): one big square to start setting up a trip. */
+export function StartJourney({ href = "/journey" }: { href?: string }) {
+  return (
+    <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+      <TopBar />
+      <div className="flex flex-1 flex-col items-center pt-[220px]">
+        <Link href={href} className="group flex flex-col items-center gap-[22px] uppercase">
+          <span className="text-2xl">Start your journey</span>
+          <span className="flex size-[247px] items-center justify-center border border-foreground/80 transition-colors group-hover:bg-surface group-focus-visible:bg-surface">
+            <svg aria-hidden viewBox="0 0 64 64" className="size-16 stroke-foreground" strokeWidth={3}>
+              <path d="M32 16v32M16 32h32" />
+            </svg>
+          </span>
+        </Link>
+      </div>
+    </div>
+  );
+}

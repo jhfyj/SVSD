@@ -1,46 +1,93 @@
 @import "tailwindcss";
 
 /*
-  Design tokens. Swap these for a brand's DESIGN.md values
-  (see design-to-code/brands/<name>/DESIGN.md) instead of hardcoding colors in components.
+  Design tokens from the SVSD Figma file (Section 1, node 123:130).
+  See /mnt/project-files/design-system/svsd-figma-design-system.md for where each value comes from.
+  The design is dark only. Use these tokens instead of hardcoding colors in components.
 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: #6b6b6b;
-  --surface: #f5f5f5;
-  --border: #e5e5e5;
-  --accent: #2f5bea;
-  --accent-foreground: #ffffff;
-  --radius: 0.5rem;
+  --background: #1e1e1e;
+  --foreground: #ffffff;
+  --muted: #696969;
+  --label: #bababa;
+  --surface: #2b2b2b;
+  --surface-raised: #404040;
+  --border: #6c6c6c;
+  --border-input: rgb(255 255 255 / 0.2);
+  --accent: #dedede;
+  --accent-foreground: #000000;
+  --danger: #ff5151;
+  --lcd: #97bd93;
+  --lcd-ink: #1e2a1d;
+  --led: #6dff5c;
+  --marker-lime: #d4ec21;
+  --marker-sky: #7abdf0;
+  --marker-magenta: #ec6bf2;
+  --marker-orange: #e3743d;
+  --marker-border: #393939;
+  --radius: 0;
+
+  /* Hardware look from the radio screens */
+  --panel-gradient: linear-gradient(180deg, #313131 0%, #1e1d1d 100%);
+  --button-gradient: linear-gradient(180deg, #404040 0%, #2b2b2b 100%);
+  --button-highlight: inset 1px 2px 2px rgb(255 255 255 / 0.15);
+  --end-call-gradient: linear-gradient(180deg, #da4343 0%, #8e1412 100%);
+  --lcd-inset: inset 4px 4px 4px rgb(0 0 0 / 0.25);
+  --panel-highlight: inset 1px 2px 2px rgb(255 255 255 / 0.2);
+  /* Pressed hardware: the top light is gone and the face sinks into a shadow. */
+  --button-gradient-pressed: linear-gradient(180deg, #232323 0%, #353535 100%);
+  --button-pressed-shadow: inset 0 3px 6px rgb(0 0 0 / 0.7), inset 0 -1px 1px rgb(255 255 255 / 0.06);
+  --end-call-gradient-pressed: linear-gradient(180deg, #7a1110 0%, #b83232 100%);
+  --power: #ff3535;
+  /* Fine grain on the hardware panels, like the textured plastic in the Figma file. */
+  --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #9a9a9a;
-    --surface: #161616;
-    --border: #262626;
-    --accent: #6d8bff;
-    --accent-foreground: #0a0a0a;
-  }
+/* DSEG14 (OFL) stands in for Digital-7, which is personal-use only. */
+@font-face {
+  font-family: "DSEG14 Classic Mini";
+  src: url("/fonts/dseg14/DSEG14ClassicMini-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-label: var(--label);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-border: var(--border);
+  --color-border-input: var(--border-input);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-lcd: var(--lcd);
+  --color-lcd-ink: var(--lcd-ink);
+  --color-led: var(--led);
+  --color-marker-lime: var(--marker-lime);
+  --color-marker-sky: var(--marker-sky);
+  --color-marker-magenta: var(--marker-magenta);
+  --color-marker-orange: var(--marker-orange);
+  --color-marker-border: var(--marker-border);
+  --color-power: var(--power);
   --radius-token: var(--radius);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Digital-7 (the Figma face) is personal-use only, so DSEG14 is bundled as the fallback. */
+  --font-display: "Digital-7", "DSEG14 Classic Mini", var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* The route trail lights up one dot at a time. */
+@keyframes trail-in {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
 }
