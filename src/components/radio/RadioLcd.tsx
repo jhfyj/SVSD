@@ -2,8 +2,12 @@ import type { CharacterId } from "@/lib/profile/characters";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "../profile/CharacterSprite";
 
-/** Where a call is: off, finding someone, talking, or dropped. `thanks` is the switch flipped on after you've arrived: no call, just a thank-you. */
-export type CallState = "off" | "connecting" | "connected" | "lost" | "thanks";
+/**
+ * Where a call is: off, finding someone, talking, or dropped. `thanks` is the switch flipped on
+ * after you've arrived: no call, just a thank-you. `timeout` is a break after hanging up on too
+ * many people in a row: nobody gets connected until it runs out.
+ */
+export type CallState = "off" | "connecting" | "connected" | "lost" | "thanks" | "timeout";
 
 export type RadioLcdProps = {
   state: CallState;
@@ -17,11 +21,22 @@ export type RadioLcdProps = {
   speaking?: boolean;
   /** You're taking a break from the call. */
   away?: boolean;
+  /** During a hang-up timeout: time left, like "4:59". */
+  countdown?: string;
 };
 
 /** What the small LCD shows for each radio state. Blank while the radio is off. */
-export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away }: RadioLcdProps) {
+export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away, countdown }: RadioLcdProps) {
   if (state === "off") return null;
+  if (state === "timeout") {
+    return (
+      <LcdText>
+        <span className="block">TOO MANY HANG-UPS</span>
+        <span className="mt-1 block text-[11px] normal-case">Back on air in</span>
+        <span className="block text-[20px]">{countdown}</span>
+      </LcdText>
+    );
+  }
   if (state === "connecting") {
     return (
       <LcdText>

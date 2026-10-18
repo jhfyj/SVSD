@@ -18,6 +18,7 @@ import { RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, useRadioSettings } from "@/lib/radio-settings";
+import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
 import { useTilt } from "./useTilt";
@@ -82,6 +83,8 @@ export type RadioScreenProps = {
    */
   arrived?: boolean;
   onEndTrip?: () => void;
+  /** How many hang-ups, how fast, set off the timeout and how long it lasts (short ones for Storybook). */
+  hangUpRule?: HangUpRule;
   className?: string;
 };
 
@@ -105,6 +108,7 @@ export function RadioScreen({
   onPower,
   arrived: forceArrived,
   onEndTrip,
+  hangUpRule = HANG_UP_RULE,
   className,
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
@@ -125,20 +129,34 @@ export function RadioScreen({
   // End call hangs up and goes straight back to Connecting to find you a new person.
   // The key stays pressed in until that next person connects (or the radio stops), then pops back up.
   const [hangingUp, setHangingUp] = useState(false);
-  const endCall = () => {
-    setHangingUp(true);
+  // Hang up on too many people in a row and the radio takes a break: nobody connects until it ends.
+  const [timeoutUntil, setTimeoutUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(0);
+  const hangUp = (counts: boolean) => {
     setGreeting(false);
     setOnBreak(false);
     setSettingsOpen(false);
     setCalls((n) => n + 1);
-    setState("connecting");
     onEndCall?.();
+    const until = counts ? recordHangUp(hangUpRule) : null;
+    if (until) {
+      setTimeoutUntil(until);
+      setNow(0); // The countdown's first tick fills this in.
+      setHangingUp(false);
+      setState("timeout");
+      cue("error", { theme: "mech" });
+      return;
+    }
+    setHangingUp(true);
+    setState("connecting");
   };
+  const endCall = () => hangUp(true);
   // Report: they're blocked from matching you again, then the radio hangs up and finds someone new.
+  // Reporting never counts toward the hang-up timeout.
   const report = (reason: ReportReason) => {
     blockHandle(caller.handle);
     void reason; // Sent with the report once there's a backend.
-    endCall();
+    hangUp(false);
   };
   const [micMuted, setMicMuted] = useState(false);
   // Speakerphone, not mute: off just means the call isn't on speaker.
@@ -186,6 +204,25 @@ export function RadioScreen({
     }, connectMs);
     return () => clearTimeout(t);
   }, [state, outcome, connectMs]);
+
+  // Timeout: tick the countdown each second; when it runs out, the radio goes back to finding someone.
+  useEffect(() => {
+    if (state !== "timeout" || !timeoutUntil) return;
+    const tick = () => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= timeoutUntil) {
+        setTimeoutUntil(null);
+        setState("connecting");
+      }
+    };
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 1000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [state, timeoutUntil]);
 
   // Then their audio starts.
   useEffect(() => {
@@ -277,7 +314,13 @@ export function RadioScreen({
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
           onChange={(on) => {
             // After you've arrived, switching on doesn't connect anyone; the LCD just thanks you.
-            setState(on ? (arrived ? "thanks" : "connecting") : "off");
+            // Still in a hang-up timeout (even after a reload or switching off and on): wait it out.
+            const until = on && !arrived ? timedOutUntil() : null;
+            if (until) {
+              setTimeoutUntil(until);
+              setNow(0); // The countdown's first tick fills this in.
+            }
+            setState(on ? (arrived ? "thanks" : until ? "timeout" : "connecting") : "off");
             setGreeting(false);
             setHangingUp(false);
             if (on) setMusicOn(false);
@@ -292,7 +335,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} />
+          <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -321,7 +364,8 @@ export function RadioScreen({
                 sunk={hangingUp && state === "connecting"}
                 onClick={hangingUp && state === "connecting" ? undefined : state === "connecting" ? () => setState("off") : endCall}
                 aria-disabled={hangingUp && state === "connecting"}
-                disabled={state === "lost"}
+                // Nobody to hang up on during a timeout; the radio switch still turns it off.
+                disabled={state === "lost" || state === "timeout"}
                 aria-label={state === "connecting" ? "Stop connecting" : "End call"}
                 data-cuelume-tap="close"
                 data-cuelume-emphasis="strong"
