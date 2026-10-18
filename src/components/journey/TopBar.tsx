@@ -15,7 +15,7 @@ export function TopBar({ showAccount = true }: { showAccount?: boolean }) {
         <time className="min-w-20 font-display text-[20px] leading-none">{time}</time>
       </div>
       {showAccount && (
-        <Link href="/profile" aria-label="Profile" className="flex size-11 items-center justify-center">
+        <Link href="/profile" aria-label="Profile" data-cuelume-navigate="" className="flex size-11 items-center justify-center">
           <AccountIcon className="size-7.5" />
         </Link>
       )}

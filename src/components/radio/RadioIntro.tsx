@@ -1,7 +1,8 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 
 /*
@@ -36,6 +37,7 @@ export const INTRO_MS = SWEEP_AT + SWEEP_MS;
 
 export function RadioIntro({ children, className }: { children: ReactNode; className?: string }) {
   const [done, setDone] = useState(false);
+  useIntroSounds();
   const vars = { "--sweep-at": `${SWEEP_AT}ms`, "--sweep-ms": `${SWEEP_MS}ms` } as CSSProperties;
 
   return (
@@ -59,6 +61,27 @@ export function RadioIntro({ children, className }: { children: ReactNode; class
       {!done && <div aria-hidden className="radio-intro-scan pointer-events-none absolute inset-x-0 top-0 h-px bg-marker-lime" />}
     </div>
   );
+}
+
+/**
+ * The load-in, heard: a faint detent as each frame draws, like tuning across stations, a
+ * whoosh as the scan line sweeps, and a warm note when the radio is in. Silent if the browser
+ * hasn't had a tap yet (a cold load straight onto /radio).
+ */
+function useIntroSounds() {
+  useEffect(() => {
+    const at = (ms: number, play: () => void) => setTimeout(play, ms);
+    const timers = [
+      ...PARTS.map((_, i) =>
+        at(FRAME_START + i * FRAME_GAP, () =>
+          cue("select", { emphasis: "subtle", volume: 0.35, theme: "mech", direction: "forward" }),
+        ),
+      ),
+      at(SWEEP_AT, () => cue("navigate", { emphasis: "subtle" })),
+      at(INTRO_MS, () => cue("ready")),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
 }
 
 /** One part's blueprint: four lines drawn in turn, hatching, and a name tag. */

@@ -28,6 +28,7 @@ export function Button({
   return (
     <button
       type={type}
+      data-cuelume-tap=""
       className={cn(
         "inline-flex min-h-11 items-center justify-center gap-2 rounded-token px-4 py-3 text-sm uppercase transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:pointer-events-none disabled:opacity-40",

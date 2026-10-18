@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SoundProvider } from "@/components/sound";
 import { ThemeClock } from "@/components/theme/ThemeClock";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {children}
         <ThemeClock />
+        <SoundProvider />
       </body>
     </html>
   );
