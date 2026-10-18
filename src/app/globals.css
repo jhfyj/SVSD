@@ -18,7 +18,8 @@
   --surface: #2b2b2b;
   --surface-raised: #404040;
   --border: #6c6c6c;
-  --border-input: rgb(255 255 255 / 0.2);
+  /* Anything you type into gets the stronger edge (3:1); border is for dividers. */
+  --border-input: #6c6c6c;
   --accent: #dedede;
   --accent-foreground: #000000;
   --accent-hover: #ffffff;
@@ -96,22 +97,22 @@
   --background: #f5f2ec;
   --foreground: #1d1c1a;
   --muted: #6f6b64;
-  --label: #7a746b;
+  --label: #645f58;
   --surface: #e9e5dd;
   --surface-raised: #fdfcf9;
   --border: #c7c1b7;
-  --border-input: rgb(29 28 26 / 0.18);
+  --border-input: #8f8b84;
   --accent: #2a2926;
   --accent-foreground: #f8f6f1;
   --accent-hover: #000000;
-  --danger: #d23a3a;
+  --danger: #ca3838;
   --lcd: #b5b3a8;
   --lcd-ink: #2b2a27;
   /* Markers darkened and saturated so lime and magenta text and dots read on cream (≥4.5:1). */
   --marker-lime: #5f7300;
   --marker-sky: #1f6fb0;
   --marker-magenta: #b01ea8;
-  --marker-orange: #b8501a;
+  --marker-orange: #b64f1a;
   --character: rgb(29 28 26 / 0.22);
   --character-lit: #2f8f3a;
   /* Day: a deeper green with a softer glow, so the lit icon reads on the cream keys. */

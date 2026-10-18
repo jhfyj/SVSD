@@ -65,7 +65,7 @@ Recipes             components built only from semantic tokens: HardwareButton, 
 | `foreground` | `#ffffff` | `#1d1c1a` | Text, selected outlines |
 | `accent` / `accent-foreground` | `#dedede` / `#000000` | `#2a2926` / `#f8f6f1` | Primary button |
 | `accent-hover` | `#ffffff` | `#000000` | Primary button hover |
-| `label` | `#bababa` | `#7a746b` | Engraved hardware labels |
+| `label` | `#bababa` | `#645f58` | Engraved hardware labels |
 | `muted` | `#696969` | `#6f6b64` | Blueprint lines, Dial Kit chrome. **Not for text on Screens.** |
 | `land-dot` | white 25% | ink 40% | Dots of the earth on Destination |
 
@@ -93,11 +93,11 @@ Non-text shades: `foreground/20` for unlit dots and empty tracks, `foreground/15
 |---|---|---|---|
 | `story` (= `marker-lime`) | `#d4ec21` | `#5f7300` | **Stories**, and what you're tuned into: story dots, “24 STORIES”, the tuner needle, focus on readouts |
 | `question` (= `marker-magenta`) | `#ec6bf2` | `#b01ea8` | **Questions**: anything asking you to reply |
-| `marker-sky`, `marker-orange` | `#7abdf0`, `#e3743d` | `#1f6fb0`, `#b8501a` | Other **people** on the map only |
+| `marker-sky`, `marker-orange` | `#7abdf0`, `#e3743d` | `#1f6fb0`, `#b64f1a` | Other **people** on the map only |
 | `key-lit` (+ `key-lit-glow`) | `#6dff5c` | `#1f8a2c` | **On.** A latched console key's icon lights green (mic on, speaker on, the picked intent) |
 | `led` / `led-amber` / LED red | `#6dff5c` / `#ffb020` / `#ff3535` | same | **Connection:** green on a call, amber connecting, red lost, dark when off |
 | `character` / `character-lit` | white 20% / `#8dff7e` | ink 22% / `#2f8f3a` | Pixel characters: unlit, and the picked one lit |
-| `danger` | `#ff5151` | `#d23a3a` | Destructive actions and errors |
+| `danger` | `#ff5151` | `#ca3838` | Destructive actions and errors |
 | `power` | `#ff3535` | same | The lit power key (an emitter, not a printed color) |
 | `lcd` / `lcd-ink` | `#97bd93` / `#1e2a1d` | `#b5b3a8` / `#2b2a27` | The radio LCD: **green at night, gray by day** |
 | `lcd-green` / `lcd-green-ink` | `#97bd93` / `#1e2a1d` | same | The always-green screen behind the Customize profile preview |
@@ -145,9 +145,9 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 
 ### 3.7 Contrast fixes for day
 
-The day theme is new, and a few of its values fall below the minimums. Recommended values:
+The day theme is new, and a few of its values fell below the minimums. They now use these values (`globals.css`):
 
-| Token (day) | Now | Contrast now | Recommended | Contrast |
+| Token (day) | Was | Contrast was | Now | Contrast |
 |---|---|---|---|---|
 | Input edge (`--border-input`) | ink 18% | ~1.6:1 | `#8f8b84` | 3.0:1 (input edges need 3:1) |
 | `label` (engraved on the cream panel) | `#7a746b` at 80% | 2.5:1 | `#645f58` | 4.6:1 |
@@ -548,7 +548,6 @@ Two families, never mixed in one spot:
 Code that predates or differs from this spec. Fix it when you're next in the file, or in one cleanup pass.
 
 - **Icons:** Carbon in `PowerButton`, `RadioScreen`, `RadioConsole`, `RadioSettings`, `SignIn` (arrows), the Profile menu (Settings, IncidentReporter) and the volume toggle; custom `ui/icons.tsx` → Phosphor ([§10](#10-iconography)). Then remove `@carbon/icons-react`.
-- **Day contrast:** input edge, `label`, `danger`, `marker-orange` ([§3.7](#37-contrast-fixes-for-day)). Night `--border-input` too.
 - **Text tiers:** `text-foreground/60` ×29 → `/70`; `/50`, `/80`, `/85`, `/90` → tiers.
 - **Type on Screens:** `text-[10px]` → `text-xs`; `text-[11px]` on Screens → `text-xs`/`text-sm`; `tracking-wide`/`tracking-wider` → none.
 - **Type on hardware:** `text-[9px]` on intent and report keys → `key-sm` (11px, wrap to 2 lines); `text-[12px]` keys → `key` (13) or `key-sm`; LCD `text-[12px]` peer caption → `lcd-sm`; `NavMap` next turn `text-[22px]` → 20.
@@ -556,3 +555,4 @@ Code that predates or differs from this spec. Fix it when you're next in the fil
 - **Layout:** `px-[31px]`, `mx-[31px]`, `px-[33px]`, `px-[19px]` → the 44px gutter; `h-[47px]` → `h-12`; bottom spacers (`mb-[61px]`, `pb-[77px]`) → `pb-14`.
 - **Motion:** the ⚠️ rows in [§9.8](#98-current-motion-inventory).
 - **Misc:** `HardwareButton` disabled `opacity-50` → 40; `CalendarDots` active dot → `bg-foreground`; Geist Sans loaded but unused.
+- **Input edge on the phone field:** `SignIn`'s phone number is a filled `bg-surface` box with no edge (about 1.1:1 against the cream background). Give it the input edge ([§3.7](#37-contrast-fixes-for-day)) like the other fields, or record the filled field as a recipe.

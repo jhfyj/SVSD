@@ -129,7 +129,7 @@ export function JourneySetup() {
               setDestination(null);
             }}
             placeholder={here ? "Search an address or coordinates" : ""}
-            className="h-[47px] w-full truncate rounded-token border border-foreground/60 bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="h-[47px] w-full truncate rounded-token border border-border-input bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button

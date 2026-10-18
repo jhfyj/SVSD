@@ -163,7 +163,7 @@ export function CodeStep({
             aria-hidden
             className={cn(
               "flex h-[69px] flex-1 items-center justify-center border bg-surface text-2xl",
-              error ? "border-danger" : focused && i === code.length ? "border-foreground" : "border-border",
+              error ? "border-danger" : focused && i === code.length ? "border-foreground" : "border-border-input",
             )}
           >
             {code[i] ?? (focused && i === code.length && <span className="caret-blink h-[27px] w-px bg-foreground" />)}
