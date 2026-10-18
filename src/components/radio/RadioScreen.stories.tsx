@@ -65,3 +65,6 @@ export const LoadIn: Story = {
     </RadioIntro>
   ),
 };
+
+/** At the destination: the button row turns into End trip, which opens the trip recap. */
+export const Arrived: Story = { args: { arrived: true, onEndTrip: fn() } };

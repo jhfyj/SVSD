@@ -1,13 +1,14 @@
 "use client";
 
 import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
-import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
+import { FlagCheckered, PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
 import { useSession } from "@/lib/auth/session";
 import { useCharacter } from "@/lib/profile/avatar";
+import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
 import { CharacterSprite } from "../profile/CharacterSprite";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
@@ -40,6 +41,9 @@ export type RadioScreenProps = {
   travellers?: Traveller[];
   onEndCall?: () => void;
   onPower?: () => void;
+  /** Arrive at the destination now (demos, Storybook). Otherwise you arrive once the drive's time is up. */
+  arrived?: boolean;
+  onEndTrip?: () => void;
   className?: string;
 };
 
@@ -55,6 +59,8 @@ export function RadioScreen({
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
   onPower,
+  arrived: forceArrived = false,
+  onEndTrip,
   className,
 }: RadioScreenProps) {
   const [radioOn, setRadioOn] = useState(defaultOn);
@@ -67,6 +73,8 @@ export function RadioScreen({
   const session = useSession();
   const character = useCharacter(session?.phone);
   useTilt(root);
+  // At the destination the button row becomes a single End trip.
+  const arrived = useArrived(forceArrived);
 
   // Music only plays while the radio is off; turning the radio on or leaving the screen stops it.
   const playing = musicOn && !radioOn;
@@ -158,7 +166,19 @@ export function RadioScreen({
           <Glare />
         </div>
 
-        <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
+        {arrived && (
+          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+            <HardwareButton
+              className="flex-1"
+              onClick={onEndTrip ?? (() => router.push("/trip"))}
+              data-cuelume-emphasis="strong"
+            >
+              <FlagCheckered size={24} className="opacity-80" aria-hidden />
+              <span className="text-base font-bold opacity-80">END TRIP</span>
+            </HardwareButton>
+          </div>
+        )}
+        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", arrived && "hidden")}>
           {radioOn ? (
             <>
               <HardwareButton

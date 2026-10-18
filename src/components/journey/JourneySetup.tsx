@@ -10,6 +10,7 @@ import { cn } from "../ui/cn";
 import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
 import { useCountUp } from "./useCountUp";
+import { saveTrip } from "@/lib/trip/trip";
 import { useCurrentLocation } from "./useCurrentLocation";
 
 /** Destination (iPhone 16 - 50 to 58): pick where you're going; the drive sets the trip's length. */
@@ -168,6 +169,19 @@ export function JourneySetup() {
         <Link
           href="/journey/starting"
           data-cuelume-navigate=""
+          // Remember the drive for the radio (arrival) and the trip recap.
+          onClick={() =>
+            destination &&
+            currentRoute &&
+            saveTrip({
+              from: "",
+              to: destination.detail.split(",")[0] || destination.name,
+              route: currentRoute.points,
+              minutes,
+              miles: Math.max(1, Math.round(currentRoute.distance / 1609.34)),
+              startedAt: Date.now(),
+            })
+          }
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(
