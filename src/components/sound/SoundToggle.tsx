@@ -12,7 +12,6 @@ export function SoundToggle() {
     <MenuRow
       icon={on ? <VolumeUp size={16} /> : <VolumeMute size={16} />}
       label={on ? "Sound: on" : "Sound: off"}
-      sound={false}
       onClick={async () => {
         setSoundOn(!on);
         if (!on && (await unlock())) cue("toggle");
