@@ -3,7 +3,6 @@
 import { ArrowLeft } from "@carbon/icons-react";
 import { useState } from "react";
 import { CHARACTERS, DEFAULT_CHARACTER, getCharacter, type CharacterId } from "@/lib/profile/characters";
-import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "./CharacterSprite";
 import { ScrambleText } from "@/components/ui/ScrambleText";
@@ -36,10 +35,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
         {onBack && (
           <button
             type="button"
-            onClick={() => {
-              cue("navigate", { direction: "back" });
-              onBack();
-            }}
+            onClick={onBack}
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
@@ -81,7 +77,6 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               onClick={() => setPicked(c.id)}
-              data-cuelume-select=""
               className="group flex w-[83px] flex-col items-center gap-[5px] focus-visible:outline-none"
             >
               <span

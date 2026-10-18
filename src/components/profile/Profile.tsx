@@ -124,7 +124,6 @@ export function ProfileView({
           <button
             type="button"
             onClick={onEditCharacter}
-            data-cuelume-open=""
             disabled={!onEditCharacter}
             aria-label="Change character"
             className="relative flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd text-lcd-ink shadow-[var(--lcd-inset)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
@@ -154,7 +153,7 @@ export function ProfileView({
         </div>
 
         <div className="mt-[19px] flex flex-col items-start gap-2 text-xs">
-          <button type="button" onClick={onSignOut} data-cuelume-close="" className="text-foreground/80 underline-offset-4 hover:underline">
+          <button type="button" onClick={onSignOut} className="text-foreground/80 underline-offset-4 hover:underline">
             SIGN OUT
           </button>
           <button

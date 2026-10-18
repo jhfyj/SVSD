@@ -11,6 +11,10 @@ import { useSyncExternalStore } from "react";
   - Call cue() from code for anything that isn't a plain click: outcomes, the radio switch,
     the tuning strip's detents, the load-in.
 
+  Outside the radio, keep sound for major moments only (the main call to action on a screen,
+  sign-in results, saving, deleting); Jennifer found more than that too busy. Everything on the
+  radio sounds.
+
   Radio hardware uses the "mech" theme (clicks, latches, ratchets); the rest of the app uses the
   warm default. Browsers keep audio silent until the first tap, and cuelume waits for it.
 */
