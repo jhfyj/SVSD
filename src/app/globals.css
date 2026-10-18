@@ -33,6 +33,22 @@
   --button-highlight: inset 1px 2px 2px rgb(255 255 255 / 0.15);
   --end-call-gradient: linear-gradient(180deg, #da4343 0%, #8e1412 100%);
   --lcd-inset: inset 4px 4px 4px rgb(0 0 0 / 0.25);
+  --panel-highlight: inset 1px 2px 2px rgb(255 255 255 / 0.2);
+  /* Pressed hardware: the top light is gone and the face sinks into a shadow. */
+  --button-gradient-pressed: linear-gradient(180deg, #232323 0%, #353535 100%);
+  --button-pressed-shadow: inset 0 3px 6px rgb(0 0 0 / 0.7), inset 0 -1px 1px rgb(255 255 255 / 0.06);
+  --end-call-gradient-pressed: linear-gradient(180deg, #7a1110 0%, #b83232 100%);
+  --power: #ff3535;
+  /* Fine grain on the hardware panels, like the textured plastic in the Figma file. */
+  --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* DSEG14 (OFL) stands in for Digital-7, which is personal-use only. */
+@font-face {
+  font-family: "DSEG14 Classic Mini";
+  src: url("/fonts/dseg14/DSEG14ClassicMini-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
 }
 
 @theme inline {
@@ -55,11 +71,12 @@
   --color-marker-magenta: var(--marker-magenta);
   --color-marker-orange: var(--marker-orange);
   --color-marker-border: var(--marker-border);
+  --color-power: var(--power);
   --radius-token: var(--radius);
   --font-sans: var(--font-geist-mono), ui-monospace, monospace;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  /* Digital-7 is personal-use only, so it isn't bundled. Drop its file in public/fonts to use it. */
-  --font-display: "Digital-7", var(--font-geist-mono), ui-monospace, monospace;
+  /* Digital-7 (the Figma face) is personal-use only, so DSEG14 is bundled as the fallback. */
+  --font-display: "Digital-7", "DSEG14 Classic Mini", var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {

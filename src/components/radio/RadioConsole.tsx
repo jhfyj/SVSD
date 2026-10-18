@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { cn } from "../ui/cn";
-import { MicIcon, SpeakerIcon } from "../ui/icons";
+import { Microphone } from "@carbon/icons-react";
+import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen, PixelMascot } from "./LcdScreen";
 import { Led } from "./Led";
@@ -20,12 +21,12 @@ export type RadioConsoleProps = {
 
 /** The sync-calling radio: top bar with switch and LED, LCD display, bottom console. */
 export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, className }: RadioConsoleProps) {
-  const [mic, setMic] = useState(true);
-  const [speaker, setSpeaker] = useState(true);
+  const [micMuted, setMicMuted] = useState(false);
+  const [speakerMuted, setSpeakerMuted] = useState(false);
   const on = state !== "off";
 
   return (
-    <section aria-label="Radio" className={cn("flex w-[329px] flex-col gap-3", className)}>
+    <section aria-label="Radio" className={cn("flex w-[351px] flex-col gap-3", className)}>
       <div className="flex items-center justify-between px-4 py-1 [background:var(--panel-gradient)]">
         <span className="flex items-center gap-2 text-[13px] font-bold uppercase text-label/80">
           <Led on={state === "connected"} /> Radio
@@ -44,15 +45,30 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
         )}
       </LcdScreen>
 
-      <div className="grid grid-cols-2 gap-2 p-3 [background:var(--panel-gradient)]">
-        <HardwareButton className="col-span-2" tone="end" disabled={state !== "connected"} onClick={onEndCall}>
-          End call
+      <div className="flex gap-2 p-3 [background:var(--panel-gradient)]">
+        <HardwareButton className="flex-1" tone="end" disabled={state !== "connected"} onClick={onEndCall}>
+          <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
+          <span className="text-[20px] font-bold opacity-80">END CALL</span>
         </HardwareButton>
-        <HardwareButton pressed={mic} onClick={() => setMic(!mic)} aria-label="Microphone">
-          <MicIcon /> Mic
+        <HardwareButton
+          className="w-[70px]"
+          pressed={micMuted}
+          onClick={() => setMicMuted(!micMuted)}
+          aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}
+        >
+          <Microphone size={24} className="opacity-60" aria-hidden />
         </HardwareButton>
-        <HardwareButton pressed={speaker} onClick={() => setSpeaker(!speaker)} aria-label="Speaker">
-          <SpeakerIcon /> Speaker
+        <HardwareButton
+          className="w-[70px]"
+          pressed={speakerMuted}
+          onClick={() => setSpeakerMuted(!speakerMuted)}
+          aria-label={speakerMuted ? "Turn speaker on" : "Turn speaker off"}
+        >
+          {speakerMuted ? (
+            <SpeakerSlash size={25} className="opacity-60" aria-hidden />
+          ) : (
+            <SpeakerHigh size={25} className="opacity-60" aria-hidden />
+          )}
         </HardwareButton>
       </div>
     </section>

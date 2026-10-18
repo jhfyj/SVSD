@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { RadioConsole } from "@/components/radio";
+import { RadioScreen } from "@/components/radio";
 import { LcdScreen, PixelMascot } from "@/components/radio/LcdScreen";
 import {
   AddressList,
@@ -68,14 +68,9 @@ export const StartJourney: StoryObj = {
   },
 };
 
+/** The finalized Figma screen (node 123:246). */
 export const RadioConnected: StoryObj = {
-  render: () => (
-    <Phone>
-      <div className="flex flex-1 flex-col items-center justify-end">
-        <RadioConsole state="connected" />
-      </div>
-    </Phone>
-  ),
+  render: () => <RadioScreen />,
 };
 
 export const Profile: StoryObj = {
