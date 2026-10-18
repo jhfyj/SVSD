@@ -24,9 +24,9 @@ const PARTS: Part[] = [
   { label: "Radio", box: [30, 605, 55, 20] },
   { label: "Switch", box: [26, 629, 46, 98] },
   { label: "LCD · 221×130", box: [156, 603, 221, 130] },
-  { label: "Start story", box: [26, 751, 195, 70] },
-  { label: "Mic", box: [229, 751, 70, 70] },
-  { label: "Speaker", box: [307, 751, 70, 70] },
+  { label: "Music", box: [26, 751, 112, 70] },
+  { label: "Settings", box: [146, 751, 111, 70] },
+  { label: "Speaker", box: [266, 751, 111, 70] },
 ];
 
 /** ms: frames draw in from FRAME_START, FRAME_GAP apart (each takes FRAME_MS). */
