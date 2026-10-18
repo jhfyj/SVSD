@@ -59,6 +59,10 @@
   --grid-ink: 255 255 255;
   /* Fine grain on the hardware panels, like the textured plastic in the Figma file. */
   --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Rain behind the non-radio screens (.rain): streak color, plus two tiles of streaks used as masks. */
+  --rain: rgb(205 220 235 / 0.13);
+  --rain-far: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='131' height='220'%3E%3Crect x='120' y='62' width='1' height='6' fill-opacity='0.49'/%3E%3Crect x='69' y='69' width='1' height='10' fill-opacity='0.84'/%3E%3Crect x='71' y='143' width='1' height='11' fill-opacity='0.76'/%3E%3Crect x='31' y='78' width='1' height='11' fill-opacity='0.81'/%3E%3Crect x='7' y='144' width='1' height='10' fill-opacity='0.65'/%3E%3Crect x='105' y='26' width='1' height='12' fill-opacity='0.68'/%3E%3Crect x='90' y='134' width='1' height='12' fill-opacity='0.73'/%3E%3Crect x='118' y='78' width='1' height='11' fill-opacity='0.57'/%3E%3Crect x='43' y='32' width='1' height='11' fill-opacity='0.54'/%3E%3Crect x='38' y='198' width='1' height='9' fill-opacity='0.71'/%3E%3Crect x='114' y='12' width='1' height='10' fill-opacity='0.53'/%3E%3Crect x='66' y='89' width='1' height='9' fill-opacity='0.48'/%3E%3Crect x='7' y='76' width='1' height='11' fill-opacity='0.57'/%3E%3Crect x='120' y='108' width='1' height='10' fill-opacity='0.46'/%3E%3C/svg%3E");
+  --rain-near: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='211' height='400'%3E%3Crect x='60' y='137' width='1' height='24' fill-opacity='0.63'/%3E%3Crect x='112' y='231' width='1' height='23' fill-opacity='0.50'/%3E%3Crect x='96' y='317' width='1' height='33' fill-opacity='0.76'/%3E%3Crect x='108' y='188' width='1' height='28' fill-opacity='0.80'/%3E%3Crect x='83' y='260' width='1' height='33' fill-opacity='0.51'/%3E%3Crect x='74' y='123' width='1' height='27' fill-opacity='0.60'/%3E%3Crect x='184' y='41' width='1' height='31' fill-opacity='0.88'/%3E%3Crect x='85' y='59' width='1' height='19' fill-opacity='0.40'/%3E%3C/svg%3E");
 }
 
 /*
@@ -101,6 +105,7 @@
   --map-filter: brightness(1.3) contrast(0.82) sepia(0.1);
   --spiral: #c98bb0;
   --grid-ink: 60 50 40;
+  --rain: rgb(70 82 100 / 0.12);
 }
 
 /* DSEG14 (OFL) stands in for Digital-7, which is personal-use only. */
@@ -148,6 +153,39 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/*
+  Light rain behind a screen: put .rain on the phone column. The streaks sit above the column's own
+  background and below its content. Two layers (far: short and slow, near: long and fast) give depth.
+  Reduced motion keeps the streaks still, as a texture.
+*/
+.rain {
+  position: relative;
+  isolation: isolate;
+}
+.rain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--rain);
+  -webkit-mask-image: var(--rain-near), var(--rain-far);
+  mask-image: var(--rain-near), var(--rain-far);
+  -webkit-mask-position: 0 0, 40px 0;
+  mask-position: 0 0, 40px 0;
+}
+@keyframes rain-fall {
+  to {
+    -webkit-mask-position: 0 800px, 40px 220px;
+    mask-position: 0 800px, 40px 220px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rain::before {
+    animation: rain-fall 1.1s linear infinite;
+  }
 }
 
 /* Text caret in the verification code boxes. */

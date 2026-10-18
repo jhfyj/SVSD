@@ -103,7 +103,7 @@ export function ProfileView({
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
 
   return (
-    <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
       <div className="flex flex-col px-11 pb-[77px] pt-[79px]">
         <div className="flex flex-col items-center">

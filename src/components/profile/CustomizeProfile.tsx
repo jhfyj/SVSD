@@ -29,7 +29,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
   };
 
   return (
-    <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <header className="relative flex h-[26px] items-center justify-center mt-[59px]">
         {onBack && (
           <button

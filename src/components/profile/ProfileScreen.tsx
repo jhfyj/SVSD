@@ -22,7 +22,7 @@ export function ProfileScreen() {
 
   if (session === undefined || (session && character === undefined)) {
     return (
-      <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background">
+      <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background">
         <TopBar />
       </div>
     );

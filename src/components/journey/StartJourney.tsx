@@ -4,7 +4,7 @@ import { TopBar } from "./TopBar";
 /** The first screen (iPhone 16 - 55): one big square to start setting up a trip. */
 export function StartJourney({ href = "/journey" }: { href?: string }) {
   return (
-    <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
       <div className="flex flex-1 flex-col items-center pt-[220px]">
         <Link href={href} className="group flex flex-col items-center gap-[22px] uppercase">

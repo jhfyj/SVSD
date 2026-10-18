@@ -32,7 +32,7 @@ function SignInScreen({
     if (canSubmit && !busyLabel) onSubmit();
   };
   return (
-    <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
       <form onSubmit={submit} noValidate className="flex flex-1 flex-col pt-[42px]">
         <div className="flex flex-1 flex-col items-center">
