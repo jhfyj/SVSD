@@ -78,3 +78,21 @@ export function rememberPlace(lat: number, lng: number) {
     localStorage.setItem(PLACE_KEY, JSON.stringify({ lat: Math.round(lat * 10) / 10, lng: Math.round(lng * 10) / 10 }));
   } catch {}
 }
+
+/** The pinned theme, or "auto" when it follows the clock. */
+export function themeChoice(): ThemeChoice {
+  try {
+    const pinned = localStorage.getItem(THEME_KEY);
+    if (pinned === "light" || pinned === "dark") return pinned;
+  } catch {}
+  return "auto";
+}
+
+/** Pins a theme (or goes back to the clock) and applies it now, like `?theme=` does. */
+export function setThemeChoice(choice: ThemeChoice) {
+  try {
+    if (choice === "auto") localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, choice);
+  } catch {}
+  document.documentElement.dataset.theme = pickTheme();
+}

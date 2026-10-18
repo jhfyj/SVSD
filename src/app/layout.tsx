@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { DialKit } from "@/components/dialkit/DialKit";
 import { SoundProvider } from "@/components/sound";
 import { ThemeClock } from "@/components/theme/ThemeClock";
 import { themeScript } from "@/lib/theme";
@@ -35,6 +37,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <ThemeClock />
         <SoundProvider />
+        <Suspense>
+          <DialKit />
+        </Suspense>
       </body>
     </html>
   );
