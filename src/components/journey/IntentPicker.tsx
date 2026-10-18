@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { ScrambleText } from "../ui/ScrambleText";
+import { TabBar } from "../ui/TabBar";
 import { TopBar } from "./TopBar";
 
 /** Copy from the SVSD product doc: one row per way to spend the drive. */
@@ -71,6 +72,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
       >
         Next
       </Link>
+      <TabBar current="journey" />
     </div>
   );
 }

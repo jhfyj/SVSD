@@ -9,6 +9,7 @@ import { recordJourney } from "@/lib/journey/history";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { cn } from "../ui/cn";
+import { TabBar } from "../ui/TabBar";
 import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
 import { useCountUp } from "./useCountUp";
@@ -235,6 +236,7 @@ export function JourneySetup() {
           <span aria-hidden className="size-2.5 rounded-full bg-current" />
         </Link>
       </div>
+      <TabBar current="journey" />
     </div>
   );
 }

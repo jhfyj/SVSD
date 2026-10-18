@@ -11,6 +11,7 @@ import { SoundToggle } from "../sound/SoundToggle";
 import { CalendarDots } from "../ui/CalendarDots";
 import { MenuRow } from "../ui/MenuRow";
 import { StatCard } from "../ui/StatCard";
+import { TabBar } from "../ui/TabBar";
 import { CharacterSprite } from "./CharacterSprite";
 import { ScrambleText } from "@/components/ui/ScrambleText";
 
@@ -119,7 +120,7 @@ export function ProfileView({
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
-      <div className="flex flex-col px-11 pb-14 pt-[79px]">
+      <div className="flex flex-1 flex-col px-11 pb-14 pt-[79px]">
         <div className="flex flex-col items-center">
           <button
             type="button"
@@ -168,6 +169,7 @@ export function ProfileView({
           </button>
         </div>
       </div>
+      <TabBar current="profile" />
     </div>
   );
 }

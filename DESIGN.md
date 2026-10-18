@@ -243,7 +243,7 @@ The unit is 4px. Use only these steps:
 - **Frame:** `max-w-[393px]` column, `min-h-dvh`, centered on `bg-backdrop`. The `.grain` film grain goes on the column ([§7](#7-texture)).
 - **Gutter: 44px (`px-11` / `mx-11`) on every Screen.** That gives a 305px column at 393 wide, matching Figma's buttons, sign-in and profile. Wider and narrower gutters (31, 33, 19) snap to 44.
 - **Top:** most Screens open with the top bar (`h-14`): pixel weather icon + clock, nothing else. Sign-in and verification have no top bar. Titles sit below it and scramble in.
-- **Bottom:** one primary action pinned to the bottom of the column, `pb-14` (56) from the edge.
+- **Bottom:** one primary action pinned to the bottom of the column, `pb-14` (56) from the edge. On Screens with the [tab bar](#83-hardware-components), the tab bar is that edge: it comes last in the column and sticks to the bottom while the Screen scrolls.
 - **Dial Kit:** a prototype panel beside the column on wide screens (theme, every flow, every radio state, arrive now). It's hidden at phone width and is never part of the product UI.
 
 ### 5.3 Console geometry
@@ -305,13 +305,13 @@ States for every component:
 | Selected / on | White (ink) border + filled dot, or raised fill | Latched down + `.key-lit` icon |
 | Disabled | `opacity-40 pointer-events-none` | Same |
 
-Pressables **sink, they don't shrink.** A press is a key traveling into the body, so there's no `scale(0.97)`.
+Pressables **sink, they don't shrink.** A press is a key traveling into the body, so there's no `scale(0.97)`. The Start your journey square and the tab bar keys go further: they **tip back toward your finger** ([press tilt](#95-3d-and-physical-motion)) on top of their pressed fill or material.
 
 ### 8.1 Screen components
 
 | Component | Spec |
 |---|---|
-| **Top bar** | `h-14`, `pl-4 pr-1.5`. Pixel weather icon (two-frame sprite) + `clock`. Nothing on the right; Profile is a link on the start screen. |
+| **Top bar** | `h-14`, `pl-4 pr-1.5`. Pixel weather icon (two-frame sprite) + `clock`. Nothing on the right; Profile is in the tab bar. |
 | **Screen title** | `title` uppercase in `ScrambleText`: letters settle left to right from random glyphs once, on load. One per screen. |
 | **Text field** | `h-12 border` (input edge) `bg-transparent px-3`. Value `title` for the one hero field on a screen, `body` in forms. Placeholder `foreground/40`. Focus `border-foreground`. Error: `border-danger` + a `small text-danger` line. Typing sounds (`data-cuelume-type`). |
 | **Code boxes** (verification) | One bordered box per digit, blinking caret (`caret-blink`, `steps(1)`). Wrong code: a `text-danger` alert under the boxes, the error cue, and a warning on the pixel icon above. |
@@ -334,6 +334,7 @@ Clock, frequency, counts and countdowns use the segment font with `tabular-nums`
 | Component | Spec |
 |---|---|
 | **Console key** (`HardwareButton`) | 70 tall, key material up/down. Label `key` at 80%; icons 24 at 60%. Latched keys stay down and light their icon (`.key-lit`): **lit = on** (mic lit = mic on). End call is icon-only and stays down until the next person connects. `tone="end"` uses the red material. |
+| **Tab bar** (`TabBar`) | A strip of hardware along the bottom of Screens (Figma `179:339`): three icon-only console keys, 70 tall, flush in a recessed housing (pressed material). New journey `PaperPlaneTilt` → `/`, History `ClockCounterClockwise` → `/history`, Profile `User` → `/profile`, glyphs 24, each with an `aria-label`. **Selected:** latched down like a radio preset (pressed material), icon at 100%, no green (being on a tab isn't “on”). **Not selected:** up, icon at 40% (3.4:1 at night, 2.3:1 by day: under the 3:1 icon minimum by day). Pressing tips the key back ([press tilt](#95-3d-and-physical-motion)) with a mech tap. **Shown** on Start, the journey setup steps (intents, destination), History, the trip recap and the signed-in profile. **Hidden** on the radio, the splash, and sign-in / onboarding (verify, Customize profile, Allow access and the Settings it reopens). |
 | **Power key** | Phosphor `Power` 20 in a 44 button, `text-power` with a three-layer glow. Pressed: glow drops to 1px, `translate-y-px`, 80%. |
 | **Rocker switch** | 46×98 housing; the paddle tilts on its center hinge ([§9.5](#95-3d-and-physical-motion)). `O` / `|` glyphs, engraved OFF / ON. |
 | **LED** | 8px bulb in a 1px ring. Off: dark bulb. Connecting: amber. On a call: green. Lost: red. Each lit state glows in its own color. |
@@ -419,6 +420,23 @@ Rocker paddle — press either half
   reduced: tilt snaps with no transition; light and shadow still show which side is down
 ```
 
+**Press tilt** (`usePressTilt`: the Start your journey square and the tab bar keys)
+
+```
+Press tilt — pointer down on the square or a tab key
+  pivot:   the edge opposite your finger: the face tips toward where you press and sinks by
+           however far its near edge would have come forward, so nothing comes toward you
+  view:    perspective 600px on the square, 320px on a key; straight on
+  travel:  up to 8° (square) / 6° (key) toward the press point, plus 6px / 2px straight back;
+           a corner tips as far as an edge; it follows your finger while held
+  curve:   in ease-out, out ease-mechanical (a small overshoot back past rest)
+  time:    press in, quick out
+  light:   keys: a shade darkens the side that went back, by how far it tipped; the square is a
+           Screen, so no shading, just its surface fill
+  sound:   tap (mech) on click
+  reduced: no tilt; the pressed fill or material still shows it's down. Keyboard presses never tilt.
+```
+
 **Other physical motion in the product:**
 - **Casing light** (`useTilt`): the highlight follows the phone's tilt, ±25° / ±20°, catching up 12% per frame so it feels heavy.
 - **Map camera** (`NavMap`): tilted follow view behind you, facing the road ahead.
@@ -458,6 +476,7 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 |---|---|---|
 | `HardwareButton`, `PowerButton` | Press 75ms `ease-out` | ✅ |
 | `RockerSwitch` | `quick` (150ms) `ease-mechanical` tilt + mech sounds | ✅ |
+| `usePressTilt` (`StartButton`, `TabBar`) | Tilt in at `press` `ease-out`, back at `quick` `ease-mechanical` | ✅ |
 | `RadioIntro` | Blueprint edges 140ms linear, parts flash `step-end` 360ms, casing flickers out | ✅ |
 | `RadioLcd`, sprites, pixel icons | Stepped loops | ✅ |
 | `.radio-power-off` | 480ms `steps(8)` | ✅ |
@@ -518,10 +537,11 @@ Two families, never mixed in one spot:
 | Carbon + Material icons | Phosphor glyphs + pixel pictures | One glyph family |
 | Dark only | Night + day themes | Team decision (`e3045ba`) |
 | Spiral splash | Tuning dial that hunts across the band | Team decision (`b09fd33`) |
+| Bottom nav bar (`179:339`) with no selected state | Current tab latched down at 100%, others up at 40% | Reads like radio presets. Team decision (`nav-bar` branch) |
 
 **Figma map** (file `aDzc2bXm7lrwe8ewApmlxe`, section `123:130`): Getting set up `123:533`, `125:807`, `123:131`–`123:207` · Splash `123:728` · Sync calling `123:287` connecting, `123:246` connected, `123:319` off · Receive `123:352` message, `123:441` question · Respond `123:471`, `123:502`, `123:727` · Profile `123:647` sign in, `123:541` profile. Day theme reference: Connecting `154:1263`.
 
-**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived) → `/trip` (recap). `/profile`: sign in → verify → customize profile → allow access → profile.
+**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived) → `/trip` (recap). `/history`: every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile. The tab bar joins `/`, `/history` and `/profile`.
 
 ---
 

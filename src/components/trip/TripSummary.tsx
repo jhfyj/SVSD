@@ -6,6 +6,7 @@ import { formatDuration } from "@/lib/journey/duration";
 import { loadTrip, placeName, SAMPLE_TRIP, savedTripRaw, sharedMiles, tripEvents, type TripSummary as Summary } from "@/lib/trip/trip";
 import { TopBar } from "../journey/TopBar";
 import { cn } from "../ui/cn";
+import { TabBar } from "../ui/TabBar";
 import { TripMap } from "./TripMap";
 import { plural } from "@/lib/plural";
 
@@ -131,6 +132,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
           <span aria-hidden className="size-2.5 rounded-full bg-current" />
         </Link>
       </div>
+      <TabBar current="history" />
     </div>
   );
 }
