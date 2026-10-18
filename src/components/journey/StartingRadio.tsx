@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { ScrambleText } from "@/components/ui/ScrambleText";
 
@@ -46,9 +47,18 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
     let frame = 0;
+    // The tick mark under the needle, so each one that passes it clicks: the same detent as the
+    // duration strip. At most one per frame, so fast swings blur and the settle slows to single ticks.
+    let mark = Math.round(TUNE_FROM * 10);
     const tick = (now: number) => {
       const t = still ? 1 : Math.min(1, (now - start) / TUNE_MS);
-      setFrequency(tuned(t));
+      const f = tuned(t);
+      const next = Math.round(f * 10);
+      if (!still && next !== mark) {
+        cue("select", { volume: 0.35, direction: next > mark ? "forward" : "back" });
+        mark = next;
+      }
+      setFrequency(f);
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
