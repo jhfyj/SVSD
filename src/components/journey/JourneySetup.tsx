@@ -83,7 +83,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   return (
     <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
-      <div className="px-9 pt-14">
+      <div className="px-9 pt-4">
         <SegmentedTabs label="Trip setup" options={TABS} value={tab} onChange={setTab} className="p-2 [&>button]:text-xl" />
       </div>
 
