@@ -102,7 +102,7 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
       <TypedDuration minutes={minutes} onChange={onChange} look={look} />
       <div className="relative w-full">
         {/* The fixed marker the ruler slides under. */}
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-0.5 -translate-x-1/2 bg-foreground" />
+        <span aria-hidden className="pointer-events-none absolute left-1/2 top-0 z-10 h-8 w-0.5 -translate-x-1/2 bg-foreground" />
         <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
         <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
         <div
@@ -127,10 +127,10 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
             const label = LABELS[m];
             const hour = m % 60 === 0;
             // Hand-drawn ticks: uneven lengths and a slight lean.
-            const tick = look === "scrawl" ? { height: `${(label ? 36 : hour ? 24 : 16) + wobble(i, "t", 5) * 6}px`, transform: `rotate(${wobble(i, "t", 6) * 5}deg)` } : undefined;
+            const tick = look === "scrawl" ? { height: `${(label ? 20 : hour ? 14 : 10) + wobble(i, "t", 5) * 3}px`, transform: `rotate(${wobble(i, "t", 6) * 5}deg)` } : undefined;
             return (
               <span key={m} aria-hidden className="flex shrink-0 snap-center flex-col items-center gap-2" style={{ width: PITCH }}>
-                <span className={cn("w-px origin-bottom", label ? "h-9 bg-foreground" : hour ? "h-6 bg-foreground/60" : "h-4 bg-foreground/30")} style={tick} />
+                <span className={cn("w-px origin-bottom", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} style={tick} />
                 <span className="h-3 text-[10px] leading-3 text-foreground/60">{label && <MessyText text={label} look={look === "scrawl" ? "jitter" : "tidy"} />}</span>
               </span>
             );
