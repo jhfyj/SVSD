@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration, nearestStep } from "@/lib/journey/duration";
+import { saveJourney } from "@/lib/journey/session";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
@@ -126,10 +127,15 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 {shownResults.error ? (
                   <p className="text-sm text-danger">{shownResults.error}</p>
                 ) : shownResults.places.length ? (
-                  <AddressList
-                    items={shownResults.places}
-                    onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
-                  />
+                  <>
+                    <AddressList
+                      items={shownResults.places}
+                      onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
+                    />
+                    {shownResults.places[0].google && (
+                      <p className="px-3 py-1 text-right text-[10px] normal-case text-foreground/40">Results from Google Maps</p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
                 )}
@@ -200,6 +206,8 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
       <div className="px-[44px] pb-14 pt-6">
         <Link
           href="/journey/starting"
+          // The radio's map navigates this trip; a duration-only trip clears the last one.
+          onClick={() => saveJourney(destination ? { destination, route: currentRoute } : null)}
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(

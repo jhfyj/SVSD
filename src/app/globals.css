@@ -84,6 +84,14 @@ body {
   color: var(--foreground);
 }
 
+/*
+  The radio's Google map (NavMap) in black and white. Only the map's canvas is filtered, so the
+  route stays white and the markers, which are HTML on top, keep their colors.
+*/
+.nav-map canvas {
+  filter: grayscale(1) contrast(1.15);
+}
+
 /* The route trail lights up one dot at a time. */
 @keyframes trail-in {
   from {
