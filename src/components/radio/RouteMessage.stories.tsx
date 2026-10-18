@@ -56,16 +56,18 @@ const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => 
   phase: "playing",
   respond: false,
   respondWindow: "open",
+  asking: null,
   replyLeft: 42_000,
   level: { current: null },
   play: () => {},
   toggleRespond: () => {},
+  answer: () => {},
   send: () => {},
   skip: () => {},
   ...over,
 });
 
-/** Every LCD a message can show: who it's from (Figma), with a reply chosen, recording, sent, and no mic. */
+/** Every LCD a message can show: who it's from (Figma), with a reply chosen, the radio asking, recording, sent, and no mic. */
 export const Lcd: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4 bg-[#262626] p-6">
@@ -73,6 +75,7 @@ export const Lcd: Story = {
         controls({}),
         controls({ message: SAMPLE_MESSAGES[1] }),
         controls({ respond: true }),
+        controls({ phase: "asking", asking: "listening" }),
         controls({ phase: "recording" }),
         controls({ phase: "sent" }),
         controls({ phase: "noMic" }),

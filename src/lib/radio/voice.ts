@@ -48,8 +48,76 @@ export type Voice = {
   stop: () => void;
 };
 
-/** Play someone's recording. If the browser blocks it until a tap, it starts on the next tap. */
-export function playVoice(src: string, speaker: boolean): Voice {
+/** A gentle soft-clip curve: rounds off the peaks the way a small radio speaker does. */
+function softClip(drive: number) {
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < curve.length; i++) {
+    const x = (i / (curve.length - 1)) * 2 - 1;
+    curve[i] = ((1 + drive) * x) / (1 + drive * Math.abs(x));
+  }
+  return curve;
+}
+
+/**
+ * Over the air: the voice squeezed into a radio's band (about 350 Hz to 3.2 kHz) with a little
+ * presence and soft clipping, plus a quiet bed of static under it for as long as it plays.
+ * Returns the node to take the voice from, and a stop for the static.
+ */
+function overTheAir(c: AudioContext, input: AudioNode, out: AudioNode): { voice: AudioNode; stop: () => void } {
+  const low = c.createBiquadFilter();
+  low.type = "highpass";
+  low.frequency.value = 350;
+  const high = c.createBiquadFilter();
+  high.type = "lowpass";
+  high.frequency.value = 3200;
+  const presence = c.createBiquadFilter();
+  presence.type = "peaking";
+  presence.frequency.value = 1800;
+  presence.gain.value = 4;
+  const clip = c.createWaveShaper();
+  clip.curve = softClip(1.6);
+  clip.oversample = "2x";
+  // The band cuts the voice's weight, so bring it back up to about where it was.
+  const makeUp = c.createGain();
+  makeUp.gain.value = 1.4;
+  input.connect(low).connect(high).connect(presence).connect(clip).connect(makeUp);
+
+  const noise = c.createBufferSource();
+  noise.buffer = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+  const data = noise.buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  noise.loop = true;
+  const band = c.createBiquadFilter();
+  band.type = "bandpass";
+  band.frequency.value = 2400;
+  band.Q.value = 0.6;
+  const hiss = c.createGain();
+  const t = c.currentTime;
+  hiss.gain.setValueAtTime(0.0001, t);
+  hiss.gain.exponentialRampToValueAtTime(0.025, t + 0.15);
+  noise.connect(band).connect(hiss).connect(out);
+  noise.start(t);
+
+  let ended = false;
+  return {
+    voice: makeUp,
+    stop: () => {
+      if (ended) return;
+      ended = true;
+      const now = c.currentTime;
+      hiss.gain.cancelScheduledValues(now);
+      hiss.gain.setValueAtTime(hiss.gain.value, now);
+      hiss.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+      noise.stop(now + 0.25);
+    },
+  };
+}
+
+/**
+ * Play someone's recording. If the browser blocks it until a tap, it starts on the next tap.
+ * `radio` plays it over the air (band-limited, with static); the level still reads the clean voice.
+ */
+export function playVoice(src: string, speaker: boolean, { radio = false }: { radio?: boolean } = {}): Voice {
   const c = audio();
   const el = new Audio(src);
   const source = c.createMediaElementSource(el);
@@ -57,7 +125,9 @@ export function playVoice(src: string, speaker: boolean): Voice {
   const gain = c.createGain();
   gain.gain.value = volume(speaker);
   source.connect(analyser);
-  source.connect(gain).connect(c.destination);
+  gain.connect(c.destination);
+  const air = radio ? overTheAir(c, source, gain) : null;
+  (air?.voice ?? source).connect(gain);
 
   let stopped = false;
   const retry = () => {
@@ -68,6 +138,8 @@ export function playVoice(src: string, speaker: boolean): Voice {
     el.addEventListener("ended", () => resolve(), { once: true });
     el.addEventListener("error", () => reject(new Error(`Couldn't play ${src}`)), { once: true });
   });
+  // The static goes when the voice does.
+  void done.then(() => air?.stop(), () => air?.stop());
   el.play().catch(() => document.addEventListener("pointerdown", retry, { once: true }));
 
   return {
@@ -79,8 +151,10 @@ export function playVoice(src: string, speaker: boolean): Voice {
       stopped = true;
       document.removeEventListener("pointerdown", retry);
       el.pause();
+      air?.stop();
       source.disconnect();
-      gain.disconnect();
+      // Let the static fade out before cutting it off.
+      setTimeout(() => gain.disconnect(), 300);
     },
   };
 }
@@ -231,4 +305,72 @@ export function announce(text: string): { done: Promise<void>; stop: () => void 
       finish();
     },
   };
+}
+
+export type Answer = "yes" | "no";
+
+const YES = /\b(yes|yeah|yep|yup|sure|ok|okay|alright|respond|reply)\b/i;
+const NO = /\b(no|nope|nah|not now|skip|later|never ?mind)\b/i;
+
+type Recognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
+  start: () => void;
+  abort: () => void;
+};
+
+/**
+ * Listen for a yes or a no, out loud, for up to `timeoutMs`. Resolves on the first one heard
+ * (interim results count, so it answers as you say it), or null when time runs out. Where the
+ * browser has no speech recognition, or the mic is blocked, it just waits out the time, so the
+ * YES / NO keys still work.
+ */
+export function listenYesNo(timeoutMs: number): { result: Promise<Answer | null>; stop: () => void } {
+  let settle: (answer: Answer | null) => void = () => {};
+  const result = new Promise<Answer | null>((resolve) => (settle = resolve));
+  const w = typeof window === "undefined" ? null : (window as unknown as Record<string, (new () => Recognition) | undefined>);
+  const Ctor = w?.SpeechRecognition ?? w?.webkitSpeechRecognition;
+  let rec: Recognition | null = null;
+  let over = false;
+  let blocked = false;
+  const finish = (answer: Answer | null) => {
+    if (over) return;
+    over = true;
+    clearTimeout(timer);
+    rec?.abort();
+    settle(answer);
+  };
+  const timer = setTimeout(() => finish(null), timeoutMs);
+  const start = () => {
+    if (!Ctor || over || blocked) return;
+    rec = new Ctor();
+    rec.lang = "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (e) => {
+      const heard = Array.from(e.results, (r) => r[0]?.transcript ?? "").join(" ");
+      // "No" first, so "no, not now" never reads as a yes because of the "now".
+      if (NO.test(heard)) finish("no");
+      else if (YES.test(heard)) finish("yes");
+    };
+    // Some browsers stop listening after a pause: keep going until there's an answer or time's up.
+    rec.onend = () => {
+      if (!over) setTimeout(start, 100);
+    };
+    rec.onerror = (e) => {
+      // No mic, or it's blocked: stop listening, but leave the keys their time.
+      if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") blocked = true;
+    };
+    try {
+      rec.start();
+    } catch {
+      blocked = true;
+    }
+  };
+  start();
+  return { result, stop: () => finish(null) };
 }

@@ -121,6 +121,9 @@ export type RadioScreenProps = {
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
 
+/** After a story lands, a beat for the "ahh" to bloom before the radio tunes in to it. */
+const STORY_OPENS_MS = 500;
+
 /** Where collected pickups land: the counter's icon in the LCD's top-left corner, in the radio's own px. */
 const LCD_TALLY = { x: 156 + 38, y: 585 + 18 + 18 };
 
@@ -241,6 +244,9 @@ export function RadioScreen({
     setFlights((f) => f.filter((x) => x.id !== flight.id));
     setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
     setTallyFlash((n) => n + 1);
+    // The story opens once it's in: its voice message tunes in and plays.
+    const story = demo?.story;
+    if (story && flight.kind === "story") setTimeout(() => setQueue((q) => [...q, story]), STORY_OPENS_MS);
   };
   useTilt(root);
   // At the destination the button row becomes a single End trip.
@@ -436,7 +442,15 @@ export function RadioScreen({
           <MessageGlow mode="reply" color={youColor} level={drop.level} />
         ) : (
           <MessageGlow
-            mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
+            mode={
+              !messageOn || message.phase === "sent" || message.phase === "noMic" || message.phase === "asking"
+                ? "off"
+                : message.phase === "recording"
+                  ? "reply"
+                  : message.message?.glow === "around"
+                    ? "around"
+                    : "voice"
+            }
             color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
             level={message.level}
           />

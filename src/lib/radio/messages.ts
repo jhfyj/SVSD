@@ -20,6 +20,12 @@ export type RouteMessage = {
   src: string;
   /** Where it was left, as a share of the way along your route (0 is the start, 1 the destination). */
   at: number;
+  /** Played through the radio's band filter with a little static, like it's coming over the air. */
+  radio?: boolean;
+  /** Where the glow comes in from while it plays: the top by default, or all four edges at once. */
+  glow?: "around";
+  /** Asked by the radio's voice once it finishes; you answer yes or no, out loud or with the keys. */
+  ask?: string;
 };
 
 /** Messages are magenta, questions sky, so they read apart on the map. */

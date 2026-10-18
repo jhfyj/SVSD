@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowBendUpLeft, PaperPlaneRight, SkipForward, X } from "@phosphor-icons/react";
+import { ArrowBendUpLeft, Check, PaperPlaneRight, SkipForward, X } from "@phosphor-icons/react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { formatCountdown } from "@/lib/radio/hangups";
 import { RESPOND_WINDOW_MS } from "@/lib/radio/messages";
@@ -18,9 +18,10 @@ import type { RouteMessageControls } from "./useRouteMessage";
 
 /**
  * voice: their voice comes down from the top of the screen, the way it reaches you.
+ * around: their voice closes in from all four edges at once, as if it fills the car.
  * reply: your voice rises from the bottom, from the console and your mic.
  */
-export type GlowMode = "off" | "voice" | "reply";
+export type GlowMode = "off" | "voice" | "around" | "reply";
 
 /** Size of one dithered pixel, in CSS px (the Figma dither's pixel size). */
 const CELL = 3;
@@ -50,22 +51,28 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 /**
  * How far each cell is from where the sound comes in, in half-widths of the screen (0 at the source).
  * The edge it comes from bows toward the middle, so the front reads as a wave, not a ruler line,
- * and the side edges lift a little near the source like the Figma corner glow.
+ * and the side edges lift a little near the source like the Figma corner glow. `around` is the
+ * nearest of all four edges, each bowed the same way, so the front closes in like a rounded frame.
  */
 function fields(w: number, h: number) {
   const half = w / 2;
   const top = new Float32Array(w * h);
   const bottom = new Float32Array(w * h);
+  const around = new Float32Array(w * h);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const across = (x - (w - 1) / 2) / half; // -1 at the left edge, 1 at the right
+      const down = (y - (h - 1) / 2) / (h / 2); // -1 at the top, 1 at the bottom
       const bow = 0.12 * (1 - across * across);
       const side = 0.06 * Math.max(0, Math.abs(across) - 0.6) / 0.4;
       top[y * w + x] = Math.max(0, y / half - bow - side);
       bottom[y * w + x] = Math.max(0, (h - 1 - y) / half - bow - side);
+      const fromEnds = Math.min(y, h - 1 - y) / half - bow;
+      const fromSides = Math.min(x, w - 1 - x) / half - 0.12 * (1 - down * down);
+      around[y * w + x] = Math.max(0, Math.min(fromEnds, fromSides));
     }
   }
-  return { top, bottom };
+  return { top, bottom, around };
 }
 
 function rgbOf(el: Element, color: MarkerColor): [number, number, number] {
@@ -130,6 +137,9 @@ export function MessageGlow({
     let frame = 0;
     let last = 0;
 
+    let rising = true;
+    let shownAround = false;
+
     const tick = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -137,7 +147,10 @@ export function MessageGlow({
       const target = mode === "off" ? 0 : 1;
       const still = reduce.matches;
       // Comes up over ~450ms, goes in ~300ms: leaving is faster than arriving.
-      presence = still ? target : target > presence ? Math.min(1, presence + dt / 0.45) : Math.max(0, presence - dt / 0.3);
+      rising = target > presence;
+      presence = still ? target : rising ? Math.min(1, presence + dt / 0.45) : Math.max(0, presence - dt / 0.3);
+      // Remember the shape while it fades, so leaving "around" doesn't snap to the top.
+      if (mode !== "off") shownAround = mode === "around";
       if (presence === 0) {
         g.clearRect(0, 0, w, h);
         if (tint.current) tint.current.style.opacity = "0";
@@ -157,12 +170,17 @@ export function MessageGlow({
       }
 
       const reply = mode === "reply";
-      const dist = reply ? field.bottom : field.top;
+      const around = shownAround;
+      const dist = around ? field.around : reply ? field.bottom : field.top;
       // Both reach about a third of the screen at their loudest, then rings carry on and fade
-      // before the middle, so the road and you always stay clear.
-      const reach = 0.3 + 0.7 * env;
+      // before the middle, so the road and you always stay clear. From all four edges the reach is
+      // shorter (four fronts meet sooner), so the middle still stays clear at the loudest.
+      const reach = around ? 0.12 + 0.5 * env : 0.3 + 0.7 * env;
       const life = 1500;
-      const travel = 1.3;
+      const travel = around ? 0.8 : 1.3;
+      // From all four edges the glow eases (Emil's ease-out: quick to answer, gentle to settle),
+      // in on the way up and out on the way down, instead of a straight ramp.
+      const shown = around && !still ? (rising ? 1 - (1 - presence) ** 3 : presence ** 3) : presence;
       ripples = ripples.filter((r) => now - r.born < life);
       const rings = ripples.map((r) => {
         const p = (now - r.born) / life;
@@ -179,7 +197,7 @@ export function MessageGlow({
           const b = Math.max(0, 1 - e / reach);
           let v = b * b * lift;
           for (const ring of rings) v += ring.amp * Math.max(0, 1 - Math.abs(e - ring.front) / 0.06);
-          const q = Math.min(2, Math.floor(clamp01(v * presence) * 2 + BAYER[(y & 7) * 8 + (x & 7)]));
+          const q = Math.min(2, Math.floor(clamp01(v * shown) * 2 + BAYER[(y & 7) * 8 + (x & 7)]));
           const p = i * 4;
           data[p] = cr;
           data[p + 1] = cg;
@@ -188,7 +206,7 @@ export function MessageGlow({
         }
       }
       g.putImageData(img, 0, 0);
-      if (tint.current) tint.current.style.opacity = String(presence * (0.25 + 0.35 * env));
+      if (tint.current) tint.current.style.opacity = String(shown * (0.25 + 0.35 * env));
       frame = requestAnimationFrame(tick);
     };
 
@@ -211,7 +229,9 @@ export function MessageGlow({
     if (mode !== "off" && canvas.current && tint.current) {
       rgb.current = rgbOf(canvas.current, color);
       tint.current.style.background =
-        `linear-gradient(to ${mode === "reply" ? "top" : "bottom"}, var(--marker-${color}) 0%, transparent 45%)`;
+        mode === "around"
+          ? `radial-gradient(ellipse at center, transparent 45%, var(--marker-${color}) 110%)`
+          : `linear-gradient(to ${mode === "reply" ? "top" : "bottom"}, var(--marker-${color}) 0%, transparent 45%)`;
     }
     wake.current();
   }, [mode, color]);
@@ -226,8 +246,24 @@ export function MessageGlow({
 
 /** The LCD while a message plays: who it's from (as in Figma), then your reply's timer. */
 export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
-  const { message, phase, respond, replyLeft } = controls;
+  const { message, phase, respond, replyLeft, asking } = controls;
   if (!message) return null;
+  if (phase === "asking") {
+    return (
+      <Lcd>
+        <span className="block text-[16px] leading-[1.2]">
+          Respond to
+          <br />
+          {message.from}?
+        </span>
+        <span className="mt-2 flex items-center gap-1.5 text-[11px] normal-case">
+          {/* The dot blinks once the radio is listening for your answer. */}
+          <span aria-hidden className={cn("size-2 rounded-full bg-current", asking === "listening" ? "caret-blink" : "opacity-40")} />
+          {asking === "listening" ? "Say yes or no" : "Listen…"}
+        </span>
+      </Lcd>
+    );
+  }
   if (phase === "recording") {
     return (
       <Lcd>
@@ -302,7 +338,21 @@ export function MessageKeys({
   color: MarkerColor;
   squareKey: string;
 }) {
-  const { phase, respond, respondWindow, replyLeft, toggleRespond, send, skip } = controls;
+  const { phase, respond, respondWindow, replyLeft, toggleRespond, answer, send, skip } = controls;
+
+  if (phase === "asking") {
+    return (
+      <>
+        <HardwareButton className="flex-1" onClick={() => answer("yes")} data-cuelume-emphasis="strong">
+          <Check size={22} className="opacity-80" aria-hidden />
+          <span className="text-base font-bold opacity-80">YES</span>
+        </HardwareButton>
+        <HardwareButton className={squareKey} onClick={() => answer("no")} aria-label="No" data-cuelume-tap="close">
+          <span className="text-base font-bold opacity-80">NO</span>
+        </HardwareButton>
+      </>
+    );
+  }
 
   if (phase === "recording") {
     return (

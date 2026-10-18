@@ -1,13 +1,17 @@
 import type { DropKind } from "@/components/drops/glyphs";
 import type { LatLng, Route } from "@/lib/journey/geo";
+import type { RouteMessage } from "@/lib/radio/messages";
 import { headingAt, measure, offset, pointAt } from "@/lib/nav/path";
 import { I10_EAST } from "./i10";
 
 /** Something someone else left at a spot on the road, waiting for you to collect it (what you leave is a drop). */
 export type Pickup = { id: string; kind: DropKind; at: LatLng };
 
-/** A scripted drive for the demo video: a fixed route, a fixed speed and what's waiting along it. */
-export type DemoDrive = { name: string; route: Route; speed: number; pickups: Pickup[] };
+/**
+ * A scripted drive for the demo video: a fixed route, a fixed speed and what's waiting along it.
+ * `story` is the voice message that plays once a story pickup lands in the LCD.
+ */
+export type DemoDrive = { name: string; route: Route; speed: number; pickups: Pickup[]; story?: RouteMessage };
 
 /** m/s: about 50 mph, quick enough to feel like a freeway at the radio map's zoom. */
 const SPEED = 22;
@@ -35,4 +39,17 @@ export const STORY_DRIVE: DemoDrive = {
     ],
   },
   pickups: [{ id: "nightowl-burrito", kind: "story", at: offset(pointAt(path, STORY_ALONG), heading + 90, STORY_OFF) }],
+  // Flow 1 · the story opens: @NightOwl's voice over the air, from all four edges, then the radio
+  // asks if you want to respond.
+  story: {
+    id: "nightowl-story",
+    kind: "message",
+    from: "@NightOwl",
+    character: "boo",
+    src: "/demo/flow-1-voice-message.m4a",
+    at: 0,
+    radio: true,
+    glow: "around",
+    ask: "Do you want to respond? Yes or no?",
+  },
 };
