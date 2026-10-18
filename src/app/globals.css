@@ -84,6 +84,10 @@
   /* What a color means (DESIGN.md §3): a content kind always uses its own color. */
   --story: var(--marker-lime);
   --question: var(--marker-magenta);
+  /* Tips (a drop sorted as advice: a lane, a gas stop). Teal: not a person hue, not an LED. */
+  --tip: #4fd8c4;
+  /* The icon inside a drop pin: dark on the bright night colours, white on the deeper day ones. */
+  --drop-ink: #111111;
   --led-amber: #ffb020;
   --led-red: #ff3535;
   /* The LED's ring: night label gray, kept in both themes because the LED is a physical part. */
@@ -134,6 +138,8 @@
   */
   --key-lit: #19752a;
   --key-lit-glow: drop-shadow(0 0 2px rgb(25 117 42 / 0.28));
+  --tip: #0f7a6c;
+  --drop-ink: #ffffff;
   --marker-border: #393939;
 
   --panel-gradient: linear-gradient(180deg, #f7f2eb 0%, #c9c2b9 100%);
@@ -208,6 +214,8 @@
   --color-land-dot: var(--land-dot);
   --color-story: var(--story);
   --color-question: var(--question);
+  --color-tip: var(--tip);
+  --color-drop-ink: var(--drop-ink);
   --color-led-amber: var(--led-amber);
   --color-led-red: var(--led-red);
   --color-led-ring: var(--led-ring);
@@ -355,6 +363,24 @@ body {
 }
 :root[data-theme="light"] .nav-map .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
   --map-attrib-invert: 0;
+}
+
+/*
+  The radio map is green only at night. By day it's greyscale: your voice (a reply or a
+  drop) rises from the bottom in grey, and your marker is a white square, so it still stands out
+  on the black route line. Message and question markers keep their colours.
+*/
+/* At night "you" on the radio map is the radio's own on-green (the LED and lit keys), not the
+   yellow story lime, which stays lime everywhere else. */
+.radio-map {
+  --marker-lime: var(--led);
+}
+:root[data-theme="light"] .radio-map {
+  /* A neutral mid grey, not ink: the dither stays light, and the wash only takes the colour out. */
+  --marker-lime: #7a7a7a;
+}
+:root[data-theme="light"] .radio-map .bg-marker-lime {
+  background-color: #fdfcf9;
 }
 
 /* The route trail lights up one dot at a time. */
@@ -515,6 +541,92 @@ body {
 }
 .radio-power-off {
   animation: radio-power-off 480ms steps(8, end) forwards;
+}
+
+/*
+  Drops (Drop key). Live map: the dot is pinned where you dropped it and falls behind as the camera
+  follows you, so it only needs to arrive (drop-pop). Placeholder map: nothing drives, so the dot
+  slides back along the route from you (toward the traveller behind) and off the bottom of the
+  screen, at a constant pace like the road carrying it away. Reduced motion: it appears, holds, fades.
+*/
+@keyframes drop-pop {
+  from { opacity: 0; transform: scale(0.6); }
+}
+@keyframes drop-left-behind {
+  0% { opacity: 0; transform: scale(0.6); }
+  3% { opacity: 1; transform: scale(1); }
+  12% { transform: translate(0, 0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-270px, 288px); }
+}
+@keyframes drop-fade {
+  0% { opacity: 0; }
+  5%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.drop-pop {
+  animation: drop-pop 240ms var(--motion-ease-out);
+}
+.drop-left-behind {
+  animation: drop-fade 4s var(--motion-ease-out) forwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .drop-left-behind {
+    animation: drop-left-behind 8s linear forwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drop-pop {
+    animation: none;
+  }
+}
+
+/*
+  A drop landing (DropPin): it falls onto the road, squashes as it hits, settles, and a ring
+  ripples out once in its kind's colour, like a pin pushed into a map. Reduced motion: it fades in.
+*/
+@keyframes drop-land {
+  0% { opacity: 0; transform: translateY(-28px) scale(0.7); }
+  45% { opacity: 1; transform: translateY(0) scale(1.15, 0.82); }
+  68% { transform: translateY(-5px) scale(0.95, 1.06); }
+  84% { transform: translateY(0) scale(1.03, 0.97); }
+  100% { transform: translateY(0) scale(1); }
+}
+/* Two rings out to about 6x the pin, the second trailing, over a soft flash of the kind's colour. */
+@keyframes drop-ripple {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(6); }
+}
+@keyframes drop-flash {
+  0% { opacity: 0.45; transform: scale(1); }
+  100% { opacity: 0; transform: scale(3.5); }
+}
+@keyframes drop-fade-in {
+  from { opacity: 0; }
+}
+.drop-land {
+  animation: drop-fade-in 200ms var(--motion-ease-out) both;
+}
+.drop-ripple,
+.drop-ripple-2,
+.drop-flash {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .drop-land {
+    animation: drop-land 560ms var(--motion-ease-out) both;
+    transform-origin: 50% 100%;
+  }
+  /* Starts as it hits the road (45% of the landing). */
+  .drop-ripple {
+    animation: drop-ripple 1100ms var(--motion-ease-out) 250ms both;
+  }
+  .drop-ripple-2 {
+    animation: drop-ripple 1100ms var(--motion-ease-out) 450ms both;
+  }
+  .drop-flash {
+    animation: drop-flash 600ms var(--motion-ease-out) 250ms both;
+  }
 }
 
 /* Radio LCD. CONNECTING dots step in one at a time: 1, 2, 3, then clear. */

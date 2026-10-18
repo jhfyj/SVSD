@@ -211,9 +211,10 @@ export function DialKit() {
           note: "Engraved RADIO; the script calls it Company. Skip the load-in here: it belongs to 2 · Radio loads in.",
         },
         {
-          label: "Mood: Something real",
-          todo: "change",
-          note: "Picked when you flip the switch on. Moods are Meet someone, Chit-chat, Share a story, Off my chest; add or rename one to Something real.",
+          label: "Mood: pick an intent",
+          href: "/radio?call=pick",
+          radio: true,
+          note: "Built: flip the switch on and the four keys ask what you're up for (Meet someone, Chit-chat, Share a story, Off my chest). The script's Something real is this pick.",
         },
         { label: "Connecting", href: "/radio?call=connecting", radio: true },
         {
@@ -258,9 +259,9 @@ export function DialKit() {
         },
         {
           label: "Planting your answer",
-          href: blank("Planting your answer"),
-          todo: "new",
-          note: "Your answer gets planted on the road for whoever passes next.",
+          href: "/radio?messages=off&sim",
+          radio: true,
+          note: "Built as Drop (Jen): planting your own thing, radio off, nothing coming in, the map driving the route. Tap the pin key, talk, tap send. It's sorted into a message or a question and pinned on the map where you are. No pin key on a call.",
         },
       ],
     },

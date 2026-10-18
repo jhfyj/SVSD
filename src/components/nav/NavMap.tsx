@@ -7,8 +7,11 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactN
 import { createPortal } from "react-dom";
 import { routeBetween, type LatLng, type Route } from "@/lib/journey/geo";
 import { useJourney } from "@/lib/journey/session";
+import { DEMO_DESTINATION, DEMO_ROUTE } from "@/lib/journey/demoRoute";
 import { mapStyle } from "@/lib/nav/mapStyle";
 import { headingAt, locate, measure, offset, pointAt, slice, type Path } from "@/lib/nav/path";
+import type { DropKind } from "@/lib/radio/drops";
+import { DropPin } from "../ui/DropPin";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { formatDistance, ManeuverIcon } from "./Maneuver";
@@ -50,12 +53,21 @@ export type NavRoadMessage = {
   at: number;
 };
 
+/** Something you left on the road this trip (the Drop key): pinned where you were when you dropped it. */
+export type NavDrop = {
+  id: string;
+  kind: DropKind;
+  label: string;
+};
+
 export type NavMapProps = {
   travellers: NavTraveller[];
   /** Messages along the route that haven't played yet. */
   messages?: NavRoadMessage[];
   /** You've driven past a message. */
   onReach?: (id: string) => void;
+  /** What you've dropped on this trip: each is pinned where you were when it appeared, so it falls behind. */
+  drops?: NavDrop[];
   /** Shown instead of the map if the browser can't draw it (no WebGL). */
   fallback: ReactNode;
   className?: string;
@@ -104,20 +116,25 @@ const lngLat = (p: LatLng): [number, number] => [p.lng, p.lat];
 
 type Progress = { along: number; at: LatLng; now: number };
 
-export function NavMap({ travellers, messages = [], onReach, fallback, className }: NavMapProps) {
+export function NavMap({ travellers, messages = [], onReach, drops = [], fallback, className }: NavMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [lib, setLib] = useState<MapLibre | null>(null);
   const [failed, setFailed] = useState(false);
   const theme = useTheme();
-  const journey = useJourney();
+  const simSpeed = useSimulation();
+  const saved = useJourney();
+  // ?sim with no trip set up (the dial kit, a demo): drive the scripted LA route, so the map still moves.
+  const journey = useMemo(
+    () => saved?.route ? saved : simSpeed !== null ? { destination: saved?.destination ?? DEMO_DESTINATION, route: DEMO_ROUTE } : saved,
+    [saved, simSpeed],
+  );
   const [rerouted, setRerouted] = useState<Route | null>(null);
   const route = rerouted ?? journey?.route ?? null;
   const path = useMemo(() => (route && route.points.length > 1 ? measure(route.points) : null), [route]);
   const steps = useMemo(() => (route && path ? stepStarts(route, path) : []), [route, path]);
   const start = path?.points[0] ?? journey?.destination ?? { lat: 37.7749, lng: -122.4194 };
 
-  const simSpeed = useSimulation();
   const live = useLivePosition(simSpeed === null);
   // No location to follow: drive the route on its own so there's still something to see.
   const simulate = path !== null && (simSpeed !== null || live.status === "error");
@@ -271,6 +288,17 @@ export function NavMap({ travellers, messages = [], onReach, fallback, className
     return () => clearInterval(id);
   }, []);
 
+  // Your drops: each is pinned to where you are when it first shows up, and there it stays.
+  const [dropSpots, setDropSpots] = useState<Record<string, LatLng>>({});
+  useEffect(() => {
+    const at = nav.current.target;
+    if (!at) return;
+    setDropSpots((spots) => {
+      const fresh = drops.filter((d) => !(d.id in spots));
+      return fresh.length ? { ...spots, ...Object.fromEntries(fresh.map((d) => [d.id, at])) } : spots;
+    });
+  }, [drops, progress]);
+
   // Passing a message: checked whenever your progress updates.
   const reach = useRef(onReach);
   useEffect(() => {
@@ -318,15 +346,9 @@ export function NavMap({ travellers, messages = [], onReach, fallback, className
 
       {map && lib && (
         <>
-          {path &&
-            travellers
-              .filter((t) => t.ahead !== 0 && along + t.ahead > 0 && along + t.ahead < path.length)
-              .map((t) => (
-                <Pin key={t.id} lib={lib} map={map} at={pointAt(path, along + t.ahead)} z={5}>
-                  <MapMarker color={t.color} label={t.label} className="block size-[20px]" />
-                </Pin>
-              ))}
-          {/* Messages ahead, slightly smaller than travellers so they read as places, not people */}
+          {/* Other drivers are never shown on the map: you're anonymous on the road, and so are they.
+              The only person on it is you; everything else is something left behind (messages, drops). */}
+          {/* Messages ahead, smaller than your marker so they read as places, not people */}
           {path &&
             messages
               .filter((m) => m.at * path.length > along)
@@ -335,6 +357,15 @@ export function NavMap({ travellers, messages = [], onReach, fallback, className
                   <MapMarker color={m.color} label={m.label} className="block size-[14px]" />
                 </Pin>
               ))}
+          {/* Your drops: a pin with what it became (question, story, tip). It lands where you are,
+              stays pinned to the road, and falls behind you as you drive on. */}
+          {drops
+            .filter((d) => d.id in dropSpots)
+            .map((d) => (
+              <Pin key={d.id} lib={lib} map={map} at={dropSpots[d.id]} z={6}>
+                <DropPin kind={d.kind} label={d.label} land />
+              </Pin>
+            ))}
           {path && !arrived && (
             <Pin lib={lib} map={map} at={path.points[path.points.length - 1]} z={4}>
               <span aria-label="Destination" role="img" className="block size-3.5 rounded-full border-2 border-black bg-foreground" />

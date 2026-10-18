@@ -73,7 +73,8 @@ export function SettingsPanel({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "absolute inset-x-0 overflow-hidden transition-[clip-path] duration-200 ease-[steps(4)] motion-reduce:transition-none",
+        // z-10: the panel rises over the map, so the map's corner "i" (credits) and route pins stay underneath.
+        "absolute inset-x-0 z-10 overflow-hidden transition-[clip-path] duration-200 ease-[steps(4)] motion-reduce:transition-none",
         "[background:var(--panel-noise),var(--casing-gradient)] shadow-[var(--panel-highlight)]",
         className,
       )}
