@@ -68,7 +68,7 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   return (
     <div
       className={cn(
-        "rain flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
+        "grain flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
         // Fades out just before the radio's blueprint takes over.
         onDone && "motion-safe:animate-[intro-pop_400ms_ease-in_3000ms_reverse_both]",
         className,

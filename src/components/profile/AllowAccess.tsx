@@ -83,7 +83,7 @@ export type AllowAccessViewProps = {
 export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = true }: AllowAccessViewProps) {
   const allOn = Object.values(states).every((s) => s === "granted" || s === "unsupported");
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <header className="relative mt-[59px] flex h-[26px] items-center justify-center">
         {onBack && (
           <button

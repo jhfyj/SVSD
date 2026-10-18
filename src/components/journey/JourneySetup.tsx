@@ -81,7 +81,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const shownResults = searching && results.query === query.trim() ? results : null;
 
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
       <div className="px-9 pt-4">
         <SegmentedTabs label="Trip setup" options={TABS} value={tab} onChange={setTab} className="p-2 [&>button]:text-xl" />
