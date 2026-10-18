@@ -24,7 +24,7 @@ export function RadioSettings({ open, className }: { open: boolean; className?: 
         <ToggleSwitch on={surprises} onChange={(on) => saveRadioSettings({ surprises: on })} label="Enable surprises" />
       </Row>
       <Row label="How often">
-        <div className="flex items-center gap-2 text-[10px] uppercase text-label/80">
+        <div className="flex items-center gap-2 text-[11px] uppercase text-label/80">
           <span aria-hidden>Less</span>
           <input
             type="range"

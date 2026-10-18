@@ -274,7 +274,7 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
           <div className="flex items-center gap-3 px-3 py-2.5">
             <ManeuverIcon maneuver={arrived || !next ? "ARRIVE" : next.maneuver} />
             <div className="min-w-0">
-              <p className="text-[22px] leading-tight">
+              <p className="text-[20px] leading-tight">
                 {arrived ? "Arrived" : formatDistance((next?.along ?? path.length) - along)}
               </p>
               <p className="truncate text-[11px] text-foreground/70">

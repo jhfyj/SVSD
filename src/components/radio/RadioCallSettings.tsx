@@ -56,7 +56,7 @@ export function RadioCallSettings({ open, peer, onBreak, onBreakChange, onReport
               type="button"
               onClick={() => setView(reason)}
               data-cuelume-tap=""
-              className="flex h-11 items-center justify-center text-[12px] font-bold uppercase opacity-90 [background:var(--button-gradient)] shadow-[var(--button-highlight)] hover:brightness-110"
+              className="flex h-11 items-center justify-center text-[11px] font-bold uppercase opacity-90 [background:var(--button-gradient)] shadow-[var(--button-highlight)] hover:brightness-110"
             >
               {reason}
             </button>
@@ -106,7 +106,7 @@ export function RadioCallSettings({ open, peer, onBreak, onBreakChange, onReport
                 onClick={() => saveRadioSettings({ intent: t.id })}
                 data-cuelume-select=""
                 className={cn(
-                  "flex h-10 items-center justify-center px-0.5 text-center text-[9px] font-bold uppercase leading-tight",
+                  "flex h-10 items-center justify-center px-0.5 text-center text-[11px] font-bold uppercase leading-tight",
                   // Picked: pressed in and lit, like the console's active keys.
                   on
                     ? "text-[var(--key-lit)] [background:var(--button-gradient-pressed)] [filter:var(--key-lit-glow)] shadow-[var(--button-pressed-shadow)]"

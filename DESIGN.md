@@ -548,8 +548,6 @@ Two families, never mixed in one spot:
 Code that predates or differs from this spec. Fix it when you're next in the file, or in one cleanup pass.
 
 - **Icon sizes on console keys:** `SpeakerHigh` is 25 and the icon-only End call's `PhoneDisconnect` is 28 (`RadioScreen`, `RadioConsole`); [§10](#10-iconography) says 24 on console keys. Snap them, or record the End call size as an exception.
-- **Type on Screens:** `text-[10px]` → `text-xs`; `text-[11px]` on Screens → `text-xs`/`text-sm`; `tracking-wide`/`tracking-wider` → none.
-- **Type on hardware:** `text-[9px]` on intent and report keys → `key-sm` (11px, wrap to 2 lines); `text-[12px]` keys → `key` (13) or `key-sm`; LCD `text-[12px]` peer caption → `lcd-sm`; `NavMap` next turn `text-[22px]` → 20.
 - **Hex values:** `RockerSwitch`, `Led`, `PowerButton`, `NavMap` → tokens ([§3.6](#36-retired-values)).
 - **Layout:** `px-[31px]`, `mx-[31px]`, `px-[33px]`, `px-[19px]` → the 44px gutter; `h-[47px]` → `h-12`; bottom spacers (`mb-[61px]`, `pb-[77px]`) → `pb-14`.
 - **Motion:** the ⚠️ rows in [§9.8](#98-current-motion-inventory).

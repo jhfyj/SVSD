@@ -75,7 +75,7 @@ export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away,
         <CharacterSprite character={peerCharacter} pixel={4} className={cn(speaking && "lcd-hop")} />
         <SoundWaves on={!!speaking} />
       </div>
-      <figcaption className="font-mono text-[12px] leading-none">{peer}</figcaption>
+      <figcaption className="font-mono text-[11px] leading-none">{peer}</figcaption>
     </figure>
   );
 }

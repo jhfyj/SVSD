@@ -83,7 +83,7 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
                 {g.journeys.map((j) => (
                   <li key={j.id} className="flex items-end justify-between py-3 first:pt-0 last:pb-0">
                     <time dateTime={j.startedAt.toISOString()} className="text-sm leading-[18px] text-foreground">{clockTime(j.startedAt)}</time>
-                    <span className="text-[10px] text-foreground/70">{formatDuration(j.minutes).toUpperCase()}</span>
+                    <span className="text-xs text-foreground/70">{formatDuration(j.minutes).toUpperCase()}</span>
                   </li>
                 ))}
               </ul>

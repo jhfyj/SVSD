@@ -85,13 +85,13 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
                 <li key={q.id} className="flex gap-3 py-3">
                   <span
                     aria-hidden
-                    className="mt-0.5 flex size-5 shrink-0 items-center justify-center border-2 border-marker-border bg-marker-magenta text-[10px] text-black"
+                    className="mt-0.5 flex size-5 shrink-0 items-center justify-center border-2 border-marker-border bg-marker-magenta text-xs text-black"
                   >
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm normal-case">{q.text}</p>
-                    <p className="mt-1 text-[10px] text-foreground/70">
+                    <p className="mt-1 text-xs text-foreground/70">
                       {q.from} · near {q.near} · <span className={cn(!q.answered && "text-foreground/40")}>{q.answered ? "Answered" : "Not answered"}</span>
                     </p>
                   </div>
@@ -109,7 +109,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
                 <li key={call.id} className="flex items-center gap-3 py-3">
                   <span aria-hidden className="size-3 shrink-0 rounded-full bg-marker-sky" />
                   <span className="flex-1 text-sm normal-case">{call.with}</span>
-                  <span className="text-[10px] text-foreground/70">
+                  <span className="text-xs text-foreground/70">
                     {sharedMiles(trip, call)} mi · {formatDuration(call.minutes)}
                   </span>
                 </li>

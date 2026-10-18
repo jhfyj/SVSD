@@ -20,7 +20,7 @@ export function AddressList({ items, onSelect, className }: AddressListProps) {
             className="flex w-full flex-col gap-1 px-3 py-3 text-left uppercase hover:bg-surface"
           >
             <span className="text-sm">{item.name}</span>
-            {item.detail && <span className="text-[10px] text-foreground/70">{item.detail}</span>}
+            {item.detail && <span className="text-xs text-foreground/70">{item.detail}</span>}
           </button>
         </li>
       ))}

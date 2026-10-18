@@ -150,7 +150,7 @@ export function JourneySetup() {
                 <>
                   <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
                   {results.places[0].google && (
-                    <p className="px-3 py-1 text-right text-[10px] normal-case text-foreground/70">Results from Google Maps</p>
+                    <p className="px-3 py-1 text-right text-xs normal-case text-foreground/70">Results from Google Maps</p>
                   )}
                 </>
               ) : loading ? (
@@ -188,7 +188,7 @@ export function JourneySetup() {
             <dt className="sr-only">Stories</dt>
             <dd className="text-marker-lime">{plural(shownStories, "story", "stories")}</dd>
           </div>
-          <div className="text-[10px] text-foreground/70">
+          <div className="text-xs text-foreground/70">
             <dt className="sr-only">Distance</dt>
             <dd>
               {currentRoute ? (currentRoute.distance / 1000).toFixed(1) : "0.0"} km{" "}
@@ -248,7 +248,7 @@ function LocationNote({
 }) {
   if (location.status === "ok") return null;
   return (
-    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/70">
+    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-xs text-foreground/70">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
         <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">

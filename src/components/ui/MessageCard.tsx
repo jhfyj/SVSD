@@ -14,7 +14,7 @@ export type MessageCardProps = {
 export function MessageCard({ kind, from, time, children, actions, className }: MessageCardProps) {
   return (
     <article className={cn("flex flex-col gap-3 border border-border bg-surface p-4 uppercase", className)}>
-      <header className="flex items-center justify-between text-[10px]">
+      <header className="flex items-center justify-between text-xs">
         <span className="font-bold text-label/80">{kind === "question" ? "Question" : "Message"} · {from}</span>
         {time && <span className="text-foreground/70">{time}</span>}
       </header>

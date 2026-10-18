@@ -24,7 +24,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
       <fieldset className="mx-11 mt-16 flex flex-col">
-        <legend className="mb-9 text-sm tracking-wide"><ScrambleText>What brings you here today</ScrambleText></legend>
+        <legend className="mb-9 text-sm"><ScrambleText>What brings you here today</ScrambleText></legend>
         <div className="flex flex-col gap-[18px]">
           {INTENTS.map((item) => {
             const on = item.id === intent;
@@ -52,8 +52,8 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
                   className={cn("size-2.5 shrink-0 rounded-full border", on ? "border-foreground bg-foreground" : "border-current")}
                 />
                 <span className="flex flex-col gap-0.5 peer-focus-visible:underline">
-                  <span className="text-xs tracking-wide">{item.label}</span>
-                  <span className={cn("text-[10px] normal-case tracking-normal", on && "text-foreground/70")}>
+                  <span className="text-xs">{item.label}</span>
+                  <span className={cn("text-xs normal-case", on && "text-foreground/70")}>
                     {item.line}
                     {"verified" in item && " · needs a verified phone, 18+"}
                   </span>
@@ -67,7 +67,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
         href={`${href}?intent=${intent}`}
         data-cuelume-tap=""
         data-cuelume-theme="mech"
-        className="mx-11 mb-[61px] mt-auto flex h-[47px] items-center justify-center rounded-token border border-foreground text-sm tracking-wide transition-colors hover:bg-surface focus-visible:bg-surface"
+        className="mx-11 mb-[61px] mt-auto flex h-[47px] items-center justify-center rounded-token border border-foreground text-sm transition-colors hover:bg-surface focus-visible:bg-surface"
       >
         Next
       </Link>

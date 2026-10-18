@@ -47,9 +47,9 @@ export function RecentJourneys({ journeys: given, limit = 3, className }: Recent
           <li key={past.id} className="py-3">
             <div className="flex items-baseline justify-between gap-3">
               <span className="truncate text-base">{past.trip.to || past.journey.destination.name}</span>
-              <span className="shrink-0 text-[10px] text-foreground/70">{day.format(past.trip.startedAt)}</span>
+              <span className="shrink-0 text-xs text-foreground/70">{day.format(past.trip.startedAt)}</span>
             </div>
-            <p className="mt-1 text-[10px] text-foreground/70">
+            <p className="mt-1 text-xs text-foreground/70">
               {past.trip.miles.toLocaleString()} mi · {formatDuration(past.trip.minutes)}
             </p>
             <div className="mt-3 flex gap-2">
