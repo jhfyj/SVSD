@@ -3,18 +3,18 @@
 import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
 import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
 import { useSession } from "@/lib/auth/session";
 import { useCharacter } from "@/lib/profile/avatar";
 import { cue } from "@/lib/sound";
-import { CharacterSprite } from "../profile/CharacterSprite";
+import { setStaticMuted, startStatic, stopStatic } from "@/lib/static";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
+import { RadioLcd, type CallState } from "./RadioLcd";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
 import { useTilt } from "./useTilt";
@@ -34,12 +34,23 @@ export const DEFAULT_TRAVELLERS: Traveller[] = [
 
 export type RadioScreenProps = {
   time?: string;
-  connected?: boolean;
-  /** Whether the radio switch starts on. It starts off, with Music, Settings and Speaker showing. */
+  /** How a call ends up after connecting (mocked until there's a backend). */
+  outcome?: "connected" | "lost";
+  /** How long "Connecting..." shows before the outcome, in ms. */
+  connectMs?: number;
+  /** The person you get connected to (mocked). */
+  peer?: string;
+  /** Where the radio starts. It starts off, with Music, Settings and Speaker showing. */
+  defaultState?: CallState;
+  /** Shorthand for starting connected. */
   defaultOn?: boolean;
+  /** After "Currently connected to", when the other person's audio should start. */
+  onConnected?: (peer: string) => void;
   travellers?: Traveller[];
   onEndCall?: () => void;
+  /** After the power-off slide finishes: the app goes back to Start your journey. */
   onPower?: () => void;
+  onSettings?: () => void;
   className?: string;
 };
 
@@ -50,27 +61,33 @@ const casing =
 /** The "Connected" radio screen (Figma node 123:246): map on an inset screen above the radio console. */
 export function RadioScreen({
   time = "3:30 AM",
-  connected = true,
+  outcome = "connected",
+  connectMs = 3000,
+  peer = "@sunny_side",
   defaultOn = false,
+  defaultState = defaultOn ? "connected" : "off",
+  onConnected,
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
   onPower,
+  onSettings,
   className,
 }: RadioScreenProps) {
-  const [radioOn, setRadioOn] = useState(defaultOn);
+  const [state, setState] = useState<CallState>(defaultState);
+  const radioOn = state !== "off";
+  // "Currently connected to" shows for a moment when the call comes through.
+  const [greeting, setGreeting] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
-  const router = useRouter();
   // Power off: the whole radio slides down out of view, then you're back at Start your journey.
   const [leaving, setLeaving] = useState(false);
-  const leave = () => (onPower ? onPower() : router.push("/"));
+  const leave = () => onPower?.();
   const powerOff = () => {
     if (leaving) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return leave();
     setLeaving(true);
   };
-  const live = radioOn && connected;
   const root = useRef<HTMLDivElement>(null);
   const session = useSession();
   const character = useCharacter(session?.phone);
@@ -83,7 +100,39 @@ export function RadioScreen({
     startMusic();
     return stopMusic;
   }, [playing]);
-  useEffect(() => setMusicMuted(speakerMuted), [speakerMuted]);
+  useEffect(() => {
+    setMusicMuted(speakerMuted);
+    setStaticMuted(speakerMuted);
+  }, [speakerMuted]);
+
+  // Connecting: static on the LCD and in the speaker until the call comes through or drops.
+  useEffect(() => {
+    if (state !== "connecting") return;
+    startStatic();
+    const t = setTimeout(() => {
+      setState(outcome);
+      if (outcome === "connected") {
+        setGreeting(true);
+        cue("ready", { emphasis: "subtle", theme: "mech" });
+      } else {
+        cue("error", { theme: "mech" });
+      }
+    }, connectMs);
+    return () => {
+      clearTimeout(t);
+      stopStatic();
+    };
+  }, [state, outcome, connectMs]);
+
+  // Then their audio starts.
+  useEffect(() => {
+    if (!greeting) return;
+    const t = setTimeout(() => {
+      setGreeting(false);
+      onConnected?.(peer);
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [greeting, peer, onConnected]);
 
   return (
     <div
@@ -143,15 +192,14 @@ export function RadioScreen({
       <div className="absolute inset-x-0 top-[585px] h-[267px]">
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[11px] font-bold text-label/80">RADIO</span>
-          <Led on={live} />
+          <Led on={state !== "off"} tone={state === "lost" ? "error" : "live"} blink={state === "connecting"} />
         </div>
 
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
           onChange={(on) => {
-            setRadioOn(on);
+            setState(on ? "connecting" : "off");
+            setGreeting(false);
             if (on) setMusicOn(false);
-            // The LED comes up with a soft note when the radio goes live.
-            if (on && connected) setTimeout(() => cue("ready", { emphasis: "subtle", theme: "mech" }), 200);
           }}
         />
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
@@ -163,8 +211,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          {/* The account's own character, swapping its two frames like on Customize profile. */}
-          <CharacterSprite character={character ?? "freddie"} pixel={6.5} className="text-lcd-ink" />
+          <RadioLcd state={state} character={character ?? "freddie"} peer={peer} greeting={greeting} />
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -176,13 +223,15 @@ export function RadioScreen({
               <HardwareButton
                 tone="end"
                 className="flex-1"
-                onClick={onEndCall}
-                disabled={!live}
+                onClick={state === "connecting" ? () => setState("off") : onEndCall}
+                disabled={state === "lost"}
                 data-cuelume-tap="close"
                 data-cuelume-emphasis="strong"
               >
                 <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
-                <span className="text-base font-bold opacity-80">END CALL</span>
+                <span className="text-base font-bold opacity-80">
+                  {state === "connecting" ? "STOP CONNECTION" : "END CALL"}
+                </span>
               </HardwareButton>
               <HardwareButton
                 className="w-[70px]"
@@ -203,7 +252,7 @@ export function RadioScreen({
               >
                 <Music size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
-              <HardwareButton className="flex-1" onClick={() => router.push("/profile?settings=1")} aria-label="Settings">
+              <HardwareButton className="flex-1" onClick={onSettings} aria-label="Settings">
                 <Settings size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
             </>

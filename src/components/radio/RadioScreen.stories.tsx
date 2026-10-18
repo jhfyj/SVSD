@@ -12,7 +12,7 @@ import { RockerSwitch } from "./RockerSwitch";
 const meta = {
   title: "Radio/RadioScreen",
   component: RadioScreen,
-  args: { onEndCall: fn(), onPower: fn() },
+  args: { onEndCall: fn(), onPower: fn(), onSettings: fn(), onConnected: fn() },
 } satisfies Meta<typeof RadioScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -22,6 +22,18 @@ export const Connected: Story = { args: { defaultOn: true } };
 
 /** How the screen opens: radio off, Start story showing. */
 export const RadioOff: Story = {};
+
+/** Figma "Connecting" (node 154:1263): static on the LCD and in the speaker, LED blinking. Holds here. */
+export const Connecting: Story = { args: { defaultState: "connecting", connectMs: 600_000 } };
+
+/** Flip the switch on: Connecting..., then "Currently connected to @sunny_side", then the character. */
+export const ConnectThenTalk: Story = { name: "Connect, then talk", args: { connectMs: 3000 } };
+
+/** The connection drops: red LED, "Connection lost" on the LCD. */
+export const ConnectionLost: Story = { args: { defaultState: "lost" } };
+
+/** Flip the switch on and it fails after Connecting... */
+export const ConnectThenFail: Story = { name: "Connect, then fail", args: { outcome: "lost" } };
 
 export const Switch: Story = {
   name: "Rocker switch",

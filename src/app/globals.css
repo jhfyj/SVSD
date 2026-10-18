@@ -412,3 +412,13 @@ body {
 .radio-power-off {
   animation: radio-power-off 480ms steps(8, end) forwards;
 }
+
+/* Radio static on the LCD while connecting: the two noise frames swap fast. Still for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .static-play .sprite-a {
+    animation: sprite-a 160ms steps(1) infinite;
+  }
+  .static-play .sprite-b {
+    animation: sprite-b 160ms steps(1) infinite;
+  }
+}
