@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { SAMPLE_TRIP, tripEvents } from "@/lib/trip/trip";
 import { TripMap } from "./TripMap";
+import { TripQuestions } from "./TripQuestions";
 import { TripSummary } from "./TripSummary";
 
 /** The end of a trip: End trip on the radio opens this recap. */
@@ -12,9 +13,17 @@ const trip = tripEvents(SAMPLE_TRIP);
 /** San Francisco to Santa Cruz: the route with its questions pinned, the summary, the questions and the call. */
 export const Summary: StoryObj = { render: () => <TripSummary trip={trip} doneHref="#" /> };
 
-/** A longer drive: six questions and two calls. */
+const longDrive = tripEvents({ ...SAMPLE_TRIP, to: "Los Angeles", minutes: 380, miles: 383 });
+
+/** A longer drive: six questions and two calls. Past three questions the recap shows the first three and View all. */
 export const LongDrive: StoryObj = {
-  render: () => <TripSummary trip={tripEvents({ ...SAMPLE_TRIP, to: "Los Angeles", minutes: 380, miles: 383 })} doneHref="#" />,
+  render: () => <TripSummary trip={longDrive} doneHref="#" allQuestionsHref="?path=/story/trip--all-questions" />,
+};
+
+/** View all: every question from the long drive, with the time each came up and how far into the drive. */
+export const AllQuestions: StoryObj = {
+  name: "All questions",
+  render: () => <TripQuestions trip={{ ...longDrive, startedAt: new Date(2026, 9, 18, 14, 5).getTime() }} backHref="#" />,
 };
 
 /** A short hop where nothing came up. */

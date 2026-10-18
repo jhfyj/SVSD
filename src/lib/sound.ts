@@ -71,3 +71,113 @@ const subscribe = (l: () => void) => {
 export function useSoundOn() {
   return useSyncExternalStore(subscribe, isSoundOn, () => true);
 }
+
+/*
+  Two sounds cuelume doesn't have, for collecting a drop on the road. They're synthesised with
+  Web Audio, but still go through here so the one mute silences them too.
+*/
+let context: AudioContext | null = null;
+function audio(): AudioContext | null {
+  if (!on || typeof window === "undefined") return null;
+  try {
+    context ??= new AudioContext();
+  } catch {
+    return null;
+  }
+  if (context.state === "suspended") void context.resume();
+  return context;
+}
+
+/**
+ * The build-up while a drop comes in, `ms` long: ticks that come faster and faster, like a wheel
+ * spinning up, over a shimmer that rises in pitch and opens up in brightness. It stops as the
+ * drop arrives, where the payoff takes over.
+ */
+export function buildUp(ms: number) {
+  [0, 0.3, 0.52, 0.68, 0.79, 0.87, 0.93, 0.97].forEach((at, i) =>
+    setTimeout(() => cue("select", { emphasis: "subtle", volume: 0.16 + 0.03 * i, direction: "forward" }), at * ms),
+  );
+  const ctx = audio();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  const end = t + ms / 1000;
+  const level = ctx.createGain();
+  level.gain.setValueAtTime(0.0001, t);
+  level.gain.exponentialRampToValueAtTime(0.035, end - 0.08);
+  level.gain.exponentialRampToValueAtTime(0.0001, end + 0.05);
+  const tone = ctx.createBiquadFilter();
+  tone.type = "lowpass";
+  tone.frequency.setValueAtTime(500, t);
+  tone.frequency.exponentialRampToValueAtTime(4200, end);
+  tone.connect(level).connect(ctx.destination);
+  const voices: [number, number, OscillatorType][] = [
+    [330, -6, "triangle"],
+    [330, 7, "sawtooth"],
+    [660, 0, "sine"],
+  ];
+  for (const [hz, detune, type] of voices) {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.detune.value = detune;
+    osc.frequency.setValueAtTime(hz, t);
+    osc.frequency.exponentialRampToValueAtTime(hz * 2.5, end);
+    osc.connect(tone);
+    osc.start(t);
+    osc.stop(end + 0.1);
+  }
+}
+
+/**
+ * The payoff after a drop is collected: a warm "ahh". A soft C major chord through the two
+ * formants of an open "ah" (about 800 and 1150 Hz), with a slow vibrato, swelling in and fading.
+ */
+export function warmAhh() {
+  const ctx = audio();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  const level = ctx.createGain();
+  level.gain.setValueAtTime(0.0001, t);
+  level.gain.exponentialRampToValueAtTime(0.12, t + 0.18);
+  level.gain.setValueAtTime(0.12, t + 0.55);
+  level.gain.exponentialRampToValueAtTime(0.0001, t + 2.1);
+  level.connect(ctx.destination);
+  const voice = ctx.createGain();
+  voice.gain.value = 0.35;
+  const dry = ctx.createBiquadFilter();
+  dry.type = "lowpass";
+  dry.frequency.value = 1800;
+  const dryLevel = ctx.createGain();
+  dryLevel.gain.value = 0.35;
+  voice.connect(dry).connect(dryLevel).connect(level);
+  for (const [hz, q] of [
+    [800, 6],
+    [1150, 8],
+  ]) {
+    const formant = ctx.createBiquadFilter();
+    formant.type = "bandpass";
+    formant.frequency.value = hz;
+    formant.Q.value = q;
+    const lift = ctx.createGain();
+    lift.gain.value = 2.2;
+    voice.connect(formant).connect(lift).connect(level);
+  }
+  const vibrato = ctx.createOscillator();
+  vibrato.frequency.value = 5;
+  const depth = ctx.createGain();
+  depth.gain.value = 6;
+  vibrato.connect(depth);
+  vibrato.start(t);
+  vibrato.stop(t + 2.2);
+  for (const hz of [261.63, 329.63, 392, 523.25]) {
+    for (const detune of [-5, 5]) {
+      const osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = hz;
+      osc.detune.value = detune;
+      depth.connect(osc.detune);
+      osc.connect(voice);
+      osc.start(t);
+      osc.stop(t + 2.2);
+    }
+  }
+}

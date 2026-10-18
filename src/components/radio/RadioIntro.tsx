@@ -25,8 +25,8 @@ const PARTS: Part[] = [
   { label: "Switch", box: [26, 629, 46, 98] },
   { label: "LCD · 221×130", box: [156, 603, 221, 130] },
   { label: "Music", box: [26, 751, 112, 70] },
-  { label: "Settings", box: [146, 751, 111, 70] },
-  { label: "Speaker", box: [266, 751, 111, 70] },
+  { label: "Drop", box: [146, 751, 111, 70] },
+  { label: "Settings", box: [266, 751, 111, 70] },
 ];
 
 /** ms: frames draw in from FRAME_START, FRAME_GAP apart (each takes FRAME_MS). */
@@ -41,13 +41,15 @@ const FLASH_GAP = 120;
 const FLASH_MS = 360;
 export const INTRO_MS = FLASH_AT + (PARTS.length - 1) * FLASH_GAP + FLASH_MS;
 
-export function RadioIntro({ children, className }: { children: ReactNode; className?: string }) {
-  const [done, setDone] = useState(false);
-  useIntroSounds();
+/** `skip`: show the radio straight away, without the load-in or its sounds (a scripted demo). */
+export function RadioIntro({ children, className, skip = false }: { children: ReactNode; className?: string; skip?: boolean }) {
+  const [done, setDone] = useState(skip);
+  useIntroSounds(!skip);
   useEffect(() => {
+    if (skip) return;
     const timer = setTimeout(() => setDone(true), INTRO_MS + 50);
     return () => clearTimeout(timer);
-  }, []);
+  }, [skip]);
   const vars = { "--casing-at": `${CASING_AT}ms` } as CSSProperties;
 
   return (
@@ -75,8 +77,9 @@ export function RadioIntro({ children, className }: { children: ReactNode; class
  * click as each part flashes in, and a warm note when the radio is in. Silent if the browser
  * hasn't had a tap yet (a cold load straight onto /radio).
  */
-function useIntroSounds() {
+function useIntroSounds(on: boolean) {
   useEffect(() => {
+    if (!on) return;
     const at = (ms: number, play: () => void) => setTimeout(play, ms);
     const timers = [
       ...PARTS.map((_, i) =>
@@ -90,7 +93,7 @@ function useIntroSounds() {
       at(INTRO_MS, () => cue("ready")),
     ];
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [on]);
 }
 
 /**

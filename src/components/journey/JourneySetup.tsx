@@ -150,9 +150,7 @@ export function JourneySetup() {
               ) : results.places.length ? (
                 <>
                   <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
-                  {results.places[0].google && (
-                    <p className="px-3 py-1 text-right text-xs normal-case text-foreground/70">Results from Google Maps</p>
-                  )}
+                  <p className="px-3 py-1 text-right text-xs normal-case text-foreground/70">© OpenStreetMap</p>
                 </>
               ) : loading ? (
                 <p className="text-sm text-foreground/70">Searching…</p>

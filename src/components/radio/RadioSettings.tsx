@@ -55,12 +55,15 @@ export function SettingsPanel({
   open,
   label,
   title,
+  height = SETTINGS_HEIGHT,
   className,
   children,
 }: {
   open: boolean;
   label: string;
   title: ReactNode;
+  /** Open height in px; the in-call panel is a little taller for its 2x2 intent keys. */
+  height?: number;
   className?: string;
   children: ReactNode;
 }) {
@@ -70,15 +73,16 @@ export function SettingsPanel({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "absolute inset-x-0 overflow-hidden transition-[clip-path] duration-200 ease-[steps(4)] motion-reduce:transition-none",
+        // z-10: the panel rises over the map, so the map's corner "i" (credits) and route pins stay underneath.
+        "absolute inset-x-0 z-10 overflow-hidden transition-[clip-path] duration-200 ease-[steps(4)] motion-reduce:transition-none",
         "[background:var(--panel-noise),var(--casing-gradient)] shadow-[var(--panel-highlight)]",
         className,
       )}
       // Revealed from the bottom edge up by clipping (not by animating height), in 4 hard steps.
-      style={{ height: SETTINGS_HEIGHT, clipPath: open ? "inset(0)" : "inset(100% 0 0 0)" }}
+      style={{ height, clipPath: open ? "inset(0)" : "inset(100% 0 0 0)" }}
     >
       {/* Content pinned to the bottom, so it rises into view with the panel's top edge. */}
-      <div className="absolute inset-x-[26px] bottom-0 flex flex-col" style={{ height: SETTINGS_HEIGHT }}>
+      <div className="absolute inset-x-[26px] bottom-0 flex flex-col" style={{ height }}>
         <span className="mt-[20px] px-1 text-[11px] font-bold text-label/80">{title}</span>
         {children}
       </div>

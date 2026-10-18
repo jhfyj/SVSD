@@ -8,11 +8,12 @@ import { useSyncExternalStore } from "react";
  * and "stories told together". `key` is the short label that fits a key; `label` is the full wording.
  */
 export type CallIntent = "new" | "chat" | "story" | "chest";
-export const CALL_INTENTS: { id: CallIntent; key: string; label: string }[] = [
-  { id: "new", key: "Meet someone", label: "Connect with someone new" },
-  { id: "chat", key: "Chit-chat", label: "Just here to chit-chat" },
-  { id: "story", key: "Share a story", label: "Share a story" },
-  { id: "chest", key: "Off my chest", label: "Get something off my chest" },
+export const CALL_INTENTS: { id: CallIntent; key: string; label: string; looking: string }[] = [
+  { id: "new", key: "Meet someone", label: "Connect with someone new", looking: "Finding someone new" },
+  { id: "chat", key: "Chit-chat", label: "Just here to chit-chat", looking: "Finding someone to chat" },
+  { id: "story", key: "Share a story", label: "Share a story", looking: "Finding someone to swap stories" },
+  // Off my chest only pairs with a listener, who is told first.
+  { id: "chest", key: "Off my chest", label: "Get something off my chest", looking: "Finding someone to listen" },
 ];
 
 /**
@@ -34,12 +35,14 @@ export type RadioSettings = {
   frequency: number;
   /** Your intent for the next match. Changing it mid-call doesn't end the call. */
   intent: CallIntent;
+  /** You've picked an intent before, so flipping the radio on keeps it after a moment instead of waiting. */
+  intentSet: boolean;
   /** Handles you've reported: never matched with them again. */
   blocked: string[];
 };
 
 const KEY = "svsd-radio-settings";
-const DEFAULTS: RadioSettings = { questions: true, surprises: true, frequency: 3, intent: "new", blocked: [] };
+const DEFAULTS: RadioSettings = { questions: true, surprises: true, frequency: 3, intent: "new", intentSet: false, blocked: [] };
 const listeners = new Set<() => void>();
 let cached: RadioSettings | null = null;
 

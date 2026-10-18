@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "../ui/cn";
-import { Microphone, MicrophoneSlash, PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
+import { MapPinPlus, Microphone, MicrophoneSlash, PhoneDisconnect } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen, PixelMascot } from "./LcdScreen";
 import { Led } from "./Led";
@@ -21,7 +21,7 @@ export type RadioConsoleProps = {
 /** The sync-calling radio: top bar with switch and LED, LCD display, bottom console. */
 export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, className }: RadioConsoleProps) {
   const [micMuted, setMicMuted] = useState(false);
-  const [speakerOn, setSpeakerOn] = useState(false);
+  const [dropping, setDropping] = useState(false);
   const on = state !== "off";
 
   return (
@@ -70,12 +70,12 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
         </HardwareButton>
         <HardwareButton
           className="w-[70px]"
-          // Speakerphone: starts up (on the phone); pressed in and lit = on speaker.
-          pressed={speakerOn}
-          onClick={() => setSpeakerOn(!speakerOn)}
-          aria-label={speakerOn ? "Turn speaker off" : "Turn speaker on"}
+          // Drop: pressed in and lit while recording something to leave on the road.
+          pressed={dropping}
+          onClick={() => setDropping(!dropping)}
+          aria-label={dropping ? "Drop it here" : "Leave a drop"}
         >
-          <SpeakerHigh size={25} className="opacity-60" aria-hidden />
+          <MapPinPlus size={24} className="opacity-60" aria-hidden />
         </HardwareButton>
       </div>
     </section>

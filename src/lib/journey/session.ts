@@ -1,3 +1,4 @@
+import { useMemo, useSyncExternalStore } from "react";
 import type { Place, Route } from "./geo";
 
 /*
@@ -18,3 +19,18 @@ export function saveJourney(journey: Journey | null) {
   }
 }
 
+
+const noSubscribe = () => () => {};
+const readJourney = () => {
+  try {
+    return sessionStorage.getItem(JOURNEY_KEY);
+  } catch {
+    return null;
+  }
+};
+
+/** The trip from the setup screen (see saveJourney), read on the client only. */
+export function useJourney(): Journey | null {
+  const raw = useSyncExternalStore(noSubscribe, readJourney, () => null);
+  return useMemo(() => (raw ? (JSON.parse(raw) as Journey) : null), [raw]);
+}

@@ -1,11 +1,12 @@
 "use client";
 
+import { ArrowRight } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { QuestionRow, QUESTIONS_PREVIEW } from "./TripQuestions";
 import { formatDuration } from "@/lib/journey/duration";
 import { loadTrip, placeName, SAMPLE_TRIP, savedTripRaw, sharedMiles, tripEvents, type TripSummary as Summary } from "@/lib/trip/trip";
 import { TopBar } from "../journey/TopBar";
-import { cn } from "../ui/cn";
 import { TabBar } from "../ui/TabBar";
 import { TripMap } from "./TripMap";
 import { plural } from "@/lib/plural";
@@ -20,10 +21,12 @@ export type TripSummaryProps = {
   /** The trip to show. Leave unset to read the trip you just drove (or a sample when there is none). */
   trip?: Summary;
   doneHref?: string;
+  /** Where View all goes when there are more questions than the recap shows. */
+  allQuestionsHref?: string;
 };
 
 /** The destination recap after End trip: the route, a short summary, the questions and the calls. */
-export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
+export function TripSummary({ trip: given, doneHref = "/", allQuestionsHref = "/trip/questions" }: TripSummaryProps) {
   // The trip you just drove, read after hydration (undefined on the server).
   const raw = useSyncExternalStore(noop, savedTripRaw, () => undefined);
   const saved = useMemo(() => (raw === undefined ? null : tripEvents(loadTrip(raw) ?? SAMPLE_TRIP)), [raw]);
@@ -79,24 +82,24 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
             )}
           </div>
 
-          <h2 className="mt-10 text-sm text-foreground/70">Questions on the way</h2>
+          {/* Past a few questions the recap shows the first ones; View all opens every one, with when it came up. */}
+          <div className="mt-10 flex items-baseline justify-between">
+            <h2 className="text-sm text-foreground/70">Questions on the way</h2>
+            {trip.questions.length > QUESTIONS_PREVIEW && (
+              <Link
+                href={allQuestionsHref}
+                data-cuelume-tap=""
+                className="-my-3 flex min-h-11 items-center gap-1 text-sm text-foreground hover:text-foreground/70 focus-visible:outline-2 focus-visible:outline-foreground"
+              >
+                View all ({trip.questions.length})
+                <ArrowRight size={12} aria-hidden />
+              </Link>
+            )}
+          </div>
           {trip.questions.length ? (
             <ol className="mt-3 divide-y divide-border border-y border-border">
-              {trip.questions.map((q, i) => (
-                <li key={q.id} className="flex gap-3 py-3">
-                  <span
-                    aria-hidden
-                    className="mt-0.5 flex size-5 shrink-0 items-center justify-center border-2 border-marker-border bg-marker-magenta text-xs text-black"
-                  >
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm normal-case">{q.text}</p>
-                    <p className="mt-1 text-xs text-foreground/70">
-                      {q.from} · near {q.near} · <span className={cn(!q.answered && "text-foreground/40")}>{q.answered ? "Answered" : "Not answered"}</span>
-                    </p>
-                  </div>
-                </li>
+              {trip.questions.slice(0, QUESTIONS_PREVIEW).map((q, i) => (
+                <QuestionRow key={q.id} q={q} n={i + 1} />
               ))}
             </ol>
           ) : (

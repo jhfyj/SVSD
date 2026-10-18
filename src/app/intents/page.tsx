@@ -1,11 +1,9 @@
-import { IntentPicker } from "@/components/journey";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "What brings you here · SVSD" };
-
+/**
+ * The old "What brings you here today" step. Intent is now picked when you flip the radio on
+ * (it's only used to match calls), so old links to /intents go straight to Destination.
+ */
 export default function IntentsPage() {
-  return (
-    <main className="flex min-h-full flex-1 justify-center bg-backdrop">
-      <IntentPicker />
-    </main>
-  );
+  redirect("/journey");
 }

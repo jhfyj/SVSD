@@ -1,29 +1,41 @@
 "use client";
 
-import { FlagCheckered, GearSix, Microphone, MicrophoneSlash, MusicNotes, PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, MusicNotes, PaperPlaneRight, PhoneDisconnect } from "@phosphor-icons/react";
 import { WeatherIcon } from "../journey/WeatherIcon";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { setMusicSpeaker, startMusic, stopMusic } from "@/lib/music";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startMusic, stopMusic } from "@/lib/music";
+import { DROP_LABEL, type Drop } from "@/lib/radio/drops";
+import { DropLcd, LeftBehind } from "./Drop";
+import { useDrop } from "./useDrop";
 import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
+import type { DemoDrive, Pickup } from "@/lib/demo/storyDrive";
+import { CollectedTally, CollectFlight } from "../drops/CollectFlight";
+import type { DropKind } from "../drops/glyphs";
 import { NavMap } from "../nav/NavMap";
+import { useJourney } from "@/lib/journey/session";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
-import { RadioLcd, type CallState } from "./RadioLcd";
+import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
-import { blockHandle, useRadioSettings } from "@/lib/radio-settings";
+import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
+import { announce } from "@/lib/radio/voice";
+import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
+import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/messages";
 import { PowerButton } from "./PowerButton";
+import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
+import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
 import { useTilt } from "./useTilt";
 
-/** Mic, Speaker and Settings during a call: square keys, as tall as the row (70px). */
+/** Mic and Settings during a call (and Drop/Settings beside a message): square keys, as tall as the row (70px). */
 const CALL_KEY = "w-[70px] shrink-0";
 
 /** Mocked strangers for the calls after the first, until there's a backend matching people. */
@@ -62,16 +74,20 @@ export type RadioScreenProps = {
   outcome?: "connected" | "lost";
   /** How long "Connecting..." shows before the outcome, in ms. */
   connectMs?: number;
+  /** You, as the radio introduces you to them. */
+  me?: string;
+  /** How many miles of road you share with them (mocked until there's matching on routes). */
+  sharedMiles?: number;
   /** The person you get connected to and their character (mocked). */
   peer?: string;
   peerCharacter?: CharacterId;
   /** Pin whether they're talking (Storybook). Otherwise it's mocked: they talk, pause, talk. */
   speaking?: boolean;
-  /** Where the radio starts. Off shows Music, Speaker and Settings; on a call it's End call, Mic, Speaker and Settings. */
+  /** Where the radio starts. Off shows Music, Drop and Settings; on a call it's End call, Mic and Settings (no Drop). */
   defaultState?: CallState;
   /** Shorthand for starting connected. */
   defaultOn?: boolean;
-  /** After "Currently connected to", when the other person's audio should start. */
+  /** After the radio introduces you both, when the other person's audio should start. */
   onConnected?: (peer: string) => void;
   travellers?: Traveller[];
   onEndCall?: () => void;
@@ -83,10 +99,32 @@ export type RadioScreenProps = {
    */
   arrived?: boolean;
   onEndTrip?: () => void;
-  /** How many hang-ups, how fast, set off the timeout and how long it lasts (short ones for Storybook). */
-  hangUpRule?: HangUpRule;
+  /**
+   * How many hang-ups, how fast, set off the timeout and how long it lasts. `null` turns it off:
+   * hang-ups don't count and no timeout applies (every dial kit flow except Hang-up timeout).
+   */
+  hangUpRule?: HangUpRule | null;
+  /** Messages and questions left along the route. They play as you pass them, while the radio's off. */
+  messages?: RouteMessage[];
+  /** Play this message as soon as the screen opens (Storybook, the dial kit). */
+  defaultMessage?: RouteMessage;
+  /**
+   * Without a route to drive, how often you "pass" the next message, in ms. The first comes sooner.
+   * (On real roads they're sparse: one every 20–30 minutes by day, 8–10 at night.)
+   */
+  messageEveryMs?: number;
+  /** A scripted drive for the story-unlock demo, with pickups to collect along it. */
+  demo?: DemoDrive;
   className?: string;
 };
+
+/** A beat of quiet between one message ending and the next one tuning in. */
+const MESSAGE_GAP_MS = 2500;
+
+/** Where collected pickups land: the counter's icon in the LCD's top-left corner, in the radio's own px. */
+const LCD_TALLY = { x: 156 + 38, y: 585 + 18 + 18 };
+
+type Flight = { id: string; kind: DropKind; from: { x: number; y: number } };
 
 /** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
 const casing =
@@ -97,6 +135,8 @@ export function RadioScreen({
   time = "3:30 AM",
   outcome = "connected",
   connectMs = 3000,
+  me = "@you",
+  sharedMiles = 84,
   peer = "@sunny_side",
   peerCharacter = "mochi",
   speaking: speakingPinned,
@@ -109,16 +149,27 @@ export function RadioScreen({
   arrived: forceArrived,
   onEndTrip,
   hangUpRule = HANG_UP_RULE,
+  messages = SAMPLE_MESSAGES,
+  defaultMessage,
+  messageEveryMs = 30_000,
+  demo,
   className,
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
   const radioOn = state !== "off";
-  // "Currently connected to" shows for a moment when the call comes through.
+  // When the call comes through, the radio introduces you both (two lines, one LCD page each).
   const [greeting, setGreeting] = useState(false);
+  const [introPage, setIntroPage] = useState<0 | 1>(0);
   // Who you're talking to. The first call is `peer`; each End call finds someone new (mocked).
   const [calls, setCalls] = useState(0);
   // Anyone you've reported never comes up again.
-  const { blocked } = useRadioSettings();
+  const { blocked, intent, intentSet } = useRadioSettings();
+  // Flipping the radio on asks what you're up for; that's what matches you (with your stretch of road).
+  const pickIntent = (id: CallIntent) => {
+    saveRadioSettings({ intent: id, intentSet: true });
+    setState("connecting");
+  };
+  const intentInfo = CALL_INTENTS.find((t) => t.id === intent) ?? CALL_INTENTS[0];
   const nextCallers = NEXT_CALLERS.filter((c) => !blocked.includes(c.handle));
   const caller =
     calls === 0 || !nextCallers.length
@@ -138,7 +189,7 @@ export function RadioScreen({
     setSettingsOpen(false);
     setCalls((n) => n + 1);
     onEndCall?.();
-    const until = counts ? recordHangUp(hangUpRule) : null;
+    const until = counts && hangUpRule ? recordHangUp(hangUpRule) : null;
     if (until) {
       setTimeoutUntil(until);
       setNow(0); // The countdown's first tick fills this in.
@@ -159,8 +210,10 @@ export function RadioScreen({
     hangUp(false);
   };
   const [micMuted, setMicMuted] = useState(false);
-  // Speakerphone, not mute: off just means the call isn't on speaker.
-  const [speakerOn, setSpeakerOn] = useState(false);
+  // Drop (where Speaker used to be): one key leaves something on the road for whoever drives it next.
+  // Tap to record, tap again to drop it here; it's sorted into a message or a question and left on the map.
+  const drop = useDrop();
+  const dropRecording = drop.phase === "recording";
   const [musicOn, setMusicOn] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Power off: the whole radio slides down out of view, then you're back at Start your journey.
@@ -172,22 +225,95 @@ export function RadioScreen({
     setLeaving(true);
   };
   const root = useRef<HTMLDivElement>(null);
+
+  // Pickups collected on the map fly into the LCD, which keeps count.
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [collected, setCollected] = useState<Partial<Record<DropKind, number>>>({});
+  const [tallyFlash, setTallyFlash] = useState(0);
+  const onCollect = (pickup: Pickup, at: { x: number; y: number }) => {
+    const box = root.current?.getBoundingClientRect();
+    if (!box) return;
+    // The radio can be drawn scaled (a narrow window), so map the page's px back to its own.
+    const k = box.width / 393;
+    setFlights((f) => [...f, { id: pickup.id, kind: pickup.kind, from: { x: (at.x - box.left) / k, y: (at.y - box.top) / k } }]);
+  };
+  const landed = (flight: Flight) => {
+    setFlights((f) => f.filter((x) => x.id !== flight.id));
+    setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
+    setTallyFlash((n) => n + 1);
+  };
   useTilt(root);
   // At the destination the button row becomes a single End trip.
   const arrived = useArrived(forceArrived);
 
-  // Music only plays while the radio is off; turning the radio on or leaving the screen stops it.
-  const playing = musicOn && !radioOn;
+  // Messages on the road. Each plays once, as you pass it, and only while the radio's off: they never
+  // talk over a live call. Pass one mid-call and it's gone; pass two close together and they queue.
+  // No Speaker key any more: messages play at the phone level, the way Speaker started.
+  const message = useRouteMessage({ speaker: false });
+  const messageOn = message.phase !== "idle" && !radioOn;
+  // Your reply glows in your own marker's colour.
+  const youColor = travellers.find((t) => t.ahead === 0)?.color ?? "lime";
+  const [passed, setPassed] = useState<string[]>(() => (defaultMessage ? [defaultMessage.id] : []));
+  const [queue, setQueue] = useState<RouteMessage[]>(() => (defaultMessage ? [defaultMessage] : []));
+  const ahead = useMemo(
+    () =>
+      messages
+        .filter((m) => !passed.includes(m.id))
+        .map((m) => ({ id: m.id, at: m.at, color: MESSAGE_COLOR[m.kind], label: `${m.kind === "question" ? "Question" : "Message"} from ${m.from}` })),
+    [messages, passed],
+  );
+  const listening = state === "off" && !arrived && !leaving;
+  const reach = useCallback(
+    (id: string) => {
+      const m = messages.find((x) => x.id === id);
+      if (!m || passed.includes(id)) return;
+      setPassed((p) => [...p, id]);
+      if (listening) setQueue((q) => [...q, m]);
+    },
+    [messages, passed, listening],
+  );
+  // No route to drive past them on (Storybook, no trip set up): pass the next one every so often instead.
+  const onRoute = Boolean(useJourney()?.route);
+  const nextAhead = ahead[0]?.id;
+  useEffect(() => {
+    if (onRoute || !nextAhead || !listening || messageOn) return;
+    const t = setTimeout(() => reach(nextAhead), passed.length ? messageEveryMs : Math.min(messageEveryMs, 6000));
+    return () => clearTimeout(t);
+  }, [onRoute, nextAhead, listening, messageOn, reach, passed.length, messageEveryMs]);
+  // Next in the queue tunes in once the radio's quiet. The first one opening the screen goes straight away.
+  // A message waits while you're leaving a drop: it never talks over you.
+  const { play } = message;
+  const dropBusy = drop.active;
+  useEffect(() => {
+    if (!queue.length || messageOn || !listening || dropBusy) return;
+    const t = setTimeout(() => {
+      play(queue[0]);
+      setQueue((q) => q.slice(1));
+    }, message.message ? MESSAGE_GAP_MS : 0);
+    return () => clearTimeout(t);
+  }, [queue, messageOn, listening, dropBusy, play, message.message]);
+
+  // Music only plays while the radio is off and quiet; a message, the radio, or leaving the screen stops it.
+  const playing = musicOn && !radioOn && !messageOn;
   useEffect(() => {
     if (!playing) return;
     startMusic();
     return stopMusic;
   }, [playing]);
+
+  // Arriving mid-drop drops it right there (the key row turns into End trip).
+  const { toggle: toggleDrop } = drop;
   useEffect(() => {
-    setMusicSpeaker(speakerOn);
-  }, [speakerOn]);
+    if (arrived && dropRecording) toggleDrop();
+  }, [arrived, dropRecording, toggleDrop]);
+  // Your drops on the map: a pin per drop with its kind's icon (question, story, tip).
+  const dropPins = useMemo(
+    () => drop.drops.map((d: Drop) => ({ id: d.id, kind: d.kind, label: `${DROP_LABEL[d.kind]} you dropped` })),
+    [drop.drops],
+  );
 
   // Connecting: CONNECTING... on the LCD until the call comes through or drops.
+  // It doesn't start searching until you've said what you're up for (the pick state comes first).
   useEffect(() => {
     if (state !== "connecting") return;
     const t = setTimeout(() => {
@@ -196,6 +322,7 @@ export function RadioScreen({
       // Every call starts with your mic on, even if you'd muted it on the last one.
       setMicMuted(false);
       if (outcome === "connected") {
+        setIntroPage(0);
         setGreeting(true);
         cue("ready", { emphasis: "subtle", theme: "mech" });
       } else {
@@ -224,15 +351,34 @@ export function RadioScreen({
     };
   }, [state, timeoutUntil]);
 
-  // Then their audio starts.
+  // Picking with a remembered intent: keep it after 3 seconds, so turning on stays one motion while driving.
+  useEffect(() => {
+    if (state !== "pick" || !intentSet) return;
+    const t = setTimeout(() => setState("connecting"), 3000);
+    return () => clearTimeout(t);
+  }, [state, intentSet]);
+
+  // The radio introduces you both out loud, a page on the LCD per line, then their audio starts.
   useEffect(() => {
     if (!greeting) return;
-    const t = setTimeout(() => {
+    let live = true;
+    let line: ReturnType<typeof announce> | null = null;
+    void (async () => {
+      const lines = introLines(me, caller.handle, sharedMiles);
+      for (let i = 0; i < lines.length; i++) {
+        if (i > 0) setIntroPage(1);
+        line = announce(lines[i]);
+        await line.done;
+        if (!live) return;
+      }
       setGreeting(false);
       onConnected?.(caller.handle);
-    }, 2500);
-    return () => clearTimeout(t);
-  }, [greeting, caller.handle, onConnected]);
+    })();
+    return () => {
+      live = false;
+      line?.stop();
+    };
+  }, [greeting, caller.handle, onConnected, me, sharedMiles]);
 
   // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
   const [talking, setTalking] = useState(false);
@@ -272,14 +418,29 @@ export function RadioScreen({
       {/* Inner screen: the live map, recessed into the body */}
       <section
         aria-label="Route map"
-        className="absolute overflow-hidden bg-[#111] shadow-[0_1px_0_rgb(255_255_255/0.12)]"
+        className="radio-map absolute overflow-hidden bg-[#111] shadow-[0_1px_0_rgb(255_255_255/0.12)]"
         style={SCREEN}
       >
         <NavMap
           travellers={travellers}
+          messages={ahead}
+          onReach={reach}
+          drops={dropPins}
+          demo={demo}
+          onCollect={onCollect}
           className="absolute inset-0"
-          fallback={<PlaceholderMap travellers={travellers} />}
+          fallback={<PlaceholderMap travellers={travellers} drops={drop.drops} />}
         />
+        {/* A message playing: their voice comes down from the top; your reply (or a drop) rises from the bottom in your colour. */}
+        {dropRecording ? (
+          <MessageGlow mode="reply" color={youColor} level={drop.level} />
+        ) : (
+          <MessageGlow
+            mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
+            color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
+            level={message.level}
+          />
+        )}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
         <Glare />
@@ -308,22 +469,30 @@ export function RadioScreen({
         />
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[11px] font-bold text-label/80">RADIO</span>
-          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" ? "connecting" : "live"} blink={state === "connecting"} />
+          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" || state === "pick" ? "connecting" : "live"} blink={state === "connecting"} />
         </div>
 
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
           onChange={(on) => {
             // After you've arrived, switching on doesn't connect anyone; the LCD just thanks you.
             // Still in a hang-up timeout (even after a reload or switching off and on): wait it out.
-            const until = on && !arrived ? timedOutUntil() : null;
+            const until = on && !arrived && hangUpRule ? timedOutUntil() : null;
             if (until) {
               setTimeoutUntil(until);
               setNow(0); // The countdown's first tick fills this in.
             }
-            setState(on ? (arrived ? "thanks" : until ? "timeout" : "connecting") : "off");
+            // Turning on to find someone asks what you're up for first.
+            setState(on ? (arrived ? "thanks" : until ? "timeout" : "pick") : "off");
             setGreeting(false);
             setHangingUp(false);
-            if (on) setMusicOn(false);
+            // Flipping the switch mid-drop drops what you've said so far, right here.
+            if (dropRecording) toggleDrop();
+            if (on) {
+              setMusicOn(false);
+              // Going live ends whatever message was playing, and drops any waiting.
+              message.skip();
+              setQueue([]);
+            }
           }}
         />
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
@@ -335,7 +504,8 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+          {drop.active && state !== "pick" ? <DropLcd controls={drop} /> : messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
+          <CollectedTally counts={collected} flash={tallyFlash} />
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -353,7 +523,14 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", arrived && "hidden")}>
+        {/* What you're up for: the console keys become the four intents, a 2 x 2 grid of wide keys.
+            A remembered pick sits pressed in and lit, and is kept after 3 seconds. */}
+        {state === "pick" && !arrived && (
+          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+            <IntentKeys current={intentSet ? intent : undefined} onPick={pickIntent} />
+          </div>
+        )}
+        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", (arrived || state === "pick") && "hidden")}>
           {radioOn ? (
             <>
               <HardwareButton
@@ -376,8 +553,9 @@ export function RadioScreen({
               <HardwareButton
                 className={CALL_KEY}
                 // Pressed in and lit = mic on, which is how every call starts. Muting pops it up;
-                // on a break the mic stays off, and pressing it ends the break.
-                pressed={!micMuted && !onBreak}
+                // on a break the mic stays off, and pressing it ends the break. While you record
+                // a drop the call can't hear you, so the mic reads as off until you drop it.
+                pressed={!micMuted && !onBreak && !dropRecording}
                 onClick={() => (onBreak ? setOnBreak(false) : setMicMuted(!micMuted))}
                 aria-label={micMuted || onBreak ? "Unmute microphone" : "Mute microphone"}
               >
@@ -388,6 +566,8 @@ export function RadioScreen({
                 )}
               </HardwareButton>
             </>
+          ) : messageOn && message.message ? (
+            <MessageKeys controls={message} color={MESSAGE_COLOR[message.message.kind]} squareKey={CALL_KEY} />
           ) : (
             <>
               <HardwareButton
@@ -400,18 +580,28 @@ export function RadioScreen({
               </HardwareButton>
             </>
           )}
+          {/* Drop is for planting your own thing while you drive alone: not on a call (you're
+              talking to someone) and not while a message plays (that has its own Respond). */}
+          {!radioOn && (
           <HardwareButton
-            className={radioOn ? CALL_KEY : "flex-1"}
-            // Speakerphone: starts up (on the phone, held to your ear); pressed in and lit = on speaker.
-            pressed={speakerOn}
-            onClick={() => setSpeakerOn(!speakerOn)}
-            aria-label={speakerOn ? "Turn speaker off" : "Turn speaker on"}
+            className={messageOn ? CALL_KEY : "flex-1"}
+            // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
+            pressed={dropRecording}
+            disabled={drop.phase === "sorting" || messageOn}
+            onClick={toggleDrop}
+            aria-label={dropRecording ? "Drop it here" : "Leave a drop"}
           >
-            <SpeakerHigh size={25} className="opacity-60" aria-hidden />
+            {/* While recording the key says what the next tap does: send it, like Respond's send key. */}
+            {dropRecording ? (
+              <PaperPlaneRight size={24} className="opacity-80" aria-hidden />
+            ) : (
+              <MapPinPlus size={24} className="opacity-60" aria-hidden />
+            )}
           </HardwareButton>
-          {/* Settings stays on the console during a call too, square like Mic and Speaker. */}
+          )}
+          {/* Settings stays on the console during a call too, square like Mic. */}
           <HardwareButton
-            className={radioOn ? CALL_KEY : "flex-1"}
+            className={radioOn || messageOn ? CALL_KEY : "flex-1"}
             pressed={settingsOpen}
             onClick={() => setSettingsOpen(!settingsOpen)}
             aria-label={settingsOpen ? "Close settings" : "Settings"}
@@ -431,6 +621,10 @@ export function RadioScreen({
             "radial-gradient(circle at calc(50% + var(--tilt-x, 0) * 45%) calc(22% + var(--tilt-y, 0) * 35%), rgb(255 255 255 / 0.22), transparent 60%)",
         }}
       />
+
+      {flights.map((f) => (
+        <CollectFlight key={f.id} kind={f.kind} from={f.from} to={LCD_TALLY} onLanded={() => landed(f)} />
+      ))}
     </div>
   );
 }
@@ -456,8 +650,10 @@ function Glare() {
   );
 }
 
-/** The dithered map from Figma, shown when Google Maps isn't set up. */
-function PlaceholderMap({ travellers }: { travellers: Traveller[] }) {
+/** The dithered map from Figma, shown if the browser can't draw the live map (no WebGL). */
+function PlaceholderMap({ travellers, drops }: { travellers: Traveller[]; drops: Drop[] }) {
+  // Where you are on the placeholder: drops leave from here and slide back down the road.
+  const you = travellers.find((t) => t.ahead === 0) ?? travellers[0];
   return (
     <>
       {/* Same green cast as the live map; the markers sit outside it and keep their colors. */}
@@ -473,15 +669,19 @@ function PlaceholderMap({ travellers }: { travellers: Traveller[] }) {
         style={{ left: -SCREEN.left, top: -SCREEN.top }}
       />
       </div>
-      {travellers.map((t) => (
+      {/* Only you: other drivers are never shown on the map. */}
+      {you && (
         <MapMarker
-          key={t.id}
-          color={t.color}
-          label={t.label}
+          color={you.color}
+          label="You"
           className="absolute"
-          style={{ left: t.x - SCREEN.left, top: t.y - SCREEN.top, width: 19.8, height: 19.8 }}
+          style={{ left: you.x - SCREEN.left, top: you.y - SCREEN.top, width: 19.8, height: 19.8 }}
         />
-      ))}
+      )}
+      {you &&
+        drops.map((d) => (
+          <LeftBehind key={d.id} kind={d.kind} from={{ x: you.x - SCREEN.left + 9.9, y: you.y - SCREEN.top + 9.9 }} />
+        ))}
     </>
   );
 }

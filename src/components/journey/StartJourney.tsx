@@ -5,7 +5,9 @@ import { StartButton } from "./StartButton";
 import { TopBar } from "./TopBar";
 
 /** The first screen (iPhone 16 - 55): one big square to start setting up a trip, then your recent journeys. */
-export function StartJourney({ href = "/intents", journeys }: { href?: string; journeys?: PastJourney[] }) {
+// Straight to Destination: there's no intent question before the drive. Intent is asked only
+// when you flip the radio on, since it's only used to match calls.
+export function StartJourney({ href = "/journey", journeys }: { href?: string; journeys?: PastJourney[] }) {
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
