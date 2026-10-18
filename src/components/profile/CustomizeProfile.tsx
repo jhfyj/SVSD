@@ -95,7 +95,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
         })}
       </div>
 
-      <div className="mt-auto flex justify-center pb-[33px] pt-8">
+      <div className="mt-auto flex justify-center pb-14 pt-8">
         <button
           type="button"
           onClick={() => onSave(picked)}

@@ -40,7 +40,7 @@ function SignInScreen({
           {icon}
           {children}
         </div>
-        <div className={cn("flex pb-[33px] pt-8", submitLabel ? "justify-center" : "justify-end pr-[30px]")}>
+        <div className={cn("flex pb-14 pt-8", submitLabel ? "justify-center" : "justify-end pr-[30px]")}>
           <button
             type="submit"
             data-cuelume-tap=""
@@ -83,7 +83,7 @@ export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: Ph
       busyLabel={sending ? "SENDING…" : undefined}
     >
       <h1 className="mt-[85px] w-[293px] text-center text-xl"><ScrambleText>SIGN IN OR SIGN UP WITH YOUR PHONE NUMBER.</ScrambleText></h1>
-      <label className="mt-[28px] flex h-[49px] w-[325px] items-center gap-3 bg-surface px-2.5 text-xl focus-within:outline focus-within:outline-1 focus-within:outline-foreground/60">
+      <label className="mt-[28px] flex h-12 w-[325px] items-center gap-3 bg-surface px-2.5 text-xl focus-within:outline focus-within:outline-1 focus-within:outline-foreground/60">
         <span className={digits ? "text-foreground" : "text-foreground/40"}>{COUNTRY_CODE}</span>
         <input
           type="tel"

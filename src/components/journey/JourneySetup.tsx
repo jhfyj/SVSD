@@ -116,7 +116,7 @@ export function JourneySetup() {
         >
           Enter your destination
         </label>
-        <div className="relative mx-[31px] mt-4">
+        <div className="relative mx-11 mt-4">
           <input
             id="destination"
             type="search"
@@ -129,7 +129,7 @@ export function JourneySetup() {
               setDestination(null);
             }}
             placeholder={here ? "Search an address or coordinates" : ""}
-            className="h-[47px] w-full truncate rounded-token border border-border-input bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="h-12 w-full truncate rounded-token border border-border-input bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
@@ -179,7 +179,7 @@ export function JourneySetup() {
             Drawing your trail…
           </p>
         )}
-        <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base">
+        <dl className="mx-11 mt-10 grid grid-cols-2 gap-y-2 text-base">
           <div>
             <dt className="sr-only">Trip</dt>
             <dd className="text-foreground/70">{formatDuration(minutes)} trip</dd>
@@ -202,7 +202,7 @@ export function JourneySetup() {
         </dl>
       </section>
 
-      <div className="px-[44px] pb-14 pt-6">
+      <div className="px-11 pb-14 pt-6">
         <Link
           href="/journey/starting"
           data-cuelume-tap=""
@@ -248,7 +248,7 @@ function LocationNote({
 }) {
   if (location.status === "ok") return null;
   return (
-    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-xs text-foreground/70">
+    <p role="status" className="mx-11 mt-2 flex items-center justify-between text-xs text-foreground/70">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
         <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">

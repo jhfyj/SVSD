@@ -62,7 +62,7 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
   const groups = groupByDay(history, now);
   return (
     <div className="relative h-[374px] border border-muted">
-      <div tabIndex={0} aria-label="Journey history" className="h-full overflow-y-auto px-[19px] pb-[84px] pt-4 focus-visible:outline-2 focus-visible:outline-foreground">
+      <div tabIndex={0} aria-label="Journey history" className="h-full overflow-y-auto px-5 pb-[84px] pt-4 focus-visible:outline-2 focus-visible:outline-foreground">
         {groups.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-4 pb-8 text-center">
             <p className="text-sm text-foreground/70">NO JOURNEYS YET</p>
@@ -119,7 +119,7 @@ export function ProfileView({
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
-      <div className="flex flex-col px-11 pb-[77px] pt-[79px]">
+      <div className="flex flex-col px-11 pb-14 pt-[79px]">
         <div className="flex flex-col items-center">
           <button
             type="button"

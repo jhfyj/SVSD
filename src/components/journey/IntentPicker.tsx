@@ -67,7 +67,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
         href={`${href}?intent=${intent}`}
         data-cuelume-tap=""
         data-cuelume-theme="mech"
-        className="mx-11 mb-[61px] mt-auto flex h-[47px] items-center justify-center rounded-token border border-foreground text-sm transition-colors hover:bg-surface focus-visible:bg-surface"
+        className="mx-11 mb-14 mt-auto flex h-12 items-center justify-center rounded-token border border-foreground text-sm transition-colors hover:bg-surface focus-visible:bg-surface"
       >
         Next
       </Link>

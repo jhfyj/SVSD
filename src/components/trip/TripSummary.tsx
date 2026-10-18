@@ -47,7 +47,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
       {trip && (
-        <section aria-label="Trip summary" className="flex flex-1 flex-col px-[31px]">
+        <section aria-label="Trip summary" className="flex flex-1 flex-col px-11">
           <h1 className="mt-6 text-center text-xl">
             {trip.from || "…"} → {trip.to}
           </h1>
@@ -121,7 +121,7 @@ export function TripSummary({ trip: given, doneHref = "/" }: TripSummaryProps) {
         </section>
       )}
 
-      <div className="px-[44px] pb-14 pt-10">
+      <div className="px-11 pb-14 pt-10">
         <Link
           href={doneHref}
           data-cuelume-tap=""

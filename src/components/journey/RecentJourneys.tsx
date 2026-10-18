@@ -38,7 +38,7 @@ export function RecentJourneys({ journeys: given, limit = 3, className }: Recent
   if (!journeys.length) return null;
 
   return (
-    <section aria-labelledby="recent-journeys" className={cn("w-full px-[44px] uppercase", className)}>
+    <section aria-labelledby="recent-journeys" className={cn("w-full px-11 uppercase", className)}>
       <h2 id="recent-journeys" className="text-sm text-foreground/70">
         Recent journeys
       </h2>

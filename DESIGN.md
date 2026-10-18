@@ -549,7 +549,8 @@ Two families, never mixed in one spot:
 Code that predates or differs from this spec. Fix it when you're next in the file, or in one cleanup pass.
 
 - **Icon sizes on console keys:** `SpeakerHigh` is 25 and the icon-only End call's `PhoneDisconnect` is 28 (`RadioScreen`, `RadioConsole`); [§10](#10-iconography) says 24 on console keys. Snap them, or record the End call size as an exception.
-- **Layout:** `px-[31px]`, `mx-[31px]`, `px-[33px]`, `px-[19px]` → the 44px gutter; `h-[47px]` → `h-12`; bottom spacers (`mb-[61px]`, `pb-[77px]`) → `pb-14`.
+- **Control heights:** primary buttons are `min-h-[45px]` (Start journey, trip Done, Customize profile Save, Allow access) or `min-h-11` (sign-in Next, Profile), and `TextInput` is `h-11`; [§5.4](#54-sizes) says 48 (`h-12`).
+- **Fixed widths on the profile flow:** `SignIn`, `CustomizeProfile` and `AllowAccess` size their fields and buttons with `w-[293px]`…`w-[345px]` instead of filling the 305px column inside the 44px gutter.
 - **Motion:** the ⚠️ rows in [§9.8](#98-current-motion-inventory).
 - **Misc:** `HardwareButton` disabled `opacity-50` → 40; `CalendarDots` active dot → `bg-foreground`; Geist Sans loaded but unused.
 - **Input edge on the phone field:** `SignIn`'s phone number is a filled `bg-surface` box with no edge (about 1.1:1 against the cream background). Give it the input edge ([§3.7](#37-contrast-fixes-for-day)) like the other fields, or record the filled field as a recipe.

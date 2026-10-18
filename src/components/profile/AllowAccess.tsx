@@ -115,7 +115,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         ))}
       </ul>
       <p className="mx-11 mt-4 text-xs text-foreground/70">You can change these anytime in your phone&apos;s Settings.</p>
-      <div className="mt-auto flex flex-col items-center gap-2 pb-[33px] pt-8">
+      <div className="mt-auto flex flex-col items-center gap-2 pb-14 pt-8">
         <button
           type="button"
           onClick={onDone}
