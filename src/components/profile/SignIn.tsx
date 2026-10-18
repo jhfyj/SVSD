@@ -6,19 +6,25 @@ import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } fr
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
 import { TopBar } from "../journey/TopBar";
 import { cn } from "../ui/cn";
+import { LcdIcon } from "./LcdIcon";
 
 const CODE_LENGTH = 6;
 
-/** Shared frame for the two sign-in screens: title near the top, NEXT pinned bottom right. */
+/** Shared frame for the two sign-in screens: LCD icon on top, the submit button pinned to the bottom. */
 function SignInScreen({
+  icon,
   onSubmit,
   canSubmit,
   busyLabel,
+  submitLabel,
   children,
 }: {
+  icon: ReactNode;
   onSubmit: () => void;
   canSubmit: boolean;
   busyLabel?: string;
+  /** A full-width button with this label; NEXT --> in the bottom right when left out. */
+  submitLabel?: string;
   children: ReactNode;
 }) {
   const submit = (e: FormEvent) => {
@@ -28,16 +34,22 @@ function SignInScreen({
   return (
     <div className="flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
-      <form onSubmit={submit} noValidate className="flex flex-1 flex-col pt-[94px]">
-        <div className="flex flex-1 flex-col items-center">{children}</div>
-        <div className="flex justify-end pb-[33px] pr-[30px] pt-8">
+      <form onSubmit={submit} noValidate className="flex flex-1 flex-col pt-[42px]">
+        <div className="flex flex-1 flex-col items-center">
+          {icon}
+          {children}
+        </div>
+        <div className={cn("flex pb-[33px] pt-8", submitLabel ? "justify-center" : "justify-end pr-[30px]")}>
           <button
             type="submit"
             disabled={!canSubmit || !!busyLabel}
             aria-busy={!!busyLabel}
-            className="inline-flex min-h-11 min-w-[125px] items-center justify-center bg-foreground px-6 py-3 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40"
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center bg-foreground px-6 py-3 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40",
+              submitLabel ? "w-[332px]" : "min-w-[125px]",
+            )}
           >
-            {busyLabel ?? (
+            {busyLabel ?? submitLabel ?? (
               <span className="flex items-center gap-3">
                 NEXT
                 <svg aria-hidden width="28" height="10" viewBox="0 0 28 10" fill="none" stroke="currentColor" strokeWidth="1.25">
@@ -61,12 +73,17 @@ export type PhoneStepProps = {
   error?: string;
 };
 
-/** "Sign in or sign up with your phone number" (Figma node 123:691). */
+/** "Sign in or sign up with your phone number" (Figma node 153:1092). */
 export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: PhoneStepProps) {
   return (
-    <SignInScreen onSubmit={onNext} canSubmit={isCompletePhone(digits)} busyLabel={sending ? "SENDING…" : undefined}>
-      <h1 className="w-[293px] text-center text-xl">SIGN IN OR SIGN UP WITH YOUR PHONE NUMBER.</h1>
-      <label className="mt-[71px] flex h-[49px] w-[325px] items-center gap-3 bg-surface px-2.5 text-xl focus-within:outline focus-within:outline-1 focus-within:outline-foreground/60">
+    <SignInScreen
+      icon={<LcdIcon icon="phone" label="Phone" />}
+      onSubmit={onNext}
+      canSubmit={isCompletePhone(digits)}
+      busyLabel={sending ? "SENDING…" : undefined}
+    >
+      <h1 className="mt-[85px] w-[293px] text-center text-xl">SIGN IN OR SIGN UP WITH YOUR PHONE NUMBER.</h1>
+      <label className="mt-[28px] flex h-[49px] w-[325px] items-center gap-3 bg-surface px-2.5 text-xl focus-within:outline focus-within:outline-1 focus-within:outline-foreground/60">
         <span className={digits ? "text-foreground" : "text-muted"}>{COUNTRY_CODE}</span>
         <input
           type="tel"
@@ -99,7 +116,7 @@ export type CodeStepProps = {
   defaultFocused?: boolean;
 };
 
-/** "Enter verification code" (Figma node 123:701): six boxes over one real input. */
+/** "Enter verification code" (Figma node 153:1102): six boxes over one real input. */
 export function CodeStep({
   digits,
   code,
@@ -119,15 +136,17 @@ export function CodeStep({
   };
   return (
     <SignInScreen
+      icon={<LcdIcon icon="message" label="Message" />}
       onSubmit={() => onNext(code)}
       canSubmit={code.length === CODE_LENGTH}
       busyLabel={checking ? "CHECKING…" : undefined}
+      submitLabel="VERIFY"
     >
-      <h1 className="w-[293px] text-center text-xl">ENTER VERIFICATION CODE</h1>
+      <h1 className="mt-[61px] w-[293px] text-center text-xl">ENTER VERIFICATION CODE</h1>
       <p className="mt-[19px] w-[293px] text-center text-base text-foreground/70">
         We sent a 6-digit code to {maskPhone(digits)}.
       </p>
-      <div className="relative mt-[44px] flex w-[345px] gap-[11px]">
+      <div className="relative mt-[26px] flex w-[345px] gap-[11px]">
         {Array.from({ length: CODE_LENGTH }, (_, i) => (
           <div
             key={i}
