@@ -139,7 +139,7 @@ export const A_AtTheMoment: StoryObj = {
             <div className="relative flex-1">
               <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
                 <span className="text-[11px] font-bold text-label/80">RADIO</span>
-                <Led on={radioOn} blink={m.kind === "connecting"} />
+                <Led on={radioOn} tone={m.kind === "connecting" ? "connecting" : "live"} blink={m.kind === "connecting"} />
               </div>
               <RockerSwitch
                 className="absolute left-[26px] top-[44px]"
@@ -557,7 +557,7 @@ export const E_IntentAtRadioSwitch: StoryObj = {
           <div className="relative flex-1">
             <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
               <span className="text-[11px] font-bold text-label/80">RADIO</span>
-              <Led on={radioOn} blink={phase === "connecting"} />
+              <Led on={radioOn} tone={phase === "call" ? "live" : "connecting"} blink={phase === "connecting"} />
             </div>
             <RockerSwitch
               className="absolute left-[26px] top-[44px]"

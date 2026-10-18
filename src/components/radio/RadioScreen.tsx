@@ -271,7 +271,7 @@ export function RadioScreen({
         />
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[11px] font-bold text-label/80">RADIO</span>
-          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : "live"} blink={state === "connecting"} />
+          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" ? "connecting" : "live"} blink={state === "connecting"} />
         </div>
 
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}

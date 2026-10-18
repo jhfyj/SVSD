@@ -27,7 +27,7 @@ export const Parts: Story = {
     const [on, setOn] = useState(true);
     return (
       <div className="flex flex-col items-start gap-6">
-        <div className="flex items-center gap-4"><Led on /> <Led on={false} /></div>
+        <div className="flex items-center gap-4"><Led on={false} /> <Led on tone="connecting" /> <Led on /> <Led on tone="error" /></div>
         <ToggleSwitch on={on} onChange={setOn} />
         <LcdScreen className="size-24 rounded-full"><PixelMascot size={5} /></LcdScreen>
         <div className="flex gap-2">
