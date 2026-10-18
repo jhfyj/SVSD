@@ -168,7 +168,8 @@ export function JourneySetup() {
       <div className="px-[44px] pb-14 pt-6">
         <Link
           href="/journey/starting"
-          data-cuelume-navigate=""
+          data-cuelume-tap=""
+          data-cuelume-theme="mech"
           // Remember the drive for the radio (arrival) and the trip recap.
           onClick={() =>
             destination &&

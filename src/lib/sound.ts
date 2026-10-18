@@ -6,7 +6,8 @@ import { useSyncExternalStore } from "react";
 
   Two ways to make a control sound:
   - Mark it with a cuelume attribute and the global binding plays it:
-    data-cuelume-tap, -select, -toggle, -open, -close, -navigate, -type
+    data-cuelume-tap, -select, -toggle, -open, -close, -type (Jennifer dislikes the
+    -navigate whoosh on buttons; buttons that move to the next screen use a mech tap)
     (set the value to another cue name, e.g. data-cuelume-tap="close").
   - Call cue() from code for anything that isn't a plain click: outcomes, the radio switch,
     the tuning strip's detents, the load-in.
