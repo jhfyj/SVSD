@@ -402,3 +402,13 @@ body {
     animation: intro-pop 120ms steps(2) calc(var(--at) + 560ms) both;
   }
 }
+
+/* Power off: the radio drops out the bottom of the screen in 8 hard steps. */
+@keyframes radio-power-off {
+  to {
+    transform: translateY(100%);
+  }
+}
+.radio-power-off {
+  animation: radio-power-off 480ms steps(8, end) forwards;
+}
