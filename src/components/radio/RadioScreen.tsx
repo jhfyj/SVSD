@@ -8,6 +8,7 @@ import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
 import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
+import { NavMap } from "../nav/NavMap";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
@@ -22,14 +23,23 @@ import { useTilt } from "./useTilt";
 /** Where the map sits inside the device body (the inner screen). */
 const SCREEN = { left: 14, top: 64, width: 365, height: 509 };
 
-export type Traveller = { id: string; color: MarkerColor; label: string; x: number; y: number };
+export type Traveller = {
+  id: string;
+  color: MarkerColor;
+  label: string;
+  /** On the live map: metres along the route from you (ahead is positive, 0 is you). */
+  ahead: number;
+  /** On the placeholder map: the Figma position, in device coordinates (393 × 852). */
+  x: number;
+  y: number;
+};
 
-/** Marker positions from the Figma frame, in device coordinates (393 × 852). */
+/** Placeholder travellers until there are real ones: spread along the route around you. */
 export const DEFAULT_TRAVELLERS: Traveller[] = [
-  { id: "orange", color: "orange", label: "Traveller ahead", x: 225.8, y: 87.1 },
-  { id: "magenta", color: "magenta", label: "Traveller", x: 206, y: 256.1 },
-  { id: "lime", color: "lime", label: "You", x: 253.6, y: 287.83 },
-  { id: "sky", color: "sky", label: "Traveller behind", x: 118.84, y: 431.49 },
+  { id: "orange", color: "orange", label: "Traveller ahead", ahead: 900, x: 225.8, y: 87.1 },
+  { id: "magenta", color: "magenta", label: "Traveller", ahead: 250, x: 206, y: 256.1 },
+  { id: "lime", color: "lime", label: "You", ahead: 0, x: 253.6, y: 287.83 },
+  { id: "sky", color: "sky", label: "Traveller behind", ahead: -500, x: 118.84, y: 431.49 },
 ];
 
 export type RadioScreenProps = {
@@ -63,7 +73,7 @@ export type RadioScreenProps = {
 const casing =
   "[background:var(--panel-noise),var(--casing-gradient)] shadow-[var(--panel-highlight)]";
 
-/** The "Connected" radio screen (Figma node 123:246): map on an inset screen above the radio console. */
+/** The "Connected" radio screen (Figma node 123:246): the navigation map on an inset screen above the radio console. */
 export function RadioScreen({
   time = "3:30 AM",
   outcome = "connected",
@@ -173,31 +183,17 @@ export function RadioScreen({
         if (e.target === e.currentTarget && e.animationName === "radio-power-off") leave();
       }}
     >
-      {/* Inner screen: the dithered map, recessed into the body */}
+      {/* Inner screen: the live map, recessed into the body */}
       <section
         aria-label="Route map"
         className="absolute overflow-hidden bg-[#111] shadow-[0_1px_0_rgb(255_255_255/0.12)]"
         style={SCREEN}
       >
-        <Image
-          src="/radio/map-dithered.png"
-          alt=""
-          width={393}
-          height={852}
-          priority
-          unoptimized
-          className="absolute max-w-none [filter:var(--map-filter)] [image-rendering:pixelated]"
-          style={{ left: -SCREEN.left, top: -SCREEN.top }}
+        <NavMap
+          travellers={travellers}
+          className="absolute inset-0"
+          fallback={<PlaceholderMap travellers={travellers} />}
         />
-        {travellers.map((t) => (
-          <MapMarker
-            key={t.id}
-            color={t.color}
-            label={t.label}
-            className="absolute"
-            style={{ left: t.x - SCREEN.left, top: t.y - SCREEN.top, width: 19.8, height: 19.8 }}
-          />
-        ))}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
         <Glare />
@@ -352,5 +348,32 @@ function Glare() {
       <div className="absolute -inset-y-4 w-[60%] -skew-x-12" style={{ ...band(1), background: streak }} />
       <div className="absolute -inset-y-4 w-[60%] -skew-x-12" style={{ ...band(-1), background: streak }} />
     </div>
+  );
+}
+
+/** The dithered map from Figma, shown when Google Maps isn't set up. */
+function PlaceholderMap({ travellers }: { travellers: Traveller[] }) {
+  return (
+    <>
+      <Image
+        src="/radio/map-dithered.png"
+        alt=""
+        width={393}
+        height={852}
+        priority
+        unoptimized
+        className="absolute max-w-none [filter:var(--map-filter)] [image-rendering:pixelated]"
+        style={{ left: -SCREEN.left, top: -SCREEN.top }}
+      />
+      {travellers.map((t) => (
+        <MapMarker
+          key={t.id}
+          color={t.color}
+          label={t.label}
+          className="absolute"
+          style={{ left: t.x - SCREEN.left, top: t.y - SCREEN.top, width: 19.8, height: 19.8 }}
+        />
+      ))}
+    </>
   );
 }

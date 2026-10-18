@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration } from "@/lib/journey/duration";
+import { saveJourney } from "@/lib/journey/session";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { cn } from "../ui/cn";
@@ -116,7 +117,12 @@ export function JourneySetup() {
           {searching && (
             <div className="absolute inset-x-0 top-full z-20 mt-1 bg-background">
               {results.places.length ? (
-                <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
+                <>
+                  <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
+                  {results.places[0].google && (
+                    <p className="px-3 py-1 text-right text-[10px] normal-case text-foreground/40">Results from Google Maps</p>
+                  )}
+                </>
               ) : loading ? (
                 <p className="text-sm text-foreground/60">Searching…</p>
               ) : results.error ? (
@@ -171,19 +177,19 @@ export function JourneySetup() {
           href="/journey/starting"
           data-cuelume-tap=""
           data-cuelume-theme="mech"
-          // Remember the drive for the radio (arrival) and the trip recap.
-          onClick={() =>
-            destination &&
-            currentRoute &&
-            saveTrip({
-              from: "",
-              to: destination.detail.split(",")[0] || destination.name,
-              route: currentRoute.points,
-              minutes,
-              miles: Math.max(1, Math.round(currentRoute.distance / 1609.34)),
-              startedAt: Date.now(),
-            })
-          }
+          // Remember the drive for the radio (arrival, and the live map's navigation) and the trip recap.
+          onClick={() => {
+            saveJourney(destination ? { destination, route: currentRoute } : null);
+            if (destination && currentRoute)
+              saveTrip({
+                from: "",
+                to: destination.detail.split(",")[0] || destination.name,
+                route: currentRoute.points,
+                minutes,
+                miles: Math.max(1, Math.round(currentRoute.distance / 1609.34)),
+                startedAt: Date.now(),
+              });
+          }}
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(
