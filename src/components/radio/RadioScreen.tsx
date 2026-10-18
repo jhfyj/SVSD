@@ -6,13 +6,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
+import { useSession } from "@/lib/auth/session";
+import { useCharacter } from "@/lib/profile/avatar";
 import { cue } from "@/lib/sound";
+import { CharacterSprite } from "../profile/CharacterSprite";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
-import { Mascot } from "./Mascot";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
 import { useTilt } from "./useTilt";
@@ -62,6 +64,8 @@ export function RadioScreen({
   const router = useRouter();
   const live = radioOn && connected;
   const root = useRef<HTMLDivElement>(null);
+  const session = useSession();
+  const character = useCharacter(session?.phone);
   useTilt(root);
 
   // Music only plays while the radio is off; turning the radio on or leaving the screen stops it.
@@ -147,7 +151,8 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <Mascot className="text-lcd-ink" />
+          {/* The account's own character, swapping its two frames like on Customize profile. */}
+          <CharacterSprite character={character ?? "freddie"} pixel={6.5} className="text-lcd-ink" />
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
