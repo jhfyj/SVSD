@@ -12,6 +12,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 SVSD is a Next.js (App Router) + React + TypeScript app styled with Tailwind CSS v4.
 
+## Design system
+
+**Read [`DESIGN.md`](DESIGN.md) before any UI work.** It's the source of truth for color, type, spacing, radius, texture, icons (Phosphor glyphs, pixel pictures), motion, sound and both themes, and it wins over Figma where they differ. Build from its tokens and component recipes, run its ship checklist, and if you need a value it doesn't have, add it to `DESIGN.md` first, then to `globals.css`.
+
 ## Layout
 
 - `src/app/` — routes, `layout.tsx`, `globals.css` (design tokens)
@@ -32,7 +36,7 @@ SVSD is a Next.js (App Router) + React + TypeScript app styled with Tailwind CSS
 Design references come from [jhfyj/design-to-code](https://github.com/jhfyj/design-to-code). Follow its `AGENTS.md` to pull things in:
 
 1. Read its `catalog.json` first and pick entries by `description` and `tags`. Don't crawl the folders.
-2. **Brand**: copy its `DESIGN.md` to this repo's root and map its values onto the tokens in `src/app/globals.css`. Never ship the brand's logo or paid fonts.
+2. **Brand**: map its `DESIGN.md` values onto the tokens in `src/app/globals.css` and update this repo's `DESIGN.md` to match. Don't overwrite this repo's `DESIGN.md` with the brand's. Never ship the brand's logo or paid fonts.
 3. **Skill**: copy the whole folder to `.claude/skills/<name>/`.
 4. **Font**: copy files to `public/fonts/`, use the `@font-face` block from its README, and check `license`.
 5. **Library**: install with the command in the entry and read its "Notes / gotchas".
@@ -41,7 +45,7 @@ Pull only what the task needs.
 
 ## Conventions
 
-- Use the color, radius and font tokens (`bg-accent`, `text-muted`, `border-border`, `rounded-token`) instead of hardcoded values, so a brand swap only touches `globals.css`.
+- Use the tokens from `DESIGN.md` (`bg-accent`, `text-foreground/70`, `border-border`, `rounded-token`, `ease-out duration-150`) instead of hardcoded values, so a brand swap or a theme change only touches `globals.css`.
 - Server Components by default; add `"use client"` only where interactivity needs it.
 - Import with the `@/` alias (`@/components/...`).
 - For new screens, follow `.claude/skills/canvas-first-design`: decide the design before writing project code.

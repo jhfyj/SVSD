@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /*
-  Design tokens from the SVSD Figma file (Section 1, node 123:130).
-  See /mnt/project-files/design-system/svsd-figma-design-system.md for where each value comes from.
-  Dark is the default (night); light (day) overrides the same tokens below, so components never
-  check the theme. src/lib/theme.ts sets data-theme on <html> by time of day.
-  Use these tokens instead of hardcoding colors in components.
+  Design tokens from the SVSD Figma file (section "CLAUDE LOOK HERE", node 123:130).
+  DESIGN.md at the repo root is the spec: what each token means, when to use it, and the
+  values it retires. Dark is the default (night); light (day) overrides the same tokens below,
+  so components never check the theme. src/lib/theme.ts sets data-theme on <html> by time of day.
+  Use these tokens instead of hardcoding values.
 */
 :root {
   color-scheme: dark;
@@ -69,6 +69,20 @@
   --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   /* Film grain behind the non-radio screens (.grain): fine light specks on the dark background. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  /* What a color means (DESIGN.md §3): a content kind always uses its own color. */
+  --story: var(--marker-lime);
+  --question: var(--marker-magenta);
+  --led-amber: #ffb020;
+
+  /* Motion (DESIGN.md §9): the curve comes from what's moving, the duration from its tier. */
+  --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-ease-mechanical: cubic-bezier(0.3, 1.4, 0.5, 1);
+  --motion-press: 75ms;
+  --motion-quick: 150ms;
+  --motion-enter: 240ms;
+  --motion-screen: 400ms;
 }
 
 /*
@@ -175,7 +189,13 @@
   --color-marker-border: var(--marker-border);
   --color-power: var(--power);
   --color-land-dot: var(--land-dot);
+  --color-story: var(--story);
+  --color-question: var(--question);
+  --color-led-amber: var(--led-amber);
   --radius-token: var(--radius);
+  --ease-out: var(--motion-ease-out);
+  --ease-in-out: var(--motion-ease-in-out);
+  --ease-mechanical: var(--motion-ease-mechanical);
   --font-sans: var(--font-geist-mono), ui-monospace, monospace;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   /* Digital-7 (the Figma face) is personal-use only, so DSEG14 is bundled as the fallback. */
