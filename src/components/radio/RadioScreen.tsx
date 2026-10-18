@@ -1,9 +1,11 @@
 "use client";
 
-import { Microphone, PartlyCloudyNight } from "@carbon/icons-react";
-import { PhoneDisconnect, Play, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
+import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
+import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
 import { cue } from "@/lib/sound";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
@@ -31,12 +33,10 @@ export const DEFAULT_TRAVELLERS: Traveller[] = [
 export type RadioScreenProps = {
   time?: string;
   connected?: boolean;
-  /** Whether the radio switch starts on. It starts off, with Start story showing. */
+  /** Whether the radio switch starts on. It starts off, with Music, Settings and Speaker showing. */
   defaultOn?: boolean;
   travellers?: Traveller[];
   onEndCall?: () => void;
-  /** The wide button while the radio is off: play a story instead of calling. */
-  onStartStory?: () => void;
   onPower?: () => void;
   className?: string;
 };
@@ -52,16 +52,26 @@ export function RadioScreen({
   defaultOn = false,
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
-  onStartStory,
   onPower,
   className,
 }: RadioScreenProps) {
   const [radioOn, setRadioOn] = useState(defaultOn);
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
+  const [musicOn, setMusicOn] = useState(false);
+  const router = useRouter();
   const live = radioOn && connected;
   const root = useRef<HTMLDivElement>(null);
   useTilt(root);
+
+  // Music only plays while the radio is off; turning the radio on or leaving the screen stops it.
+  const playing = musicOn && !radioOn;
+  useEffect(() => {
+    if (!playing) return;
+    startMusic();
+    return stopMusic;
+  }, [playing]);
+  useEffect(() => setMusicMuted(speakerMuted), [speakerMuted]);
 
   return (
     <div
@@ -123,6 +133,7 @@ export function RadioScreen({
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
           onChange={(on) => {
             setRadioOn(on);
+            if (on) setMusicOn(false);
             // The LED comes up with a soft note when the radio goes live.
             if (on && connected) setTimeout(() => cue("ready", { emphasis: "subtle", theme: "mech" }), 200);
           }}
@@ -144,33 +155,44 @@ export function RadioScreen({
 
         <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
           {radioOn ? (
-            <HardwareButton
-              tone="end"
-              className="flex-1"
-              onClick={onEndCall}
-              disabled={!live}
-              data-cuelume-tap="close"
-              data-cuelume-emphasis="strong"
-            >
-              <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
-              <span className="text-base font-bold opacity-80">END CALL</span>
-            </HardwareButton>
+            <>
+              <HardwareButton
+                tone="end"
+                className="flex-1"
+                onClick={onEndCall}
+                disabled={!live}
+                data-cuelume-tap="close"
+                data-cuelume-emphasis="strong"
+              >
+                <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
+                <span className="text-base font-bold opacity-80">END CALL</span>
+              </HardwareButton>
+              <HardwareButton
+                className="w-[70px]"
+                pressed={micMuted}
+                onClick={() => setMicMuted(!micMuted)}
+                aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}
+              >
+                <Microphone size={24} className="opacity-60" aria-hidden />
+              </HardwareButton>
+            </>
           ) : (
-            <HardwareButton className="flex-1" onClick={onStartStory} data-cuelume-emphasis="strong">
-              <Play size={22} weight="fill" className="opacity-60" aria-hidden />
-              <span className="text-base font-bold opacity-60">START STORY</span>
-            </HardwareButton>
+            <>
+              <HardwareButton
+                className="flex-1"
+                pressed={musicOn}
+                onClick={() => setMusicOn(!musicOn)}
+                aria-label={musicOn ? "Stop music" : "Play music"}
+              >
+                <Music size={24} className="opacity-60" aria-hidden />
+              </HardwareButton>
+              <HardwareButton className="flex-1" onClick={() => router.push("/profile?settings=1")} aria-label="Settings">
+                <Settings size={24} className="opacity-60" aria-hidden />
+              </HardwareButton>
+            </>
           )}
           <HardwareButton
-            className="w-[70px]"
-            pressed={micMuted}
-            onClick={() => setMicMuted(!micMuted)}
-            aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}
-          >
-            <Microphone size={24} className="opacity-60" aria-hidden />
-          </HardwareButton>
-          <HardwareButton
-            className="w-[70px]"
+            className={radioOn ? "w-[70px]" : "flex-1"}
             pressed={speakerMuted}
             onClick={() => setSpeakerMuted(!speakerMuted)}
             aria-label={speakerMuted ? "Turn speaker on" : "Turn speaker off"}

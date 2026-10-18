@@ -17,13 +17,13 @@ import { PhoneSignIn } from "./SignIn";
  * character yet) picks its character on Customize profile, then sees Allow access (mic,
  * notifications, location) once. Settings on the profile opens Allow access again.
  */
-export function ProfileScreen() {
+export function ProfileScreen({ openSettings = false }: { openSettings?: boolean }) {
   const session = useSession();
   const router = useRouter();
   const character = useCharacter(session?.phone);
   const onboarded = useOnboarded(session?.phone);
   const [editing, setEditing] = useState(false);
-  const [settings, setSettings] = useState(false);
+  const [settings, setSettings] = useState(openSettings);
   // Right after sign-up the account has no journeys yet; later visits show the placeholder history.
   const [justJoined, setJustJoined] = useState(false);
 

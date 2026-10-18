@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration, nearestStep } from "@/lib/journey/duration";
-import { cue } from "@/lib/sound";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
@@ -12,6 +11,7 @@ import { cn } from "../ui/cn";
 import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
 import { TuningStrip } from "./TuningStrip";
+import { useCountUp } from "./useCountUp";
 import { useCurrentLocation } from "./useCurrentLocation";
 
 const TABS = ["Destination", "Duration"] as const;
@@ -54,11 +54,6 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const [route, setRoute] = useState<{ key: string; route: Route } | null>(null);
   const currentRoute = route && route.key === routeKey ? route.route : null;
 
-  // A soft note when the trail is ready to draw.
-  useEffect(() => {
-    if (currentRoute) cue("ready", { emphasis: "subtle" });
-  }, [currentRoute]);
-
   useEffect(() => {
     if (!routeKey || !destination || !here) return;
     const controller = new AbortController();
@@ -74,6 +69,9 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const minutes = chosenMinutes ?? routeMinutes ?? DEFAULT_MINUTES;
   const { stories, questions } = contentFor(minutes);
   const ready = destination ? currentRoute !== null : chosenMinutes !== null;
+  // The summary shows from the start; stories and questions count up from 0 once a route is picked.
+  const shownStories = useCountUp(currentRoute ? stories : 0);
+  const shownQuestions = useCountUp(currentRoute ? questions : 0);
 
   const pick = (place: Place) => {
     setDestination(place);
@@ -122,8 +120,6 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 type="button"
                 aria-label="Clear destination"
                 onClick={clear}
-                data-cuelume-close=""
-                data-cuelume-emphasis="subtle"
                 className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/60 hover:text-foreground"
               >
                 ×
@@ -161,37 +157,37 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               Drawing your trail…
             </p>
           )}
-          {currentRoute && (
-            <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base motion-safe:animate-[trail-in_400ms_ease-out_1.6s_both]">
-              <div>
-                <dt className="sr-only">Trip</dt>
-                <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
-              </div>
-              <div className="text-right">
-                <dt className="sr-only">Stories</dt>
-                <dd className="text-marker-lime">{stories} stories</dd>
-              </div>
-              <div className="text-[10px] text-foreground/40">
-                <dt className="sr-only">Distance</dt>
-                <dd>
-                  {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "drive"}
-                </dd>
-              </div>
-              <div className="text-right">
-                <dt className="sr-only">Questions</dt>
-                <dd className="text-marker-magenta">{questions} questions</dd>
-              </div>
-            </dl>
-          )}
+          <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base">
+            <div>
+              <dt className="sr-only">Trip</dt>
+              <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+            </div>
+            <div className="text-right">
+              <dt className="sr-only">Stories</dt>
+              <dd className="text-marker-lime">{shownStories} stories</dd>
+            </div>
+            <div className="text-[10px] text-foreground/40">
+              <dt className="sr-only">Distance</dt>
+              <dd>
+                {currentRoute ? (currentRoute.distance / 1000).toFixed(1) : "0.0"} km{" "}
+                {currentRoute?.straight ? "as the crow flies" : "drive"}
+              </dd>
+            </div>
+            <div className="text-right">
+              <dt className="sr-only">Questions</dt>
+              <dd className="text-marker-magenta">{shownQuestions} questions</dd>
+            </div>
+          </dl>
         </section>
       ) : (
         <section aria-label="Duration" className="flex flex-1 flex-col items-center px-9">
           <p className="mt-8 text-center font-mono text-base uppercase">How long’s your trip</p>
           <TuningStrip minutes={minutes} onChange={setChosenMinutes} className="-mx-9 mt-12 w-[calc(100%+4.5rem)]" />
           <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
-            {routeMinutes !== null && (
+            {/* The drive's own length, shown as just a time: every trip is a drive. */}
+            {routeMinutes !== null && !PRESETS.includes(routeMinutes) && (
               <Chip selected={minutes === routeMinutes} onClick={() => setChosenMinutes(null)}>
-                Drive · {formatDuration(routeMinutes)}
+                {formatDuration(routeMinutes)}
               </Chip>
             )}
             {PRESETS.map((m) => (
@@ -231,7 +227,6 @@ function Chip({ selected, children, onClick }: { selected: boolean; children: Re
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      data-cuelume-select=""
       className={cn(
         "min-h-11 border px-3 text-xs uppercase transition-colors",
         selected ? "border-foreground bg-surface-raised text-foreground" : "border-border text-foreground/60 hover:text-foreground",
@@ -254,7 +249,7 @@ function LocationNote({
     <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/60">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
-        <button type="button" onClick={onRetry} data-cuelume-tap="" className="-my-3 min-h-11 px-2 text-foreground underline">
+        <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">
           Try again
         </button>
       )}

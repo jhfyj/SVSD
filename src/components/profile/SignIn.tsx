@@ -2,6 +2,7 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
+import { ArrowRight } from "@carbon/icons-react";
 import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } from "@/lib/auth/phone";
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
 import { cue } from "@/lib/sound";
@@ -24,7 +25,7 @@ function SignInScreen({
   onSubmit: () => void;
   canSubmit: boolean;
   busyLabel?: string;
-  /** A full-width button with this label; NEXT --> in the bottom right when left out. */
+  /** A full-width button with this label; NEXT with an arrow icon in the bottom right when left out. */
   submitLabel?: string;
   children: ReactNode;
 }) {
@@ -51,11 +52,9 @@ function SignInScreen({
             )}
           >
             {busyLabel ?? submitLabel ?? (
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
                 NEXT
-                <svg aria-hidden width="28" height="10" viewBox="0 0 28 10" fill="none" stroke="currentColor" strokeWidth="1.25">
-                  <path d="M0 5h27M22.5 0.5 27 5l-4.5 4.5" />
-                </svg>
+                <ArrowRight size={16} aria-hidden />
               </span>
             )}
           </button>
@@ -78,7 +77,7 @@ export type PhoneStepProps = {
 export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: PhoneStepProps) {
   return (
     <SignInScreen
-      icon={<LcdIcon icon="phone" label="Phone" />}
+      icon={<LcdIcon icon="telephone" label="Phone" />}
       onSubmit={onNext}
       canSubmit={isCompletePhone(digits)}
       busyLabel={sending ? "SENDING…" : undefined}
@@ -154,8 +153,8 @@ export function CodeStep({
             key={i}
             aria-hidden
             className={cn(
-              "flex h-[69px] flex-1 items-center justify-center bg-surface text-2xl",
-              error && "outline outline-1 outline-danger",
+              "flex h-[69px] flex-1 items-center justify-center border bg-surface text-2xl",
+              error ? "border-danger" : focused && i === code.length ? "border-foreground" : "border-border",
             )}
           >
             {code[i] ?? (focused && i === code.length && <span className="caret-blink h-[27px] w-px bg-foreground" />)}
@@ -180,10 +179,10 @@ export function CodeStep({
       </div>
       {error && <p role="alert" className="mt-3 w-[345px] text-xs text-danger">{error}</p>}
       <div className="mt-6 flex w-[345px] justify-between text-xs text-foreground/60">
-        <button type="button" onClick={onChangeNumber} data-cuelume-tap="" className="min-h-11 uppercase underline-offset-4 hover:underline">
+        <button type="button" onClick={onChangeNumber} className="min-h-11 uppercase underline-offset-4 hover:underline">
           Change number
         </button>
-        <button type="button" onClick={onResend} data-cuelume-tap="" className="min-h-11 uppercase underline-offset-4 hover:underline">
+        <button type="button" onClick={onResend} className="min-h-11 uppercase underline-offset-4 hover:underline">
           Resend code
         </button>
       </div>
@@ -213,7 +212,6 @@ export function PhoneSignIn({ send = sendCode, verify = verifyCode, onSignedIn }
       await send(phone);
       setCode("");
       setStep("code");
-      cue("ready", { emphasis: "subtle" });
     } catch (e) {
       cue("error");
       setError(e instanceof Error ? e.message : "Couldn't send a code. Try again.");

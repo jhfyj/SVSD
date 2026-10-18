@@ -8,9 +8,10 @@ import { cn } from "../ui/cn";
 /*
   The load-in from the "Starting your radio" splash into the radio. The screen first appears as
   a blueprint on the dark panel: a faint grid, then each part of the radio drawn as a lime frame
-  with hatching and a Geist Mono tag, one after another. Then a scan line sweeps down and the
-  real radio fills in behind it, top to bottom, so each part resolves inside its own frame.
-  After a reference Jennifer shared (a blueprint-to-page reveal), in SVSD's palette.
+  with hatching and a Geist Mono tag, one after another. Then the casing flickers in around the
+  frames, and each part flashes from its blueprint into the real, analog part, one at a time, in
+  hard on/off frames like a tube warming up (no wipe). After a reference Jennifer shared, in
+  SVSD's palette.
 */
 
 type Part = { label: string; box: [x: number, y: number, w: number, h: number] };
@@ -23,49 +24,55 @@ const PARTS: Part[] = [
   { label: "Radio", box: [30, 605, 55, 20] },
   { label: "Switch", box: [26, 629, 46, 98] },
   { label: "LCD · 221×130", box: [156, 603, 221, 130] },
-  { label: "Start story", box: [26, 751, 195, 70] },
-  { label: "Mic", box: [229, 751, 70, 70] },
-  { label: "Speaker", box: [307, 751, 70, 70] },
+  { label: "Music", box: [26, 751, 112, 70] },
+  { label: "Settings", box: [146, 751, 111, 70] },
+  { label: "Speaker", box: [266, 751, 111, 70] },
 ];
 
-/** ms: when the first frame starts, the gap between frames, and when the sweep starts and how long it runs. */
+/** ms: frames draw in from FRAME_START, FRAME_GAP apart (each takes FRAME_MS). */
 const FRAME_START = 250;
 const FRAME_GAP = 110;
-const SWEEP_AT = FRAME_START + PARTS.length * FRAME_GAP + 450;
-const SWEEP_MS = 1100;
-export const INTRO_MS = SWEEP_AT + SWEEP_MS;
+const FRAME_MS = 680;
+/** ms: when the casing flickers in around the frames. */
+const CASING_AT = FRAME_START + (PARTS.length - 1) * FRAME_GAP + FRAME_MS + 150;
+/** ms: then each part flashes into the real thing, FLASH_GAP apart, each flash FLASH_MS long. */
+const FLASH_AT = CASING_AT + 300;
+const FLASH_GAP = 120;
+const FLASH_MS = 360;
+export const INTRO_MS = FLASH_AT + (PARTS.length - 1) * FLASH_GAP + FLASH_MS;
 
 export function RadioIntro({ children, className }: { children: ReactNode; className?: string }) {
   const [done, setDone] = useState(false);
   useIntroSounds();
-  const vars = { "--sweep-at": `${SWEEP_AT}ms`, "--sweep-ms": `${SWEEP_MS}ms` } as CSSProperties;
+  useEffect(() => {
+    const timer = setTimeout(() => setDone(true), INTRO_MS + 50);
+    return () => clearTimeout(timer);
+  }, []);
+  const vars = { "--casing-at": `${CASING_AT}ms` } as CSSProperties;
 
   return (
     <div className={cn("relative h-[852px] w-[393px] overflow-hidden bg-background", !done && "radio-intro", className)} style={vars}>
-      {/* The real radio, revealed top to bottom by the sweep */}
-      <div className="radio-intro-page h-full w-full" onAnimationEnd={(e) => e.target === e.currentTarget && setDone(true)}>
-        {children}
-      </div>
+      {/* The real radio, under the blueprint the whole time */}
+      {children}
 
       {!done && (
         <div aria-hidden className="radio-intro-blueprint pointer-events-none absolute inset-0">
-          {/* Faint grid and column guides */}
-          <div className="radio-intro-grid absolute inset-0" />
+          {/* The blank panel and its grid, until the casing flickers in */}
+          <div className="radio-intro-backdrop absolute inset-0 bg-background">
+            <div className="radio-intro-grid absolute inset-0" />
+          </div>
           {PARTS.map((part, i) => (
-            <Frame key={part.label} part={part} at={FRAME_START + i * FRAME_GAP} />
+            <Frame key={part.label} part={part} at={FRAME_START + i * FRAME_GAP} flash={FLASH_AT + i * FLASH_GAP} />
           ))}
         </div>
       )}
-
-      {/* The scan line leading the reveal */}
-      {!done && <div aria-hidden className="radio-intro-scan pointer-events-none absolute inset-x-0 top-0 h-px bg-marker-lime" />}
     </div>
   );
 }
 
 /**
  * The load-in, heard: a faint detent as each frame draws, like tuning across stations, a
- * whoosh as the scan line sweeps, and a warm note when the radio is in. Silent if the browser
+ * click as each part flashes in, and a warm note when the radio is in. Silent if the browser
  * hasn't had a tap yet (a cold load straight onto /radio).
  */
 function useIntroSounds() {
@@ -77,19 +84,26 @@ function useIntroSounds() {
           cue("select", { emphasis: "subtle", volume: 0.35, theme: "mech", direction: "forward" }),
         ),
       ),
-      at(SWEEP_AT, () => cue("navigate", { emphasis: "subtle" })),
+      ...PARTS.map((_, i) =>
+        at(FLASH_AT + i * FLASH_GAP, () => cue("toggle", { emphasis: "subtle", volume: 0.3, theme: "mech" })),
+      ),
       at(INTRO_MS, () => cue("ready")),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
 }
 
-/** One part's blueprint: four lines drawn in turn, hatching, and a name tag. */
-function Frame({ part, at }: { part: Part; at: number }) {
+/**
+ * One part's blueprint: a blank cover over the real part, four lines drawn in turn, hatching and
+ * a name tag. At `flash` the whole frame blinks out, back with a lime flare, then is gone, leaving the
+ * real part behind.
+ */
+function Frame({ part, at, flash }: { part: Part; at: number; flash: number }) {
   const [x, y, w, h] = part.box;
-  const style = { left: x, top: y, width: w, height: h, "--at": `${at}ms` } as CSSProperties;
+  const style = { left: x, top: y, width: w, height: h, "--at": `${at}ms`, "--flash": `${flash}ms` } as CSSProperties;
   return (
     <div className="radio-intro-frame absolute" style={style}>
+      <span className="radio-intro-cover absolute inset-0 bg-background" />
       <span className="radio-intro-hatch absolute inset-0" />
       <span className="radio-intro-line radio-intro-top absolute inset-x-0 top-0 h-px" />
       <span className="radio-intro-line radio-intro-right absolute inset-y-0 right-0 w-px" />
@@ -107,6 +121,7 @@ function Frame({ part, at }: { part: Part; at: number }) {
       >
         {part.label}
       </span>
+      <span className="radio-intro-flare absolute inset-0 bg-marker-lime opacity-0" />
     </div>
   );
 }

@@ -25,6 +25,9 @@
   --danger: #ff5151;
   --lcd: #97bd93;
   --lcd-ink: #1e2a1d;
+  /* Always-green screen (the Customize profile preview), same in both themes. */
+  --lcd-green: #97bd93;
+  --lcd-green-ink: #1e2a1d;
   --led: #6dff5c;
   /* Characters on Customize profile: unlit pixels, and the picked one lit green with a glow. */
   --character: rgb(255 255 255 / 0.2);
@@ -145,6 +148,8 @@
   --color-danger: var(--danger);
   --color-lcd: var(--lcd);
   --color-lcd-ink: var(--lcd-ink);
+  --color-lcd-green: var(--lcd-green);
+  --color-lcd-green-ink: var(--lcd-green-ink);
   --color-led: var(--led);
   --color-character: var(--character);
   --color-character-lit: var(--character-lit);
@@ -219,19 +224,24 @@ body {
   }
 }
 
-/* Pixel icons on the sign-in and Allow access screens float up and down, a pixel step at a time. */
+/* Pixel icons on the sign-in and Allow access screens float up and down, one icon pixel
+   (--pixel, set by PixelIcon) at a time. */
 @keyframes pixel-float {
   0%,
   100% {
     transform: translateY(0);
   }
+  25%,
+  75% {
+    transform: translateY(calc(var(--pixel, 2px) * -1));
+  }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(calc(var(--pixel, 2px) * -2));
   }
 }
 @media (prefers-reduced-motion: no-preference) {
   .pixel-float {
-    animation: pixel-float 2.4s steps(8) infinite;
+    animation: pixel-float 2.4s steps(1) infinite;
   }
 }
 
@@ -254,8 +264,9 @@ body {
 }
 
 /*
-  Radio load-in (RadioIntro): blueprint frames draw in one by one, then a scan line sweeps
-  down and the real radio fills in behind it. Skipped entirely for reduced motion.
+  Radio load-in (RadioIntro): blueprint frames draw in one by one, the casing flickers in around
+  them, then each part flashes from blueprint to the real part in hard on/off frames (step-end,
+  never eased). Skipped entirely for reduced motion.
 */
 @keyframes intro-x {
   from {
@@ -272,56 +283,61 @@ body {
     opacity: 0;
   }
 }
-@keyframes intro-reveal {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-@keyframes intro-hide {
-  from {
-    clip-path: inset(0 0 0 0);
-  }
-  to {
-    clip-path: inset(100% 0 0 0);
-  }
-}
-@keyframes intro-scan {
-  from {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  2%,
-  95% {
+/* The blank panel going out: off, back, off for good. */
+@keyframes intro-flicker-out {
+  0% {
     opacity: 1;
   }
-  to {
-    transform: translateY(852px);
+  25% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+/* A part becoming real: blueprint off, back with a lime flare, then gone for good. */
+@keyframes intro-flash {
+  0% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes intro-flare {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  55%,
+  100% {
     opacity: 0;
   }
 }
 
-.radio-intro-blueprint,
-.radio-intro-scan {
+.radio-intro-blueprint {
   display: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .radio-intro .radio-intro-blueprint,
-  .radio-intro .radio-intro-scan {
+  .radio-intro .radio-intro-blueprint {
     display: block;
   }
-  .radio-intro .radio-intro-page {
-    animation: intro-reveal var(--sweep-ms) linear var(--sweep-at) both;
-  }
-  .radio-intro .radio-intro-blueprint {
-    animation: intro-hide var(--sweep-ms) linear var(--sweep-at) both;
-  }
-  .radio-intro .radio-intro-scan {
-    box-shadow: 0 0 12px 1px var(--marker-lime);
-    animation: intro-scan var(--sweep-ms) linear var(--sweep-at) both;
+  .radio-intro-backdrop {
+    animation: intro-flicker-out 260ms step-end var(--casing-at) both;
   }
   .radio-intro-grid {
     background:
@@ -329,6 +345,12 @@ body {
       linear-gradient(rgb(var(--grid-ink) / 0.035) 1px, transparent 1px) 0 0 / 100% 24px,
       linear-gradient(90deg, rgb(var(--grid-ink) / 0.035) 1px, transparent 1px) 0 0 / 24px 100%;
     animation: intro-pop 400ms ease-out both;
+  }
+  .radio-intro-frame {
+    animation: intro-flash 360ms step-end var(--flash) both;
+  }
+  .radio-intro-flare {
+    animation: intro-flare 360ms step-end var(--flash) both;
   }
   .radio-intro-line {
     background: var(--marker-lime);

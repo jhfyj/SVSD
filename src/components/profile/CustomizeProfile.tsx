@@ -3,7 +3,6 @@
 import { ArrowLeft } from "@carbon/icons-react";
 import { useState } from "react";
 import { CHARACTERS, DEFAULT_CHARACTER, getCharacter, type CharacterId } from "@/lib/profile/characters";
-import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "./CharacterSprite";
 import { ScrambleText } from "@/components/ui/ScrambleText";
@@ -36,10 +35,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
         {onBack && (
           <button
             type="button"
-            onClick={() => {
-              cue("navigate", { direction: "back" });
-              onBack();
-            }}
+            onClick={onBack}
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
@@ -50,8 +46,8 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
       </header>
 
       <div className="mt-[29px] flex justify-center">
-        <div className="flex size-[106px] items-center justify-center text-character-lit drop-shadow-[0_0_8px_var(--character-lit)]">
-          <CharacterSprite key={picked} character={picked} pixel={5} />
+        <div className="flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd-green text-lcd-green-ink shadow-[var(--lcd-inset)]">
+          <CharacterSprite key={picked} character={picked} pixel={4.4} className="opacity-80" />
         </div>
       </div>
       <p aria-live="polite" className="mt-3 text-center text-base text-foreground/60">
@@ -81,7 +77,6 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               onClick={() => setPicked(c.id)}
-              data-cuelume-select=""
               className="group flex w-[83px] flex-col items-center gap-[5px] focus-visible:outline-none"
             >
               <span

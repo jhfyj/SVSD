@@ -57,7 +57,7 @@ export const ButtonStates: Story = {
   ),
 };
 
-/** The load-in after the splash: blueprint frames, then the radio sweeps in. Reload the story to replay. */
+/** The load-in after the splash: blueprint frames, then each part flashes into the real radio. Reload the story to replay. */
 export const LoadIn: Story = {
   render: (args) => (
     <RadioIntro>
