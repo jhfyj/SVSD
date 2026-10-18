@@ -2,6 +2,7 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
+import { ArrowRight } from "@carbon/icons-react";
 import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } from "@/lib/auth/phone";
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
 import { cue } from "@/lib/sound";
@@ -24,7 +25,7 @@ function SignInScreen({
   onSubmit: () => void;
   canSubmit: boolean;
   busyLabel?: string;
-  /** A full-width button with this label; NEXT --> in the bottom right when left out. */
+  /** A full-width button with this label; NEXT with an arrow icon in the bottom right when left out. */
   submitLabel?: string;
   children: ReactNode;
 }) {
@@ -51,11 +52,9 @@ function SignInScreen({
             )}
           >
             {busyLabel ?? submitLabel ?? (
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
                 NEXT
-                <svg aria-hidden width="28" height="10" viewBox="0 0 28 10" fill="none" stroke="currentColor" strokeWidth="1.25">
-                  <path d="M0 5h27M22.5 0.5 27 5l-4.5 4.5" />
-                </svg>
+                <ArrowRight size={16} aria-hidden />
               </span>
             )}
           </button>
