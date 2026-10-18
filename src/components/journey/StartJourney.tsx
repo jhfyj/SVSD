@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TopBar } from "./TopBar";
 
 /** The first screen (iPhone 16 - 55): one big square to start setting up a trip. */
-export function StartJourney({ href = "/journey" }: { href?: string }) {
+export function StartJourney({ href = "/intents" }: { href?: string }) {
   return (
     <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />

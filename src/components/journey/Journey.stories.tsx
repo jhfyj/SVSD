@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
+import { IntentPicker } from "./IntentPicker";
 import { JourneyMap } from "./JourneyMap";
 import { JourneySetup } from "./JourneySetup";
 import { RouteTrail } from "./RouteTrail";
@@ -18,6 +19,9 @@ const SAMPLE_ROUTE = [
 ].map(([lat, lng]) => ({ lat, lng }));
 
 export const Start: StoryObj = { render: () => <StartJourney href="#" /> };
+
+/** What brings you here today: pick one intent, then Next opens trip setup. */
+export const Intents: StoryObj = { render: () => <IntentPicker href="#" /> };
 
 /** Asks for your location; searches and routes against the live OpenStreetMap services. */
 export const Setup: StoryObj = { render: () => <JourneySetup /> };
