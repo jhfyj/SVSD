@@ -175,6 +175,8 @@ export function RadioScreen({
     const t = setTimeout(() => {
       setState(outcome);
       setHangingUp(false);
+      // Every call starts with your mic on, even if you'd muted it on the last one.
+      setMicMuted(false);
       if (outcome === "connected") {
         setGreeting(true);
         cue("ready", { emphasis: "subtle", theme: "mech" });
@@ -329,8 +331,9 @@ export function RadioScreen({
               </HardwareButton>
               <HardwareButton
                 className={CALL_KEY}
-                // On a break the mic stays off; pressing it ends the break.
-                pressed={micMuted || onBreak}
+                // Pressed in and lit = mic on, which is how every call starts. Muting pops it up;
+                // on a break the mic stays off, and pressing it ends the break.
+                pressed={!micMuted && !onBreak}
                 onClick={() => (onBreak ? setOnBreak(false) : setMicMuted(!micMuted))}
                 aria-label={micMuted || onBreak ? "Unmute microphone" : "Mute microphone"}
               >
