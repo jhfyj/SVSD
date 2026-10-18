@@ -1,10 +1,11 @@
 "use client";
 
 import { PartlyCloudyNight } from "@carbon/icons-react";
+import Link from "next/link";
 import { AccountIcon } from "../ui/icons";
 import { useClock } from "./useClock";
 
-/** The bar along the top of the setup screens: weather and LCD clock on the left, account on the right. */
+/** The bar along the top of the setup screens: weather and LCD clock on the left, account (to /profile) on the right. */
 export function TopBar({ showAccount = true }: { showAccount?: boolean }) {
   const time = useClock();
   return (
@@ -14,9 +15,9 @@ export function TopBar({ showAccount = true }: { showAccount?: boolean }) {
         <time className="min-w-20 font-display text-[20px] leading-none">{time}</time>
       </div>
       {showAccount && (
-        <button type="button" aria-label="Account" className="flex size-11 items-center justify-center">
+        <Link href="/profile" aria-label="Profile" className="flex size-11 items-center justify-center">
           <AccountIcon className="size-7.5" />
-        </button>
+        </Link>
       )}
     </header>
   );

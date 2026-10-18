@@ -84,6 +84,18 @@ body {
   color: var(--foreground);
 }
 
+/* Text caret in the verification code boxes. */
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .caret-blink {
+    animation: caret-blink 1s steps(1) infinite;
+  }
+}
+
 /* The route trail lights up one dot at a time. */
 @keyframes trail-in {
   from {
