@@ -3,6 +3,7 @@
 import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
 import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
 import { useSession } from "@/lib/auth/session";
@@ -60,6 +61,15 @@ export function RadioScreen({
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
+  const router = useRouter();
+  // Power off: the whole radio slides down out of view, then you're back at Start your journey.
+  const [leaving, setLeaving] = useState(false);
+  const leave = () => (onPower ? onPower() : router.push("/"));
+  const powerOff = () => {
+    if (leaving) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return leave();
+    setLeaving(true);
+  };
   const live = radioOn && connected;
   const root = useRef<HTMLDivElement>(null);
   const session = useSession();
@@ -83,8 +93,12 @@ export function RadioScreen({
       className={cn(
         "relative h-[852px] w-[393px] overflow-hidden font-sans text-foreground",
         casing,
+        leaving && "radio-power-off",
         className,
       )}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget && e.animationName === "radio-power-off") leave();
+      }}
     >
       {/* Inner screen: the dithered map, recessed into the body */}
       <section
@@ -122,7 +136,7 @@ export function RadioScreen({
           <PartlyCloudyNight size={20} aria-label="Partly cloudy" />
           <span className="font-display text-[20px] leading-none">{time}</span>
         </div>
-        <PowerButton onClick={onPower} />
+        <PowerButton onClick={powerOff} />
       </header>
 
       {/* Console */}
@@ -189,7 +203,7 @@ export function RadioScreen({
               >
                 <Music size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
-              <HardwareButton className="flex-1" onClick={() => window.location.assign("/profile?settings=1")} aria-label="Settings">
+              <HardwareButton className="flex-1" onClick={() => router.push("/profile?settings=1")} aria-label="Settings">
                 <Settings size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
             </>
