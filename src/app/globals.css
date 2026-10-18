@@ -358,3 +358,14 @@ body {
     animation: intro-pop 120ms steps(2) calc(var(--at) + 560ms) both;
   }
 }
+
+/*
+  The duration drum (TuningStrip): each tick sits at angle (i - turn) * PITCH / RADIUS around a
+  cylinder. Its position is pulled in to the cylinder's projection, it narrows and dims as it rolls
+  away, and anything past the edge is hidden. It moves only as the strip scrolls, so it follows the finger.
+*/
+.drum-face {
+  --angle: clamp(-1.5rad, calc((var(--i) - var(--turn, 0)) * 22 / 120 * 1rad), 1.5rad);
+  transform: translateX(calc(sin(var(--angle)) * 120px - (var(--i) - var(--turn, 0)) * 22px)) scaleX(cos(var(--angle)));
+  opacity: calc(cos(var(--angle)) * 1.2 - 0.2);
+}
