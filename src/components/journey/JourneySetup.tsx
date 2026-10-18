@@ -203,7 +203,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(
-            "flex min-h-[45px] w-full items-center justify-center gap-3 bg-accent text-base text-accent-foreground transition-opacity hover:bg-white",
+            "flex min-h-[45px] w-full items-center justify-center gap-3 bg-accent text-base text-accent-foreground transition-opacity hover:bg-accent-hover",
             !ready && "pointer-events-none opacity-30",
           )}
         >
