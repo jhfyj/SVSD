@@ -12,7 +12,7 @@ import { RockerSwitch } from "./RockerSwitch";
 const meta = {
   title: "Radio/RadioScreen",
   component: RadioScreen,
-  args: { onEndCall: fn(), onPower: fn(), onSettings: fn(), onConnected: fn() },
+  args: { onEndCall: fn(), onPower: fn(), onConnected: fn() },
 } satisfies Meta<typeof RadioScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;

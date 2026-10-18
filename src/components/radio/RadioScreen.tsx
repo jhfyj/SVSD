@@ -16,6 +16,7 @@ import { HardwareButton } from "./HardwareButton";
 import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
 import { RadioLcd, type CallState } from "./RadioLcd";
+import { RadioSettings } from "./RadioSettings";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
 import { useTilt } from "./useTilt";
@@ -41,7 +42,7 @@ export type RadioScreenProps = {
   connectMs?: number;
   /** The person you get connected to (mocked). */
   peer?: string;
-  /** Where the radio starts. It starts off, with Music, Settings and Speaker showing. */
+  /** Where the radio starts. It starts off, with Music, Speaker and Settings showing. */
   defaultState?: CallState;
   /** Shorthand for starting connected. */
   defaultOn?: boolean;
@@ -51,7 +52,6 @@ export type RadioScreenProps = {
   onEndCall?: () => void;
   /** After the power-off slide finishes: the app goes back to Start your journey. */
   onPower?: () => void;
-  onSettings?: () => void;
   /** Arrive at the destination now (demos, Storybook). Otherwise you arrive once the drive's time is up. */
   arrived?: boolean;
   onEndTrip?: () => void;
@@ -74,7 +74,6 @@ export function RadioScreen({
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
   onPower,
-  onSettings,
   arrived: forceArrived = false,
   onEndTrip,
   className,
@@ -86,6 +85,7 @@ export function RadioScreen({
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // Power off: the whole radio slides down out of view, then you're back at Start your journey.
   const [leaving, setLeaving] = useState(false);
   const leave = () => onPower?.();
@@ -198,6 +198,7 @@ export function RadioScreen({
 
       {/* Console */}
       <div className="absolute inset-x-0 top-[585px] h-[267px]">
+        <RadioSettings open={settingsOpen && !radioOn} className="bottom-full" />
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[11px] font-bold text-label/80">RADIO</span>
           <Led on={state !== "off"} tone={state === "lost" ? "error" : "live"} blink={state === "connecting"} />
@@ -207,7 +208,10 @@ export function RadioScreen({
           onChange={(on) => {
             setState(on ? "connecting" : "off");
             setGreeting(false);
-            if (on) setMusicOn(false);
+            if (on) {
+              setMusicOn(false);
+              setSettingsOpen(false);
+            }
           }}
         />
         <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
@@ -272,9 +276,6 @@ export function RadioScreen({
               >
                 <Music size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
-              <HardwareButton className="flex-1" onClick={onSettings} aria-label="Settings">
-                <Settings size={24} className="opacity-60" aria-hidden />
-              </HardwareButton>
             </>
           )}
           <HardwareButton
@@ -289,6 +290,17 @@ export function RadioScreen({
               <SpeakerHigh size={25} className="opacity-60" aria-hidden />
             )}
           </HardwareButton>
+          {!radioOn && (
+            <HardwareButton
+              className="flex-1"
+              pressed={settingsOpen}
+              onClick={() => setSettingsOpen(!settingsOpen)}
+              aria-label={settingsOpen ? "Close settings" : "Settings"}
+              aria-expanded={settingsOpen}
+            >
+              <Settings size={24} className="opacity-60" aria-hidden />
+            </HardwareButton>
+          )}
         </div>
       </div>
 

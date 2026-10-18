@@ -10,7 +10,6 @@ export function Radio() {
     <RadioIntro>
       <RadioScreen
         onPower={() => router.push("/")}
-        onSettings={() => router.push("/profile?settings=1")}
         onEndTrip={() => router.push("/trip")}
       />
     </RadioIntro>
