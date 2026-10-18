@@ -6,6 +6,7 @@ import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } fr
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
 import { cn } from "../ui/cn";
 import { LcdIcon } from "./LcdIcon";
+import { ScrambleText } from "@/components/ui/ScrambleText";
 
 const CODE_LENGTH = 6;
 
@@ -80,7 +81,7 @@ export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: Ph
       canSubmit={isCompletePhone(digits)}
       busyLabel={sending ? "SENDING…" : undefined}
     >
-      <h1 className="mt-[85px] w-[293px] text-center text-xl">SIGN IN OR SIGN UP WITH YOUR PHONE NUMBER.</h1>
+      <h1 className="mt-[85px] w-[293px] text-center text-xl"><ScrambleText>SIGN IN OR SIGN UP WITH YOUR PHONE NUMBER.</ScrambleText></h1>
       <label className="mt-[28px] flex h-[49px] w-[325px] items-center gap-3 bg-surface px-2.5 text-xl focus-within:outline focus-within:outline-1 focus-within:outline-foreground/60">
         <span className={digits ? "text-foreground" : "text-muted"}>{COUNTRY_CODE}</span>
         <input
@@ -140,7 +141,7 @@ export function CodeStep({
       busyLabel={checking ? "CHECKING…" : undefined}
       submitLabel="VERIFY"
     >
-      <h1 className="mt-[61px] w-[293px] text-center text-xl">ENTER VERIFICATION CODE</h1>
+      <h1 className="mt-[61px] w-[293px] text-center text-xl"><ScrambleText>ENTER VERIFICATION CODE</ScrambleText></h1>
       <p className="mt-[19px] w-[293px] text-center text-base text-foreground/70">
         We sent a 6-digit code to {maskPhone(digits)}.
       </p>

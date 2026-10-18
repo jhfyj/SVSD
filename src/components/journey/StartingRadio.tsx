@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "../ui/cn";
 import { TopBar } from "./TopBar";
+import { ScrambleText } from "@/components/ui/ScrambleText";
 
 /*
   The splash after "Start journey" (Figma node 116:2974): the dial tunes up to the station while
@@ -93,7 +94,7 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
           <span className="text-xl text-foreground/50">FM</span>
           <span className="text-5xl tabular-nums">{frequency.toFixed(1)}</span>
         </p>
-        <p className="font-mono text-xl uppercase">Starting your radio</p>
+        <p className="font-mono text-xl uppercase"><ScrambleText>Starting your radio</ScrambleText></p>
       </div>
     </div>
   );

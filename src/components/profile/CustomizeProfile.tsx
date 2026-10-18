@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CHARACTERS, DEFAULT_CHARACTER, getCharacter, type CharacterId } from "@/lib/profile/characters";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "./CharacterSprite";
+import { ScrambleText } from "@/components/ui/ScrambleText";
 
 export type CustomizeProfileProps = {
   /** The character picked so far; Freddie for a new account. */
@@ -41,7 +42,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
             <ArrowLeft size={16} />
           </button>
         )}
-        <h1 className="text-xl">CUSTOMIZE PROFILE</h1>
+        <h1 className="text-xl"><ScrambleText>CUSTOMIZE PROFILE</ScrambleText></h1>
       </header>
 
       <div className="mt-[29px] flex justify-center">
