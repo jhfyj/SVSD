@@ -31,7 +31,7 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
 
 /** Close in and tilted, with the camera aimed a little ahead so you sit low on the screen. */
-const CAMERA = { zoom: 17.5, tilt: 60, ahead: 70 };
+const CAMERA = { zoom: 17.5, tilt: 60, ahead: 110 };
 /** Demo driving speed, m/s (about 50 km/h), times the ?sim multiplier. */
 const SIM_SPEED = 14;
 /** Metres off the route before you count as off it, and how often to re-route at most. */
@@ -223,7 +223,8 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
   const start = path?.points[0] ?? journey?.destination ?? { lat: 37.7749, lng: -122.4194 };
 
   return (
-    <div className={cn("relative", className)}>
+    // cn doesn't merge, so "relative" is only the default: a passed "absolute" would lose to it.
+    <div className={cn(className ?? "relative", "size-full")}>
       <Map
         className="nav-map absolute inset-0"
         mapId={MAP_ID}
