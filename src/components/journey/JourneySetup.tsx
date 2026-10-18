@@ -22,7 +22,7 @@ export function JourneySetup() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<{ query: string; places: Place[]; error?: string }>({ query: "", places: [] });
   const [destination, setDestination] = useState<Place | null>(null);
-  const searching = !destination && query.trim().length >= 3;
+  const searching = !destination && query.trim().length > 0;
 
   useEffect(() => {
     if (!searching) return;
@@ -34,7 +34,7 @@ export function JourneySetup() {
         .catch((error: Error) => {
           if (!controller.signal.aborted) setResults({ query: q, places: [], error: error.message });
         });
-    }, 300);
+    }, 150); // Just enough to skip keystrokes in a burst; Photon is a shared fair-use server.
     return () => {
       clearTimeout(timer);
       controller.abort();
@@ -72,7 +72,8 @@ export function JourneySetup() {
     setQuery("");
   };
 
-  const shownResults = searching && results.query === query.trim() ? results : null;
+  // The dropdown opens on the first keystroke. While a search runs it keeps the last places it found.
+  const loading = searching && results.query !== query.trim();
 
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
@@ -111,15 +112,14 @@ export function JourneySetup() {
             </button>
           )}
           {/* Suggestions drop down right under the box */}
-          {shownResults && (
+          {searching && (
             <div className="absolute inset-x-0 top-full z-20 mt-1 bg-background">
-              {shownResults.error ? (
-                <p className="text-sm text-danger">{shownResults.error}</p>
-              ) : shownResults.places.length ? (
-                <AddressList
-                  items={shownResults.places}
-                  onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
-                />
+              {results.places.length ? (
+                <AddressList items={results.places} onSelect={(item) => pick(results.places.find((p) => p.id === item.id)!)} />
+              ) : loading ? (
+                <p className="text-sm text-foreground/60">Searching…</p>
+              ) : results.error ? (
+                <p className="text-sm text-danger">{results.error}</p>
               ) : (
                 <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
               )}
