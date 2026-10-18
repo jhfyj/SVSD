@@ -5,11 +5,9 @@ import { FlagCheckered, PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phos
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
-import { useSession } from "@/lib/auth/session";
-import { useCharacter } from "@/lib/profile/avatar";
+import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
-import { setStaticMuted, startStatic, stopStatic } from "@/lib/static";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
@@ -40,8 +38,11 @@ export type RadioScreenProps = {
   outcome?: "connected" | "lost";
   /** How long "Connecting..." shows before the outcome, in ms. */
   connectMs?: number;
-  /** The person you get connected to (mocked). */
+  /** The person you get connected to and their character (mocked). */
   peer?: string;
+  peerCharacter?: CharacterId;
+  /** Pin whether they're talking (Storybook). Otherwise it's mocked: they talk, pause, talk. */
+  speaking?: boolean;
   /** Where the radio starts. It starts off, with Music, Speaker and Settings showing. */
   defaultState?: CallState;
   /** Shorthand for starting connected. */
@@ -68,6 +69,8 @@ export function RadioScreen({
   outcome = "connected",
   connectMs = 3000,
   peer = "@sunny_side",
+  peerCharacter = "mochi",
+  speaking: speakingPinned,
   defaultOn = false,
   defaultState = defaultOn ? "connected" : "off",
   onConnected,
@@ -95,8 +98,6 @@ export function RadioScreen({
     setLeaving(true);
   };
   const root = useRef<HTMLDivElement>(null);
-  const session = useSession();
-  const character = useCharacter(session?.phone);
   useTilt(root);
   // At the destination the button row becomes a single End trip.
   const arrived = useArrived(forceArrived);
@@ -110,13 +111,11 @@ export function RadioScreen({
   }, [playing]);
   useEffect(() => {
     setMusicMuted(speakerMuted);
-    setStaticMuted(speakerMuted);
   }, [speakerMuted]);
 
-  // Connecting: static on the LCD and in the speaker until the call comes through or drops.
+  // Connecting: CONNECTING... on the LCD until the call comes through or drops.
   useEffect(() => {
     if (state !== "connecting") return;
-    startStatic();
     const t = setTimeout(() => {
       setState(outcome);
       if (outcome === "connected") {
@@ -126,10 +125,7 @@ export function RadioScreen({
         cue("error", { theme: "mech" });
       }
     }, connectMs);
-    return () => {
-      clearTimeout(t);
-      stopStatic();
-    };
+    return () => clearTimeout(t);
   }, [state, outcome, connectMs]);
 
   // Then their audio starts.
@@ -141,6 +137,26 @@ export function RadioScreen({
     }, 2500);
     return () => clearTimeout(t);
   }, [greeting, peer, onConnected]);
+
+  // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
+  const [talking, setTalking] = useState(false);
+  const inCall = state === "connected" && !greeting;
+  useEffect(() => {
+    if (!inCall || speakingPinned !== undefined) return;
+    let next = true;
+    let t: ReturnType<typeof setTimeout>;
+    const flip = () => {
+      setTalking(next);
+      t = setTimeout(flip, next ? 3200 : 1800);
+      next = !next;
+    };
+    flip();
+    return () => {
+      clearTimeout(t);
+      setTalking(false);
+    };
+  }, [inCall, speakingPinned]);
+  const speaking = inCall && (speakingPinned ?? talking);
 
   return (
     <div
@@ -223,7 +239,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <RadioLcd state={state} character={character ?? "freddie"} peer={peer} greeting={greeting} />
+          <RadioLcd state={state} peerCharacter={peerCharacter} peer={peer} greeting={greeting} speaking={speaking} />
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
