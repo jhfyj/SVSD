@@ -67,10 +67,10 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
         </HardwareButton>
         <HardwareButton
           className="w-[70px]"
-          // One speaker icon; the key's position is the state. Latched down = phone, which is where it starts.
-          pressed={!speakerOn}
+          // Speakerphone: starts up (on the phone); pressed in and lit = on speaker.
+          pressed={speakerOn}
           onClick={() => setSpeakerOn(!speakerOn)}
-          aria-label={speakerOn ? "Switch to phone" : "Switch to speaker"}
+          aria-label={speakerOn ? "Turn speaker off" : "Turn speaker on"}
         >
           <SpeakerHigh size={25} className="opacity-60" aria-hidden />
         </HardwareButton>
