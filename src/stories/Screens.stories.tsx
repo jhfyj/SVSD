@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import { RadioScreen } from "@/components/radio";
 import { CodeStep, CustomizeProfile, PhoneStep, ProfileView } from "@/components/profile";
-import { AddressList, Button, DotTrail, SegmentedTabs, StatusBar, TextInput } from "@/components/ui";
+import { AddressList, Button, DotTrail, StatusBar, TextInput } from "@/components/ui";
 import { sampleProfile } from "@/lib/profile/sample";
 
 /** Compositions of the Figma screens (iPhone 16, 393 × 852) built from the components. */
@@ -29,28 +28,22 @@ export const VerificationCode: StoryObj = {
 };
 
 export const StartJourney: StoryObj = {
-  render: function Render() {
-    const [tab, setTab] = useState<"Destination" | "Duration">("Destination");
-    return (
-      <Phone>
-        <SegmentedTabs label="Trip setup" options={["Destination", "Duration"] as const} value={tab} onChange={setTab} />
-        <p className="font-display text-2xl">{tab === "Destination" ? "Enter your destination" : "How long's your trip"}</p>
-        <TextInput aria-label={tab} placeholder={tab === "Destination" ? "Search address" : "2 hr 14 min"} />
-        {tab === "Destination" && (
-          <AddressList
-            items={[
-              { id: "1", name: "Golden Gate Park", detail: "San Francisco, CA" },
-              { id: "2", name: "Golden Gate Bridge", detail: "US-101, San Francisco" },
-            ]}
-          />
-        )}
-        <div className="mt-auto flex flex-col gap-4">
-          <DotTrail total={14} lit={0} />
-          <Button fullWidth>Start journey</Button>
-        </div>
-      </Phone>
-    );
-  },
+  render: () => (
+    <Phone>
+      <p className="font-display text-2xl">Enter your destination</p>
+      <TextInput aria-label="Destination" placeholder="Search address" />
+      <AddressList
+        items={[
+          { id: "1", name: "Golden Gate Park", detail: "San Francisco, CA" },
+          { id: "2", name: "Golden Gate Bridge", detail: "US-101, San Francisco" },
+        ]}
+      />
+      <div className="mt-auto flex flex-col gap-4">
+        <DotTrail total={14} lit={0} />
+        <Button fullWidth>Start journey</Button>
+      </div>
+    </Phone>
+  ),
 };
 
 /** The finalized Figma screen (node 123:246). */

@@ -3,26 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
-import { formatDuration, nearestStep } from "@/lib/journey/duration";
+import { formatDuration } from "@/lib/journey/duration";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
-import { SegmentedTabs } from "../ui/SegmentedTabs";
 import { cn } from "../ui/cn";
 import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
-import { TuningStrip } from "./TuningStrip";
 import { useCountUp } from "./useCountUp";
 import { useCurrentLocation } from "./useCurrentLocation";
 
-const TABS = ["Destination", "Duration"] as const;
-type Tab = (typeof TABS)[number];
-
-const PRESETS = [30, 60, 120, 240, 480];
-const DEFAULT_MINUTES = 30;
-
-/** Destination and Duration (iPhone 16 - 50 to 58): pick where you're going and for how long. */
-export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab }) {
-  const [tab, setTab] = useState<Tab>(initialTab);
+/** Destination (iPhone 16 - 50 to 58): pick where you're going; the drive sets the trip's length. */
+export function JourneySetup() {
   const { location, retry } = useCurrentLocation();
   const here = location.status === "ok" ? location.position : null;
 
@@ -63,12 +54,10 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
     return () => controller.abort();
   }, [routeKey, destination, here]);
 
-  // Trip length: what you set on the Duration tab, else the drive's length.
-  const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
-  const routeMinutes = currentRoute ? nearestStep(currentRoute.duration / 60) : null;
-  const minutes = chosenMinutes ?? routeMinutes ?? DEFAULT_MINUTES;
+  // Trip length is the drive's length; every trip is a drive.
+  const minutes = currentRoute ? Math.max(1, Math.round(currentRoute.duration / 60)) : 0;
   const { stories, questions } = contentFor(minutes);
-  const ready = destination ? currentRoute !== null : chosenMinutes !== null;
+  const ready = currentRoute !== null;
   // The summary shows from the start; stories and questions count up from 0 once a route is picked.
   const shownStories = useCountUp(currentRoute ? stories : 0);
   const shownQuestions = useCountUp(currentRoute ? questions : 0);
@@ -87,120 +76,93 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
-      <div className="px-9 pt-4">
-        <SegmentedTabs label="Trip setup" options={TABS} value={tab} onChange={setTab} className="p-2 [&>button]:text-xl" />
-      </div>
-
-      {tab === "Destination" ? (
-        <section aria-label="Destination" className="flex flex-1 flex-col">
-          {/* The prompt fades once you start typing; it stays as the field's label for screen readers. */}
-          <label
-            htmlFor="destination"
-            className={cn("mt-6 block text-center font-mono text-base uppercase transition-opacity", query && "opacity-0")}
-          >
-            Enter your destination
-          </label>
-          <div className="relative mx-[31px] mt-4">
-            <input
-              id="destination"
-              type="search"
-              autoComplete="off"
-              enterKeyHint="search"
-              data-cuelume-type=""
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setDestination(null);
-              }}
-              placeholder={here ? "Search an address" : ""}
-              className="h-[47px] w-full truncate rounded-token border border-foreground/60 bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
-            />
-            {query && (
-              <button
-                type="button"
-                aria-label="Clear destination"
-                onClick={clear}
-                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/60 hover:text-foreground"
-              >
-                ×
-              </button>
-            )}
-            {/* Suggestions drop down right under the box */}
-            {shownResults && (
-              <div className="absolute inset-x-0 top-full z-20 mt-1 bg-background">
-                {shownResults.error ? (
-                  <p className="text-sm text-danger">{shownResults.error}</p>
-                ) : shownResults.places.length ? (
-                  <AddressList
-                    items={shownResults.places}
-                    onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
-                  />
-                ) : (
-                  <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
-                )}
-              </div>
-            )}
-          </div>
-          <LocationNote location={location} onRetry={retry} />
-
-          <div className="relative mt-12">
-            <JourneyMap
-              here={here}
-              destination={destination}
-              route={currentRoute?.points ?? null}
-              stories={stories}
-              questions={questions}
-            />
-          </div>
-          {destination && here && !currentRoute && (
-            <p role="status" className="mt-4 text-center text-sm text-foreground/60">
-              Drawing your trail…
-            </p>
+      <section aria-label="Destination" className="flex flex-1 flex-col">
+        {/* The prompt fades once you start typing; it stays as the field's label for screen readers. */}
+        <label
+          htmlFor="destination"
+          className={cn("mt-6 block text-center font-mono text-base uppercase transition-opacity", query && "opacity-0")}
+        >
+          Enter your destination
+        </label>
+        <div className="relative mx-[31px] mt-4">
+          <input
+            id="destination"
+            type="search"
+            autoComplete="off"
+            enterKeyHint="search"
+            data-cuelume-type=""
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setDestination(null);
+            }}
+            placeholder={here ? "Search an address" : ""}
+            className="h-[47px] w-full truncate rounded-token border border-foreground/60 bg-transparent px-3 pr-11 text-xl uppercase text-foreground placeholder:text-base placeholder:text-foreground/40 focus:border-foreground focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear destination"
+              onClick={clear}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/60 hover:text-foreground"
+            >
+              ×
+            </button>
           )}
-          <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base">
-            <div>
-              <dt className="sr-only">Trip</dt>
-              <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+          {/* Suggestions drop down right under the box */}
+          {shownResults && (
+            <div className="absolute inset-x-0 top-full z-20 mt-1 bg-background">
+              {shownResults.error ? (
+                <p className="text-sm text-danger">{shownResults.error}</p>
+              ) : shownResults.places.length ? (
+                <AddressList
+                  items={shownResults.places}
+                  onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
+                />
+              ) : (
+                <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
+              )}
             </div>
-            <div className="text-right">
-              <dt className="sr-only">Stories</dt>
-              <dd className="text-marker-lime">{shownStories} stories</dd>
-            </div>
-            <div className="text-[10px] text-foreground/40">
-              <dt className="sr-only">Distance</dt>
-              <dd>
-                {currentRoute ? (currentRoute.distance / 1000).toFixed(1) : "0.0"} km{" "}
-                {currentRoute?.straight ? "as the crow flies" : "drive"}
-              </dd>
-            </div>
-            <div className="text-right">
-              <dt className="sr-only">Questions</dt>
-              <dd className="text-marker-magenta">{shownQuestions} questions</dd>
-            </div>
-          </dl>
-        </section>
-      ) : (
-        <section aria-label="Duration" className="flex flex-1 flex-col items-center px-9">
-          <p className="mt-8 text-center font-mono text-base uppercase">How long’s your trip</p>
-          <TuningStrip minutes={minutes} onChange={setChosenMinutes} className="-mx-9 mt-12 w-[calc(100%+4.5rem)]" />
-          <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
-            {/* The drive's own length, shown as just a time: every trip is a drive. */}
-            {routeMinutes !== null && !PRESETS.includes(routeMinutes) && (
-              <Chip selected={minutes === routeMinutes} onClick={() => setChosenMinutes(null)}>
-                {formatDuration(routeMinutes)}
-              </Chip>
-            )}
-            {PRESETS.map((m) => (
-              <Chip key={m} selected={chosenMinutes === m} onClick={() => setChosenMinutes(m)}>
-                {formatDuration(m)}
-              </Chip>
-            ))}
-          </div>
-          <p className="mt-6 text-center text-[10px] text-foreground/60">
-            About {stories} stories and {questions} questions
+          )}
+        </div>
+        <LocationNote location={location} onRetry={retry} />
+
+        <div className="relative mt-12">
+          <JourneyMap
+            here={here}
+            destination={destination}
+            route={currentRoute?.points ?? null}
+            stories={stories}
+            questions={questions}
+          />
+        </div>
+        {destination && here && !currentRoute && (
+          <p role="status" className="mt-4 text-center text-sm text-foreground/60">
+            Drawing your trail…
           </p>
-        </section>
-      )}
+        )}
+        <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base">
+          <div>
+            <dt className="sr-only">Trip</dt>
+            <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+          </div>
+          <div className="text-right">
+            <dt className="sr-only">Stories</dt>
+            <dd className="text-marker-lime">{shownStories} stories</dd>
+          </div>
+          <div className="text-[10px] text-foreground/40">
+            <dt className="sr-only">Distance</dt>
+            <dd>
+              {currentRoute ? (currentRoute.distance / 1000).toFixed(1) : "0.0"} km{" "}
+              {currentRoute?.straight ? "as the crow flies" : "drive"}
+            </dd>
+          </div>
+          <div className="text-right">
+            <dt className="sr-only">Questions</dt>
+            <dd className="text-marker-magenta">{shownQuestions} questions</dd>
+          </div>
+        </dl>
+      </section>
 
       <div className="px-[44px] pb-14 pt-6">
         <Link
@@ -218,22 +180,6 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
         </Link>
       </div>
     </div>
-  );
-}
-
-function Chip({ selected, children, onClick }: { selected: boolean; children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      className={cn(
-        "min-h-11 border px-3 text-xs uppercase transition-colors",
-        selected ? "border-foreground bg-surface-raised text-foreground" : "border-border text-foreground/60 hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

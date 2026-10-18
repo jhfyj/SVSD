@@ -5,9 +5,7 @@ import { JourneyMap } from "./JourneyMap";
 import { JourneySetup } from "./JourneySetup";
 import { RouteTrail } from "./RouteTrail";
 import { StartJourney } from "./StartJourney";
-import type { MessyLook } from "./MessyText";
 import { StartingRadio } from "./StartingRadio";
-import { TuningStrip } from "./TuningStrip";
 import { WeatherSprite } from "./WeatherIcon";
 import type { Sky } from "@/lib/weather";
 
@@ -31,34 +29,6 @@ export const Setup: StoryObj = { render: () => <JourneySetup /> };
 
 /** The splash after Start journey; it stays put here instead of opening the radio. */
 export const Starting: StoryObj = { render: () => <StartingRadio /> };
-
-export const SetupDuration: StoryObj = { render: () => <JourneySetup initialTab="Duration" /> };
-
-function DurationStory({ look }: { look?: MessyLook }) {
-  const [minutes, setMinutes] = useState(50);
-  return (
-    <div className="w-[393px] bg-background py-6">
-      <TuningStrip minutes={minutes} onChange={setMinutes} look={look} />
-    </div>
-  );
-}
-
-/** Trip length, 5 min to 24 hr: drag, flick, or use the arrow keys. Tap the time to type one. */
-export const Duration: StoryObj = { render: () => <DurationStory /> };
-
-/* Workshop: rougher takes on the time readout, all in the foreground color. */
-
-/** Each digit leans and sits a little off the line. */
-export const DurationJitter: StoryObj = { name: "Duration / Jitter", render: () => <DurationStory look="jitter" /> };
-
-/** Printed twice, slightly off-register. */
-export const DurationMisprint: StoryObj = { name: "Duration / Misprint", render: () => <DurationStory look="misprint" /> };
-
-/** Ransom note: every glyph picks its own face and size. */
-export const DurationMixed: StoryObj = { name: "Duration / Mixed type", render: () => <DurationStory look="mixed" /> };
-
-/** Scribbled: big lean and size swings. */
-export const DurationScrawl: StoryObj = { name: "Duration / Scrawl", render: () => <DurationStory look="scrawl" /> };
 
 export const Trail: StoryObj = {
   render: () => (
