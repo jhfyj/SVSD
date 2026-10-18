@@ -128,9 +128,12 @@
   --marker-orange: #b64f1a;
   --character: rgb(29 28 26 / 0.22);
   --character-lit: #2f8f3a;
-  /* Day: a deeper green with a softer glow, so the lit icon reads on the cream keys. */
-  --key-lit: #1f8a2c;
-  --key-lit-glow: drop-shadow(0 0 1.5px rgb(47 180 60 / 0.8)) drop-shadow(0 0 4px rgb(47 180 60 / 0.35));
+  /*
+    Day: a lit LED doesn't glow in daylight, so the lit icon (and the picked intent's label) is a
+    deep green with only a faint halo. A bright glow on thin icons smears them into a green blob.
+  */
+  --key-lit: #19752a;
+  --key-lit-glow: drop-shadow(0 0 2px rgb(25 117 42 / 0.28));
   --marker-border: #393939;
 
   --panel-gradient: linear-gradient(180deg, #f7f2eb 0%, #c9c2b9 100%);

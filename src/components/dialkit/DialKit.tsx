@@ -6,6 +6,7 @@ import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { markOnboarded } from "@/lib/profile/onboarding";
+import { clearHangUps } from "@/lib/radio/hangups";
 import { setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
 import { cn } from "../ui/cn";
@@ -23,6 +24,10 @@ const TODOS_KEY = "svsd-dialkit-todos";
 const DEMO_PHONE = "5550100100";
 
 const THEMES: ThemeChoice[] = ["auto", "light", "dark"];
+
+/** The Hang-up timeout flow: a call in progress, with hang-ups counting. */
+const TIMEOUT_HREF = "/radio?call=connected&timeout=on";
+const TIMEOUT_SKIP_HREF = "/radio?call=connecting&timeout=on";
 
 type Step = {
   label: string;
@@ -311,9 +316,19 @@ export function DialKit() {
       title: "Not in the script",
       steps: [
         { label: "Profile", href: "/profile", go: signedIn },
-        { label: "Intents", href: "/intents" },
         { label: "Connect, then lost", href: "/radio?call=connecting&outcome=lost", radio: true },
         { label: "Connection lost", href: "/radio?call=lost", radio: true },
+      ],
+    },
+    {
+      n: "",
+      title: "Hang-up timeout",
+      note: "3 hang-ups in a minute = a 20 s break here (5 min in the real rule). Every other flow ignores hang-ups.",
+      steps: [
+        // Start clean on a call, then hang up 3 times to see it.
+        { label: "Try it", href: TIMEOUT_HREF, radio: true, go: clearHangUps },
+        // Clears the count and the break, then reopens the radio (a new address so it starts over).
+        { label: "Skip the wait", href: here === TIMEOUT_HREF ? TIMEOUT_SKIP_HREF : TIMEOUT_HREF, go: clearHangUps },
       ],
     },
   ];

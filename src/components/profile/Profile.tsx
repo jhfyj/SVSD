@@ -67,7 +67,7 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
           <div className="flex h-full flex-col items-center justify-center gap-4 pb-8 text-center">
             <p className="text-sm text-foreground/70">NO JOURNEYS YET</p>
             <Link
-              href="/intents"
+              href="/journey"
               className="inline-flex min-h-11 items-center justify-center gap-2 bg-foreground px-5 text-sm text-accent-foreground transition-colors duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
             >
               <span aria-hidden className="size-1.5 bg-current" />

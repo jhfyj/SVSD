@@ -17,7 +17,9 @@ import { Led } from "./Led";
 import { RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
-import { blockHandle, useRadioSettings } from "@/lib/radio-settings";
+import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
+import { hasPickedIntent, KEEP_INTENT_MS, LOOKING_FOR, markIntentPicked } from "@/lib/radio/intent";
+import { IntentKeys, IntentPrompt } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
@@ -83,8 +85,11 @@ export type RadioScreenProps = {
    */
   arrived?: boolean;
   onEndTrip?: () => void;
-  /** How many hang-ups, how fast, set off the timeout and how long it lasts (short ones for Storybook). */
-  hangUpRule?: HangUpRule;
+  /**
+   * How many hang-ups, how fast, set off the timeout and how long it lasts. `null` turns it off:
+   * hang-ups don't count and no timeout applies (every dial kit flow except Hang-up timeout).
+   */
+  hangUpRule?: HangUpRule | null;
   className?: string;
 };
 
@@ -118,7 +123,16 @@ export function RadioScreen({
   // Who you're talking to. The first call is `peer`; each End call finds someone new (mocked).
   const [calls, setCalls] = useState(0);
   // Anyone you've reported never comes up again.
-  const { blocked } = useRadioSettings();
+  const { blocked, intent } = useRadioSettings();
+  // Flipping the radio on asks what you're up for (your intent, which is what matches you).
+  // The first time it waits for a pick; after that it keeps your last one after a few seconds.
+  const [choosing, setChoosing] = useState(false);
+  const [keeping, setKeeping] = useState(false);
+  const pickIntent = (next: CallIntent) => {
+    saveRadioSettings({ intent: next });
+    markIntentPicked();
+    setChoosing(false);
+  };
   const nextCallers = NEXT_CALLERS.filter((c) => !blocked.includes(c.handle));
   const caller =
     calls === 0 || !nextCallers.length
@@ -138,7 +152,7 @@ export function RadioScreen({
     setSettingsOpen(false);
     setCalls((n) => n + 1);
     onEndCall?.();
-    const until = counts ? recordHangUp(hangUpRule) : null;
+    const until = counts && hangUpRule ? recordHangUp(hangUpRule) : null;
     if (until) {
       setTimeoutUntil(until);
       setNow(0); // The countdown's first tick fills this in.
@@ -187,9 +201,17 @@ export function RadioScreen({
     setMusicSpeaker(speakerOn);
   }, [speakerOn]);
 
-  // Connecting: CONNECTING... on the LCD until the call comes through or drops.
+  // A remembered pick: connect with it if nothing else is pressed in time.
   useEffect(() => {
-    if (state !== "connecting") return;
+    if (!choosing || !keeping) return;
+    const t = setTimeout(() => setChoosing(false), KEEP_INTENT_MS);
+    return () => clearTimeout(t);
+  }, [choosing, keeping]);
+
+  // Connecting: CONNECTING... on the LCD until the call comes through or drops.
+  // It doesn't start searching until you've said what you're up for.
+  useEffect(() => {
+    if (state !== "connecting" || choosing) return;
     const t = setTimeout(() => {
       setState(outcome);
       setHangingUp(false);
@@ -203,7 +225,7 @@ export function RadioScreen({
       }
     }, connectMs);
     return () => clearTimeout(t);
-  }, [state, outcome, connectMs]);
+  }, [state, choosing, outcome, connectMs]);
 
   // Timeout: tick the countdown each second; when it runs out, the radio goes back to finding someone.
   useEffect(() => {
@@ -308,19 +330,23 @@ export function RadioScreen({
         />
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[11px] font-bold text-label/80">RADIO</span>
-          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" ? "connecting" : "live"} blink={state === "connecting"} />
+          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" ? "connecting" : "live"} blink={state === "connecting" && !choosing} />
         </div>
 
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
           onChange={(on) => {
             // After you've arrived, switching on doesn't connect anyone; the LCD just thanks you.
             // Still in a hang-up timeout (even after a reload or switching off and on): wait it out.
-            const until = on && !arrived ? timedOutUntil() : null;
+            const until = on && !arrived && hangUpRule ? timedOutUntil() : null;
             if (until) {
               setTimeoutUntil(until);
               setNow(0); // The countdown's first tick fills this in.
             }
             setState(on ? (arrived ? "thanks" : until ? "timeout" : "connecting") : "off");
+            // Turning on to find someone asks what you're up for first.
+            const ask = on && !arrived && !until;
+            setChoosing(ask);
+            setKeeping(ask && hasPickedIntent());
             setGreeting(false);
             setHangingUp(false);
             if (on) setMusicOn(false);
@@ -335,7 +361,11 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+          {choosing ? (
+            <IntentPrompt keeping={keeping ? CALL_INTENTS.find((t) => t.id === intent)?.key : undefined} />
+          ) : (
+          <RadioLcd state={state} searching={LOOKING_FOR[intent]} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+          )}
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -353,7 +383,13 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", arrived && "hidden")}>
+        {/* While it asks what you're up for, the console keys become the four intents. */}
+        {choosing && !arrived && (
+          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+            <IntentKeys current={keeping ? intent : undefined} onPick={pickIntent} />
+          </div>
+        )}
+        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", (arrived || choosing) && "hidden")}>
           {radioOn ? (
             <>
               <HardwareButton

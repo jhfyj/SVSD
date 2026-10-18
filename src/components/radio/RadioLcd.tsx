@@ -23,10 +23,12 @@ export type RadioLcdProps = {
   away?: boolean;
   /** During a hang-up timeout: time left, like "4:59". */
   countdown?: string;
+  /** While connecting: who it's looking for, from your intent ("Looking for someone who'll listen"). */
+  searching?: string;
 };
 
 /** What the small LCD shows for each radio state. Blank while the radio is off. */
-export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away, countdown }: RadioLcdProps) {
+export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away, countdown, searching }: RadioLcdProps) {
   if (state === "off") return null;
   if (state === "timeout") {
     return (
@@ -46,6 +48,7 @@ export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away,
           <span>.</span>
           <span>.</span>
         </span>
+        {searching && <span className="mt-1.5 block text-[11px] normal-case">{searching}</span>}
       </LcdText>
     );
   }

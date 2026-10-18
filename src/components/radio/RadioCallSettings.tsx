@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CALL_INTENTS, saveRadioSettings, useRadioSettings } from "@/lib/radio-settings";
-import { cn } from "../ui/cn";
+import { HardwareButton } from "./HardwareButton";
 import { Row, SettingsPanel } from "./RadioSettings";
 import { ToggleSwitch } from "./ToggleSwitch";
 
 /** Why someone gets reported. Short, so each fits a console key. */
 export const REPORT_REASONS = ["Harassment", "Sexual content", "Hate or slurs", "Something else"] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/** Title, Take a break, the 2x2 Here to keys and Report, without squeezing. */
+const CALL_SETTINGS_HEIGHT = 216;
 
 export type RadioCallSettingsProps = {
   open: boolean;
@@ -87,38 +90,31 @@ export function RadioCallSettings({ open, peer, onBreak, onBreakChange, onReport
   }
 
   return (
-    <SettingsPanel open={open} label="Call settings" title={`ON CALL WITH ${peer}`} className={className}>
+    <SettingsPanel open={open} label="Call settings" title={`ON CALL WITH ${peer}`} height={CALL_SETTINGS_HEIGHT} className={className}>
       <Row label="Take a break">
         <ToggleSwitch on={onBreak} onChange={onBreakChange} label="Take a break" />
       </Row>
-      <Row label="Here to">
+      {/* Taller than the other rows: the four intents sit in a 2x2 grid so each label fits on one line. */}
+      <div className="flex items-center justify-between border-b border-black/20 px-1 py-2">
+        <span className="text-[13px] font-bold uppercase opacity-80">Here to</span>
         {/* Same four intents as matching. Changing it mid-call keeps this call; it's who you meet next. */}
-        <div role="radiogroup" aria-label="What you're here for" className="grid w-[256px] grid-cols-4 gap-1">
-          {CALL_INTENTS.map((t) => {
-            const on = intent === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                aria-label={t.label}
-                onClick={() => saveRadioSettings({ intent: t.id })}
-                data-cuelume-select=""
-                className={cn(
-                  "flex h-10 items-center justify-center px-0.5 text-center text-[11px] font-bold uppercase leading-tight",
-                  // Picked: pressed in and lit, like the console's active keys.
-                  on
-                    ? "text-[var(--key-lit)] [background:var(--button-gradient-pressed)] [filter:var(--key-lit-glow)] shadow-[var(--button-pressed-shadow)]"
-                    : "opacity-80 [background:var(--button-gradient)] shadow-[var(--button-highlight)] hover:brightness-110",
-                )}
-              >
-                {t.key}
-              </button>
-            );
-          })}
+        <div role="radiogroup" aria-label="What you're here for" className="grid w-[256px] grid-cols-2 gap-1.5">
+          {/* The same key as the console's intent grid, so the pick looks identical in both places. */}
+          {CALL_INTENTS.map((t) => (
+            <HardwareButton
+              key={t.id}
+              role="radio"
+              aria-checked={intent === t.id}
+              aria-label={t.label}
+              className="h-8! px-1"
+              pressed={intent === t.id}
+              onClick={() => saveRadioSettings({ intent: t.id })}
+            >
+              <span className="whitespace-nowrap text-[11px] font-bold uppercase leading-none opacity-80">{t.key}</span>
+            </HardwareButton>
+          ))}
         </div>
-      </Row>
+      </div>
       <Row label={<span className="normal-case">REPORT {peer}</span>}>
         <button
           type="button"

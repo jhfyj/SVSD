@@ -94,7 +94,7 @@ Non-text shades: `foreground/20` for unlit dots and empty tracks, `foreground/15
 | `story` (= `marker-lime`) | `#d4ec21` | `#5f7300` | **Stories**, and what you're tuned into: story dots, “24 STORIES”, the tuner needle, focus on readouts |
 | `question` (= `marker-magenta`) | `#ec6bf2` | `#b01ea8` | **Questions**: anything asking you to reply |
 | `marker-sky`, `marker-orange` | `#7abdf0`, `#e3743d` | `#1f6fb0`, `#b64f1a` | Other **people** on the map only |
-| `key-lit` (+ `key-lit-glow`) | `#6dff5c` | `#1f8a2c` | **On.** A latched console key's icon lights green (mic on, speaker on, the picked intent) |
+| `key-lit` (+ `key-lit-glow`) | `#6dff5c` | `#19752a` | **On.** A latched console key's icon lights green (mic on, speaker on, the picked intent). Day is a deep green with only a faint halo: an LED doesn't glow in daylight, and a bright glow smears thin icons into a blob on the cream keys. |
 | `led` / `led-amber` / `led-red` | `#6dff5c` / `#ffb020` / `#ff3535` | same | **Connection:** green on a call, amber connecting, red lost, dark when off. The bulb sits in a `led-ring` (`#bababa`, both themes). |
 | `character` / `character-lit` | white 20% / `#8dff7e` | ink 22% / `#2f8f3a` | Pixel characters: unlit, and the picked one lit |
 | `danger` | `#ff5151` | `#ca3838` | Destructive actions and errors |
