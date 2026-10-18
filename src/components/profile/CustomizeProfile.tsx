@@ -50,8 +50,8 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, 
       </header>
 
       <div className="mt-[29px] flex justify-center">
-        <div className="flex size-[106px] items-center justify-center text-character-lit drop-shadow-[0_0_8px_var(--character-lit)]">
-          <CharacterSprite key={picked} character={picked} pixel={5} />
+        <div className="flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd-green text-lcd-green-ink shadow-[var(--lcd-inset)]">
+          <CharacterSprite key={picked} character={picked} pixel={4.4} className="opacity-80" />
         </div>
       </div>
       <p aria-live="polite" className="mt-3 text-center text-base text-foreground/60">
