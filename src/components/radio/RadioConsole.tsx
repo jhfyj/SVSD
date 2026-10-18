@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "../ui/cn";
 import { Microphone } from "@carbon/icons-react";
-import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
+import { PhoneDisconnect, SpeakerHigh } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen, PixelMascot } from "./LcdScreen";
 import { Led } from "./Led";
@@ -22,7 +22,7 @@ export type RadioConsoleProps = {
 /** The sync-calling radio: top bar with switch and LED, LCD display, bottom console. */
 export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, className }: RadioConsoleProps) {
   const [micMuted, setMicMuted] = useState(false);
-  const [speakerMuted, setSpeakerMuted] = useState(false);
+  const [speakerOn, setSpeakerOn] = useState(false);
   const on = state !== "off";
 
   return (
@@ -67,15 +67,12 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
         </HardwareButton>
         <HardwareButton
           className="w-[70px]"
-          pressed={speakerMuted}
-          onClick={() => setSpeakerMuted(!speakerMuted)}
-          aria-label={speakerMuted ? "Turn speaker on" : "Turn speaker off"}
+          // One speaker icon; the key's position is the state. Latched down = phone, which is where it starts.
+          pressed={!speakerOn}
+          onClick={() => setSpeakerOn(!speakerOn)}
+          aria-label={speakerOn ? "Switch to phone" : "Switch to speaker"}
         >
-          {speakerMuted ? (
-            <SpeakerSlash size={25} className="opacity-60" aria-hidden />
-          ) : (
-            <SpeakerHigh size={25} className="opacity-60" aria-hidden />
-          )}
+          <SpeakerHigh size={25} className="opacity-60" aria-hidden />
         </HardwareButton>
       </div>
     </section>

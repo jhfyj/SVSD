@@ -12,8 +12,9 @@ export type HardwareButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 /**
  * Top-lit console button: Mic, Speaker, and the red End call.
- * Up: lit from the top left with a raised gradient. Held or latched down: the light goes,
- * the gradient flips, the face sinks 1px and the label dims, like a physical key.
+ * Up: lit from the top left with a raised gradient. Held: the light goes, the gradient flips,
+ * the face sinks 1px and the label dims, like a physical key. Latched down (active): sunk the
+ * same way, and the icon lights up and glows like the power key.
  */
 export function HardwareButton({
   tone = "default",
@@ -29,6 +30,8 @@ export function HardwareButton({
 }: HardwareButtonProps) {
   const [held, setHeld] = useState(false);
   const down = held || pressed === true;
+  // Latched on (Music playing, Settings open...): the key stays down and its icon lights up like the power key.
+  const lit = pressed === true;
   const release = (handler?: (e: PointerEvent<HTMLButtonElement>) => void) => (e: PointerEvent<HTMLButtonElement>) => {
     setHeld(false);
     handler?.(e);
@@ -39,6 +42,7 @@ export function HardwareButton({
       type={type}
       aria-pressed={pressed}
       data-down={down || undefined}
+      data-lit={lit || undefined}
       {...(pressed === undefined ? { "data-cuelume-tap": "" } : { "data-cuelume-toggle": "" })}
       onPointerDown={(e) => {
         setHeld(true);
@@ -64,7 +68,10 @@ export function HardwareButton({
       <span
         className={cn(
           "flex items-center gap-3 transition-[transform,opacity] duration-75",
-          down ? "translate-y-px opacity-60" : "opacity-100",
+          down ? "translate-y-px" : "",
+          // Held for a moment: dimmed. Latched on: full strength, so the lit icon glows (see .key-lit).
+          held && !lit ? "opacity-60" : "opacity-100",
+          lit && "key-lit",
         )}
       >
         {children}

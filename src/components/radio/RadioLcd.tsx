@@ -15,10 +15,12 @@ export type RadioLcdProps = {
   greeting?: boolean;
   /** The other person is talking. */
   speaking?: boolean;
+  /** You're taking a break from the call. */
+  away?: boolean;
 };
 
 /** What the small LCD shows for each radio state. Blank while the radio is off. */
-export function RadioLcd({ state, peerCharacter, peer, greeting, speaking }: RadioLcdProps) {
+export function RadioLcd({ state, peerCharacter, peer, greeting, speaking, away }: RadioLcdProps) {
   if (state === "off") return null;
   if (state === "connecting") {
     return (
@@ -40,6 +42,14 @@ export function RadioLcd({ state, peerCharacter, peer, greeting, speaking }: Rad
       <LcdText>
         <span className="block text-[11px]">CURRENTLY CONNECTED TO</span>
         <span className="mt-1 block text-[16px]">{peer}</span>
+      </LcdText>
+    );
+  }
+  if (away) {
+    return (
+      <LcdText>
+        <span className="block">ON A BREAK</span>
+        <span className="mt-1 block text-[11px] normal-case">{peer} knows you&apos;re away</span>
       </LcdText>
     );
   }

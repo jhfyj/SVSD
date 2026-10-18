@@ -15,7 +15,8 @@ const SCALES = [
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
-let muted = false;
+let speaker = false;
+const level = () => (!isSoundOn() ? 0 : speaker ? 0.08 : 0.03);
 
 const pick = <T>(list: T[]) => list[Math.floor(Math.random() * list.length)];
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
@@ -39,7 +40,7 @@ export function startMusic() {
   ctx ??= new AudioContext();
   void ctx.resume();
   master = ctx.createGain();
-  master.gain.value = muted || !isSoundOn() ? 0 : 0.08;
+  master.gain.value = level();
   master.connect(ctx.destination);
 
   const scale = pick(SCALES);
@@ -71,8 +72,8 @@ export function stopMusic() {
   master = null;
 }
 
-/** Follows the radio's speaker button. */
-export function setMusicMuted(next: boolean) {
-  muted = next;
-  if (master) master.gain.value = muted || !isSoundOn() ? 0 : 0.08;
+/** Follows the radio's speaker button: on speaker it plays out loud, off speaker it's quieter, like a phone held to your ear. */
+export function setMusicSpeaker(on: boolean) {
+  speaker = on;
+  if (master) master.gain.value = level();
 }
