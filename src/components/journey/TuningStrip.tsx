@@ -4,7 +4,7 @@ import { play } from "cuelume";
 import { useEffect, useRef, useState } from "react";
 import { DURATION_STEPS, MAX_MINUTES, formatDuration, nearestStep } from "@/lib/journey/duration";
 import { cn } from "../ui/cn";
-import { MessyText, wobble, type MessyLook } from "./MessyText";
+import { MessyText, type MessyLook } from "./MessyText";
 
 /*
   The trip-length picker: a ruler you drag or flick under a fixed marker, like tuning a radio.
@@ -22,7 +22,7 @@ const LABELS: Record<number, string> = {
 export type TuningStripProps = {
   minutes: number;
   onChange: (minutes: number) => void;
-  /** How rough the readout looks; "scrawl" roughs up the ruler too. */
+  /** How rough the time readout looks. */
   look?: MessyLook;
   className?: string;
 };
@@ -123,15 +123,13 @@ export function TuningStrip({ minutes, onChange, look = "tidy", className }: Tun
           className="flex cursor-grab snap-x snap-mandatory overflow-x-auto overscroll-x-contain py-2 outline-none [scrollbar-width:none] focus-visible:outline-1 focus-visible:outline-foreground active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
         >
           <span aria-hidden className="shrink-0" style={{ width: `calc(50% - ${PITCH / 2}px)` }} />
-          {DURATION_STEPS.map((m, i) => {
+          {DURATION_STEPS.map((m) => {
             const label = LABELS[m];
             const hour = m % 60 === 0;
-            // Hand-drawn ticks: uneven lengths and a slight lean.
-            const tick = look === "scrawl" ? { height: `${(label ? 20 : hour ? 14 : 10) + wobble(i, "t", 5) * 3}px`, transform: `rotate(${wobble(i, "t", 6) * 5}deg)` } : undefined;
             return (
               <span key={m} aria-hidden className="flex shrink-0 snap-center flex-col items-center gap-2" style={{ width: PITCH }}>
-                <span className={cn("w-px origin-bottom", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} style={tick} />
-                <span className="h-3 text-[10px] leading-3 text-foreground/60">{label && <MessyText text={label} look={look === "scrawl" ? "jitter" : "tidy"} />}</span>
+                <span className={cn("w-px", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} />
+                <span className="h-3 text-[10px] leading-3 text-foreground/60">{label}</span>
               </span>
             );
           })}

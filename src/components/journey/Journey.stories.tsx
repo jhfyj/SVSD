@@ -55,7 +55,7 @@ export const DurationMisprint: StoryObj = { name: "Duration / Misprint", render:
 /** Ransom note: every glyph picks its own face and size. */
 export const DurationMixed: StoryObj = { name: "Duration / Mixed type", render: () => <DurationStory look="mixed" /> };
 
-/** Scribbled: big lean and size swings, and a hand-drawn ruler. */
+/** Scribbled: big lean and size swings. */
 export const DurationScrawl: StoryObj = { name: "Duration / Scrawl", render: () => <DurationStory look="scrawl" /> };
 
 export const Trail: StoryObj = {
