@@ -441,13 +441,122 @@ export const D_MoodInProfile: StoryObj = {
   },
 };
 
-/** All four next to each other, for the review. */
+type MatchIntent = (typeof JOURNEY_TYPES)[number];
+
+/**
+ * E. Intent at the radio switch. Intent is what matches you (with distance), so only people who
+ * take calls ever see it: flipping the radio on asks what you're up for, your last pick is
+ * remembered (and used on its own after 3 seconds, so it's no extra tap while driving), and the
+ * match line says why you were paired.
+ */
+export const E_IntentAtRadioSwitch: StoryObj = {
+  name: "E. Pick intent when you flip the radio on",
+  render: function Render() {
+    const [phase, setPhase] = useState<"off" | "pick" | "connecting" | "call">("off");
+    const [intent, setIntent] = useState<MatchIntent | null>(null);
+    const [last, setLast] = useState<MatchIntent | null>(null);
+    const choose = (t: MatchIntent) => {
+      setIntent(t);
+      setLast(t);
+      setPhase("connecting");
+    };
+
+    // Asking again with a remembered pick: keep it after 3 seconds if nothing is pressed.
+    useEffect(() => {
+      if (phase !== "pick" || !last) return;
+      const t = setTimeout(() => {
+        setIntent(last);
+        setPhase("connecting");
+      }, 3000);
+      return () => clearTimeout(t);
+    }, [phase, last]);
+    useEffect(() => {
+      if (phase !== "connecting") return;
+      const t = setTimeout(() => setPhase("call"), 1800);
+      return () => clearTimeout(t);
+    }, [phase]);
+
+    const radioOn = phase !== "off";
+    return (
+      <Side
+        note={
+          <Note
+            title="E. Intent at the radio switch"
+            source={`"Flipping the radio on means I'll take a call. The match is the driver who shares the longest stretch of your upcoming route... optionally shares a journey type." Shown as one line: "You share 84 miles of I-40 with @Hufflepuff23."`}
+            pros="Intent only exists for matching, so it's only asked of people who get matched. Drivers who never flip the radio on never see it. After the first time it's remembered, so turning on is one motion again."
+            cons="The first pick happens while driving (four big keys, one tap). Distance should mean shared stretch of road, not how close someone is: the artifact never shows live location or distance."
+          />
+        }
+      >
+        <Phone className="[background:var(--panel-noise),var(--casing-gradient)]">
+          <div className="mx-[14px] mt-[64px] flex h-[509px] items-center justify-center bg-[#111] text-[10px] text-white/40">
+            Live map
+          </div>
+          <div className="relative flex-1">
+            <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
+              <span className="text-[11px] font-bold text-label/80">RADIO</span>
+              <Led on={radioOn} blink={phase === "connecting"} />
+            </div>
+            <RockerSwitch
+              className="absolute left-[26px] top-[44px]"
+              on={radioOn}
+              label="Radio: take a call"
+              onChange={(on) => setPhase(on ? "pick" : "off")}
+            />
+            <Lcd>
+              {phase === "off" && <span>JUST DRIVING</span>}
+              {phase === "pick" && (
+                <>
+                  <span>WHAT ARE YOU UP FOR?</span>
+                  <span className="text-[11px] normal-case">
+                    {last ? `Keeping ${last.toLowerCase()} in 3 s` : "Helps us find your match"}
+                  </span>
+                </>
+              )}
+              {phase === "connecting" && (
+                <>
+                  <span>CONNECTING…</span>
+                  <span className="text-[11px] normal-case">Looking for someone {intent?.toLowerCase()} on your road</span>
+                </>
+              )}
+              {phase === "call" && (
+                <>
+                  <span>
+                    YOU SHARE 84 MILES OF <span className="whitespace-nowrap">I-40</span>
+                  </span>
+                  <span className="text-[11px] normal-case">@Hufflepuff23 · also {intent?.toLowerCase()}</span>
+                </>
+              )}
+            </Lcd>
+            <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
+              {phase === "pick" ? (
+                JOURNEY_TYPES.map((t) => (
+                  <HardwareButton key={t} className="flex-1" pressed={t === last} onClick={() => choose(t)}>
+                    <span className="text-[10px] font-bold uppercase leading-tight opacity-80">{t}</span>
+                  </HardwareButton>
+                ))
+              ) : (
+                <HardwareButton className="flex-1" disabled>
+                  <span className="text-[10px] font-bold uppercase opacity-60">
+                    {phase === "off" ? "Flip the radio on to take a call" : "On a call"}
+                  </span>
+                </HardwareButton>
+              )}
+            </div>
+          </div>
+        </Phone>
+      </Side>
+    );
+  },
+};
+
+/** All five next to each other, for the review. */
 export const Compare: StoryObj = {
-  name: "Compare all four",
+  name: "Compare all five",
   parameters: { layout: "padded" },
   render: () => (
     <div className="flex flex-wrap gap-12">
-      {[A_AtTheMoment, B_AtFirstArrival, C_JourneyType, D_MoodInProfile].map((s, i) => {
+      {[E_IntentAtRadioSwitch, A_AtTheMoment, B_AtFirstArrival, C_JourneyType, D_MoodInProfile].map((s, i) => {
         const Story = s.render as () => ReactNode;
         return <Story key={i} />;
       })}
