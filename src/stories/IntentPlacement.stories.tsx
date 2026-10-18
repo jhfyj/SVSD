@@ -457,32 +457,53 @@ const MATCH_INTENTS = [
     key: "Meet someone",
     label: "Connect with someone new",
     looking: "Looking for someone new on your road",
-    match: "also here to meet someone",
   },
   {
     id: "chat",
     key: "Chit-chat",
     label: "Just here to chit-chat",
     looking: "Looking for someone up for a chat",
-    match: "also up for a chat",
   },
   {
     id: "story",
     key: "Share a story",
     label: "Share a story",
     looking: "Looking for someone swapping stories",
-    match: "also swapping stories",
   },
   {
     id: "chest",
     key: "Off my chest",
     label: "Get something off my chest",
     looking: "Looking for someone who'll listen",
-    match: "also up for something real",
   },
 ] as const;
 
 type MatchIntent = (typeof MATCH_INTENTS)[number];
+type IntentId = MatchIntent["id"];
+
+/**
+ * Who each intent can be paired with, best first. Most intents pair with the same intent.
+ * "Off my chest" never pairs with another venter: it goes to a listener, someone who came to
+ * meet someone new or swap stories (open, unhurried calls). Chit-chat is kept light, so it
+ * isn't handed a heavy call. Ranking within the allowed list is then by shared stretch of road.
+ */
+const PAIRS_WITH: Record<IntentId, IntentId[]> = {
+  new: ["new", "story", "chest"],
+  chat: ["chat", "new"],
+  story: ["story", "new", "chest"],
+  chest: ["new", "story"],
+};
+
+/** The line under the shared miles: why you were paired, from the other driver's intent. */
+const MATCH_LINE: Record<IntentId, Record<IntentId, string>> = {
+  new: { new: "also here to meet someone", story: "here to swap stories", chest: "has something on their mind", chat: "" },
+  chat: { chat: "also up for a chat", new: "here to meet someone", story: "", chest: "" },
+  story: { story: "also swapping stories", new: "here to meet someone", chest: "has something on their mind", chat: "" },
+  chest: { new: "here to listen", story: "here to listen", chat: "", chest: "" },
+};
+
+/** The mocked match: the first intent you're allowed to pair with (a real one also weighs shared road). */
+const pairFor = (id: IntentId): IntentId => PAIRS_WITH[id][0];
 
 /**
  * E. Intent at the radio switch. Intent is what matches you (with distance), so only people who
@@ -525,7 +546,7 @@ export const E_IntentAtRadioSwitch: StoryObj = {
             title="E. Intent at the radio switch"
             source={`"Flipping the radio on means I'll take a call." "Calls cross types through route overlap and mood." Moods: "Laugh, Company or Something real." Motives include "Humour, shared experience" and "Catharsis, being seen."`}
             pros="Intent only exists for matching, so it's only asked of people who get matched. Drivers who never flip the radio on never see it. After the first time it's remembered, so turning on is one motion again."
-            cons="The first pick happens while driving (four big keys, one tap). 'Off my chest' needs the most care: the artifact calls catharsis 'low, but most valued', and it's where crisis routing matters."
+            cons="The first pick happens while driving (four big keys, one tap). 'Off my chest' is never paired with another venter: it goes to a listener (Meet someone or Share a story), and the listener is told before the call connects. It's also where the artifact's crisis routing matters."
           />
         }
       >
@@ -565,7 +586,9 @@ export const E_IntentAtRadioSwitch: StoryObj = {
                   <span>
                     YOU SHARE 84 MILES OF <span className="whitespace-nowrap">I-40</span>
                   </span>
-                  <span className="text-[11px] normal-case">@Hufflepuff23 · {intent?.match}</span>
+                  <span className="text-[11px] normal-case">
+                    @Hufflepuff23 · {intent && MATCH_LINE[intent.id][pairFor(intent.id)]}
+                  </span>
                 </>
               )}
             </Lcd>
@@ -592,6 +615,16 @@ export const E_IntentAtRadioSwitch: StoryObj = {
             </div>
           </div>
         </Phone>
+        {/* The listener's side of an Off my chest match: they're told first and can pass. */}
+        {intent?.id === "chest" && phase !== "off" && phase !== "pick" && (
+          <aside className="w-[221px] self-end">
+            <p className="mb-2 text-[10px] uppercase text-foreground/60">Meanwhile, @Hufflepuff23&apos;s radio</p>
+            <LcdScreen className="h-[130px] w-[221px] flex-col gap-1.5 px-3 text-center font-mono text-[13px] leading-tight">
+              <span>SOMEONE ON YOUR ROAD HAS SOMETHING ON THEIR MIND</span>
+              <span className="text-[11px] normal-case">Up for listening? Connecting in 5 s</span>
+            </LcdScreen>
+          </aside>
+        )}
       </Side>
     );
   },
