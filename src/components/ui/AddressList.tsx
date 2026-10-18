@@ -17,7 +17,6 @@ export function AddressList({ items, onSelect, className }: AddressListProps) {
           <button
             type="button"
             onClick={() => onSelect?.(item)}
-            data-cuelume-select=""
             className="flex w-full flex-col gap-1 px-3 py-3 text-left uppercase hover:bg-surface"
           >
             <span className="text-sm">{item.name}</span>

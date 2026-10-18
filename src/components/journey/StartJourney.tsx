@@ -18,7 +18,7 @@ export function StartJourney({ href = "/intents" }: { href?: string }) {
         </Link>
       </div>
       {/* The way into /profile now that the top bar is only time and weather. */}
-      <Link href="/profile" data-cuelume-navigate="" className="self-center pb-10 text-sm uppercase text-muted hover:text-foreground">
+      <Link href="/profile" className="self-center pb-10 text-sm uppercase text-muted hover:text-foreground">
         Profile
       </Link>
     </div>

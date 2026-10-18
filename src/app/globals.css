@@ -25,6 +25,9 @@
   --danger: #ff5151;
   --lcd: #97bd93;
   --lcd-ink: #1e2a1d;
+  /* Always-green screen (the Customize profile preview), same in both themes. */
+  --lcd-green: #97bd93;
+  --lcd-green-ink: #1e2a1d;
   --led: #6dff5c;
   /* Characters on Customize profile: unlit pixels, and the picked one lit green with a glow. */
   --character: rgb(255 255 255 / 0.2);
@@ -145,6 +148,8 @@
   --color-danger: var(--danger);
   --color-lcd: var(--lcd);
   --color-lcd-ink: var(--lcd-ink);
+  --color-lcd-green: var(--lcd-green);
+  --color-lcd-green-ink: var(--lcd-green-ink);
   --color-led: var(--led);
   --color-character: var(--character);
   --color-character-lit: var(--character-lit);
@@ -219,19 +224,24 @@ body {
   }
 }
 
-/* Pixel icons on the sign-in and Allow access screens float up and down, a pixel step at a time. */
+/* Pixel icons on the sign-in and Allow access screens float up and down, one icon pixel
+   (--pixel, set by PixelIcon) at a time. */
 @keyframes pixel-float {
   0%,
   100% {
     transform: translateY(0);
   }
+  25%,
+  75% {
+    transform: translateY(calc(var(--pixel, 2px) * -1));
+  }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(calc(var(--pixel, 2px) * -2));
   }
 }
 @media (prefers-reduced-motion: no-preference) {
   .pixel-float {
-    animation: pixel-float 2.4s steps(8) infinite;
+    animation: pixel-float 2.4s steps(1) infinite;
   }
 }
 

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration, nearestStep } from "@/lib/journey/duration";
-import { cue } from "@/lib/sound";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
@@ -53,11 +52,6 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const routeKey = destination && here ? `${here.lat},${here.lng}>${destination.id}` : null;
   const [route, setRoute] = useState<{ key: string; route: Route } | null>(null);
   const currentRoute = route && route.key === routeKey ? route.route : null;
-
-  // A soft note when the trail is ready to draw.
-  useEffect(() => {
-    if (currentRoute) cue("ready", { emphasis: "subtle" });
-  }, [currentRoute]);
 
   useEffect(() => {
     if (!routeKey || !destination || !here) return;
@@ -122,8 +116,6 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 type="button"
                 aria-label="Clear destination"
                 onClick={clear}
-                data-cuelume-close=""
-                data-cuelume-emphasis="subtle"
                 className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/60 hover:text-foreground"
               >
                 ×
@@ -232,7 +224,6 @@ function Chip({ selected, children, onClick }: { selected: boolean; children: Re
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      data-cuelume-select=""
       className={cn(
         "min-h-11 border px-3 text-xs uppercase transition-colors",
         selected ? "border-foreground bg-surface-raised text-foreground" : "border-border text-foreground/60 hover:text-foreground",
@@ -255,7 +246,7 @@ function LocationNote({
     <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/60">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
-        <button type="button" onClick={onRetry} data-cuelume-tap="" className="-my-3 min-h-11 px-2 text-foreground underline">
+        <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">
           Try again
         </button>
       )}
