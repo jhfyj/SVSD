@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
-import { DurationDial } from "./DurationDial";
 import { JourneySetup } from "./JourneySetup";
 import { RouteTrail } from "./RouteTrail";
 import { StartJourney } from "./StartJourney";
+import { TuningStrip } from "./TuningStrip";
 import { WorldDotMap } from "./WorldDotMap";
 
 /** The "getting set up" flow (Figma iPhone 16 - 50 to 58). */
@@ -23,12 +23,13 @@ export const Setup: StoryObj = { render: () => <JourneySetup /> };
 
 export const SetupDuration: StoryObj = { render: () => <JourneySetup initialTab="Duration" /> };
 
-export const Dial: StoryObj = {
+/** Trip length, 5 min to 8 hr: drag, flick, or use the arrow keys. */
+export const Duration: StoryObj = {
   render: function Render() {
     const [minutes, setMinutes] = useState(50);
     return (
-      <div className="w-72 bg-background p-4">
-        <DurationDial minutes={minutes} onChange={setMinutes} />
+      <div className="w-[393px] bg-background py-6">
+        <TuningStrip minutes={minutes} onChange={setMinutes} />
       </div>
     );
   },

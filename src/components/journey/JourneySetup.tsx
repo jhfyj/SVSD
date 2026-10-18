@@ -3,20 +3,21 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
+import { formatDuration, nearestStep } from "@/lib/journey/duration";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
 import { cn } from "../ui/cn";
-import { DurationDial, formatDuration } from "./DurationDial";
 import { RouteTrail } from "./RouteTrail";
 import { TopBar } from "./TopBar";
+import { TuningStrip } from "./TuningStrip";
 import { useCurrentLocation } from "./useCurrentLocation";
 import { WorldDotMap } from "./WorldDotMap";
 
 const TABS = ["Destination", "Duration"] as const;
 type Tab = (typeof TABS)[number];
 
-const PRESETS = [15, 30, 45, 60, 90];
+const PRESETS = [30, 60, 120, 240, 480];
 const DEFAULT_MINUTES = 30;
 
 /** Destination and Duration (iPhone 16 - 50 to 58): pick where you're going and for how long. */
@@ -64,7 +65,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
 
   // Trip length: what you set on the Duration tab, else the walk's length.
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
-  const routeMinutes = currentRoute ? Math.max(5, Math.round(currentRoute.duration / 60)) : null;
+  const routeMinutes = currentRoute ? nearestStep(currentRoute.duration / 60) : null;
   const minutes = chosenMinutes ?? routeMinutes ?? DEFAULT_MINUTES;
   const { stories, questions } = contentFor(minutes);
   const ready = destination ? currentRoute !== null : chosenMinutes !== null;
@@ -176,8 +177,8 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
       ) : (
         <section aria-label="Duration" className="flex flex-1 flex-col items-center px-9">
           <p className="mt-8 text-center font-display text-base">How long’s your trip</p>
-          <DurationDial minutes={minutes} onChange={setChosenMinutes} className="mt-8" />
-          <div role="group" aria-label="Quick picks" className="mt-8 flex w-full flex-wrap justify-center gap-2">
+          <TuningStrip minutes={minutes} onChange={setChosenMinutes} className="-mx-9 mt-12 w-[calc(100%+4.5rem)]" />
+          <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
             {routeMinutes !== null && (
               <Chip selected={minutes === routeMinutes} onClick={() => setChosenMinutes(null)}>
                 Walk · {formatDuration(routeMinutes)}
