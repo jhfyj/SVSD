@@ -7,7 +7,7 @@ import { cn } from "../ui/cn";
 
 /*
   The load-in from the "Starting your radio" splash into the radio. The screen first appears as
-  a blueprint on the dark panel: a faint grid, then each part of the radio drawn as a lime frame
+  a blueprint on the dark panel: a faint grid, then each part of the radio drawn as a gray frame
   with hatching and a Geist Mono tag, one after another. Then the casing flickers in around the
   frames, and each part flashes from its blueprint into the real, analog part, one at a time, in
   hard on/off frames like a tube warming up (no wipe). After a reference Jennifer shared, in
@@ -95,7 +95,7 @@ function useIntroSounds() {
 
 /**
  * One part's blueprint: a blank cover over the real part, four lines drawn in turn, hatching and
- * a name tag. At `flash` the whole frame blinks out, back with a lime flare, then is gone, leaving the
+ * a name tag. At `flash` the whole frame blinks out, back with a light flare, then is gone, leaving the
  * real part behind.
  */
 function Frame({ part, at, flash }: { part: Part; at: number; flash: number }) {
@@ -111,17 +111,17 @@ function Frame({ part, at, flash }: { part: Part; at: number; flash: number }) {
       <span className="radio-intro-line radio-intro-left absolute inset-y-0 left-0 w-px" />
       {/* Corner handles, like a selection in a design tool */}
       {(["-left-[2px] -top-[2px]", "-right-[2px] -top-[2px]", "-bottom-[2px] -left-[2px]", "-bottom-[2px] -right-[2px]"] as const).map((pos) => (
-        <span key={pos} className={cn("radio-intro-handle absolute size-[5px] bg-background ring-1 ring-marker-lime", pos)} />
+        <span key={pos} className={cn("radio-intro-handle absolute size-[5px] bg-background ring-1 ring-muted", pos)} />
       ))}
       <span
         className={cn(
-          "radio-intro-tag absolute left-0 whitespace-nowrap bg-marker-lime px-1 font-mono text-[9px] uppercase leading-[13px] text-background",
+          "radio-intro-tag absolute left-0 whitespace-nowrap bg-muted px-1 font-mono text-[9px] uppercase leading-[13px] text-background",
           y < 20 ? "top-full mt-1" : "bottom-full mb-1",
         )}
       >
         {part.label}
       </span>
-      <span className="radio-intro-flare absolute inset-0 bg-marker-lime opacity-0" />
+      <span className="radio-intro-flare absolute inset-0 bg-label opacity-0" />
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "../ui/cn";
-import { TopBar } from "./TopBar";
 import { ScrambleText } from "@/components/ui/ScrambleText";
 
 /*
@@ -68,7 +67,7 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   return (
     <div
       className={cn(
-        "grain flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
+        "grain flex min-h-dvh w-[min(393px,100vw)] flex-col overflow-hidden bg-background text-foreground",
         // Fades out just before the radio's blueprint takes over.
         onDone && "motion-safe:animate-[intro-pop_400ms_ease-in_3000ms_reverse_both]",
         className,
@@ -86,8 +85,6 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
           className="motion-safe:animate-[spiral-in_3s_cubic-bezier(0.4,0,0.2,1)_both]"
         />
       </svg>
-
-      <TopBar />
 
       <div role="status" className="relative flex flex-1 flex-col items-center justify-center gap-12 pb-24">
         <p className="flex items-baseline gap-2 font-display">

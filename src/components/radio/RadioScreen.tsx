@@ -3,7 +3,6 @@
 import { Microphone, Music, PartlyCloudyNight, Settings } from "@carbon/icons-react";
 import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { setMusicMuted, startMusic, stopMusic } from "@/lib/music";
 import { useSession } from "@/lib/auth/session";
@@ -61,7 +60,6 @@ export function RadioScreen({
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
-  const router = useRouter();
   const live = radioOn && connected;
   const root = useRef<HTMLDivElement>(null);
   const session = useSession();
@@ -191,7 +189,7 @@ export function RadioScreen({
               >
                 <Music size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
-              <HardwareButton className="flex-1" onClick={() => router.push("/profile?settings=1")} aria-label="Settings">
+              <HardwareButton className="flex-1" onClick={() => window.location.assign("/profile?settings=1")} aria-label="Settings">
                 <Settings size={24} className="opacity-60" aria-hidden />
               </HardwareButton>
             </>
