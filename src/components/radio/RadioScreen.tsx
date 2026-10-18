@@ -3,7 +3,7 @@
 import { Microphone, PartlyCloudyNight } from "@carbon/icons-react";
 import { PhoneDisconnect, Play, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
@@ -12,6 +12,7 @@ import { Led } from "./Led";
 import { Mascot } from "./Mascot";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
+import { useTilt } from "./useTilt";
 
 /** Where the map sits inside the device body (the inner screen). */
 const SCREEN = { left: 14, top: 64, width: 365, height: 509 };
@@ -58,9 +59,12 @@ export function RadioScreen({
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const live = radioOn && connected;
+  const root = useRef<HTMLDivElement>(null);
+  useTilt(root);
 
   return (
     <div
+      ref={root}
       className={cn(
         "relative h-[852px] w-[393px] overflow-hidden font-sans text-foreground",
         casing,
@@ -94,6 +98,7 @@ export function RadioScreen({
         ))}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
+        <Glare />
       </section>
 
       {/* Top bar */}
@@ -124,6 +129,9 @@ export function RadioScreen({
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
           <Mascot className="text-lcd-ink" />
         </LcdScreen>
+        <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
+          <Glare />
+        </div>
 
         <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
           {radioOn ? (
@@ -159,6 +167,37 @@ export function RadioScreen({
           </HardwareButton>
         </div>
       </div>
+
+      {/* Light on the casing, sliding the way the phone tilts */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+        style={{
+          background:
+            "radial-gradient(circle at calc(50% + var(--tilt-x, 0) * 45%) calc(22% + var(--tilt-y, 0) * 35%), rgb(255 255 255 / 0.22), transparent 60%)",
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * A streak of light across glass. It sits off the edge while the phone is held still and
+ * sweeps across once you tilt far enough (right or toward you from one side, left or away
+ * from the other), like a real reflection catching the screen. Blends with what's under it,
+ * so it reads on dark and light themes alike.
+ */
+function Glare() {
+  const band = (sign: 1 | -1) => ({
+    // p rises from 0 at rest to about ±1 at full tilt; the band crosses the glass around p = ±0.5.
+    left: `calc((var(--tilt-x, 0) + var(--tilt-y, 0) * 0.5) * 200% ${sign > 0 ? "- 80%" : "+ 120%"})`,
+  });
+  const streak =
+    "linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.05) 35%, rgb(255 255 255 / 0.28) 50%, rgb(255 255 255 / 0.05) 65%, transparent 100%)";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden mix-blend-screen">
+      <div className="absolute -inset-y-4 w-[60%] -skew-x-12" style={{ ...band(1), background: streak }} />
+      <div className="absolute -inset-y-4 w-[60%] -skew-x-12" style={{ ...band(-1), background: streak }} />
     </div>
   );
 }
