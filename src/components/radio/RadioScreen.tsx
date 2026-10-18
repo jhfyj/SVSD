@@ -90,7 +90,7 @@ export function RadioScreen({
       </section>
 
       {/* Top bar */}
-      <header className="absolute inset-x-0 top-0 flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
+      <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
         <div className="flex items-center gap-1">
           <PartlyCloudyNight size={16} aria-label="Partly cloudy" />
           {/* 20px in Digital-7; the wider DSEG14 fallback is set smaller to match its width */}
