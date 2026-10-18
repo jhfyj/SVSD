@@ -78,7 +78,7 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
           d={SPIRAL}
           pathLength={1}
           fill="none"
-          stroke="#7a2d58"
+          stroke="var(--spiral)"
           strokeWidth={1.5}
           strokeLinecap="round"
           strokeDasharray={1}
