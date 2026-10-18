@@ -9,11 +9,14 @@ import {
   useAdvancedMarkerRef,
   useMap,
 } from "@vis.gl/react-google-maps";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { routeBetween, type LatLng, type Route } from "@/lib/journey/geo";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { DemoDrive, Drop } from "@/lib/demo/storyDrive";
+import { distanceBetween, routeBetween, type LatLng, type Route } from "@/lib/journey/geo";
 import { JOURNEY_KEY, type Journey } from "@/lib/journey/session";
 import { headingAt, locate, measure, offset, pointAt, slice, type Path } from "@/lib/nav/path";
+import { DropMarker, DropSparkle } from "../drops/DropMarker";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
+import { buildUp } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { formatDistance, ManeuverIcon } from "./Maneuver";
 import { useLivePosition } from "./useLivePosition";
@@ -39,6 +42,16 @@ const OFF_ROUTE = 50;
 const REROUTE_MS = 15000;
 const ARRIVED = 30;
 
+/** Metres: how close you get before a drop starts coming to you. */
+const MAGNET = 60;
+/** ms: how long it takes to come in, from where it waited to you; it pops as it arrives. */
+const PULL_MS = 1100;
+/** Travel on screen eases in and out (DESIGN.md: ease-in-out cubic): a soft start and a soft landing. */
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+/** Degrees a second a waiting drop turns, and how fast it whips round while it's pulled in. */
+const SPIN = 140;
+const SPIN_PULLED = 1100;
+
 export type NavTraveller = {
   id: string;
   color: MarkerColor;
@@ -51,6 +64,10 @@ export type NavMapProps = {
   travellers: NavTraveller[];
   /** Shown instead of the map when there's no Google Maps key (Storybook, a fresh checkout). */
   fallback: ReactNode;
+  /** A scripted drive (the demo video): its own route and speed, no location needed, drops along it. */
+  demo?: DemoDrive;
+  /** A drop popped as you reached it; `at` is where, in the page's px (your marker's centre). */
+  onCollect?: (drop: Drop, at: { x: number; y: number }) => void;
   className?: string;
 };
 
@@ -117,11 +134,24 @@ const turn = (a: number, b: number, k: number) => (a + ((((b - a + 540) % 360) -
 
 type Progress = { along: number; at: LatLng; now: number };
 
-function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
+/** A drop on the map while it waits or is pulled in, updated every frame without re-rendering. */
+type LiveDrop = {
+  drop: Drop;
+  at: LatLng;
+  /** Where it was when the pull started; it travels from here to you. */
+  from: LatLng;
+  pulledAt: number | null;
+  angle: number;
+  marker: google.maps.marker.AdvancedMarkerElement | null;
+  spin: HTMLDivElement | null;
+  grow: HTMLDivElement | null;
+};
+
+function Navigator({ travellers, demo, onCollect, className }: Omit<NavMapProps, "fallback">) {
   const map = useMap();
   const journey = useJourney();
   const [rerouted, setRerouted] = useState<Route | null>(null);
-  const route = rerouted ?? journey?.route ?? null;
+  const route = demo?.route ?? rerouted ?? journey?.route ?? null;
   const path = useMemo(() => (route && route.points.length > 1 ? measure(route.points) : null), [route]);
   const steps = useMemo(() => (route && path ? stepStarts(route, path) : []), [route, path]);
   const routeColor = useToken("--route");
@@ -129,10 +159,32 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
   const casingColor = useToken("--route-casing");
 
   const simSpeed = useSimulation();
-  const live = useLivePosition(simSpeed === null);
-  // No location to follow: drive the route on its own so there's still something to see.
-  const simulate = path !== null && (simSpeed !== null || live.status === "error");
-  const speed = SIM_SPEED * (simSpeed ?? 2);
+  const live = useLivePosition(simSpeed === null && !demo);
+  // No location to follow (or a scripted demo): drive the route on its own so there's something to see.
+  const simulate = path !== null && (!!demo || simSpeed !== null || live.status === "error");
+  const speed = demo?.speed ?? SIM_SPEED * (simSpeed ?? 2);
+
+  // Drops waiting along the road, and the sparkles left where they were picked up.
+  const [waiting, setWaiting] = useState<Drop[]>(() => demo?.drops ?? []);
+  const [sparkles, setSparkles] = useState<Drop[]>([]);
+  const drops = useRef(new globalThis.Map<string, LiveDrop>());
+  const popped = useRef(new Set<string>());
+  // Each drop's marker parts check in from their ref callbacks, which run after render. A popped
+  // drop never checks back in, even while React re-runs the callbacks on its way out.
+  const attach = (drop: Drop, part: Partial<Pick<LiveDrop, "marker" | "spin" | "grow">>) => {
+    if (popped.current.has(drop.id) || Object.values(part).every((v) => v === null)) return;
+    let d = drops.current.get(drop.id);
+    if (!d) {
+      d = { drop, at: drop.at, from: drop.at, pulledAt: null, angle: 20, marker: null, spin: null, grow: null };
+      drops.current.set(drop.id, d);
+    }
+    Object.assign(d, part);
+  };
+  const collect = useRef(onCollect);
+  useEffect(() => {
+    collect.current = onCollect;
+  }, [onCollect]);
+  const sparkled = useCallback((id: string) => setSparkles((s) => s.filter((d) => d.id !== id)), []);
 
   // Where you are, shared with the animation loop without re-rendering every frame.
   const nav = useRef({ along: 0, target: null as LatLng | null, heading: 0, offCount: 0, lastReroute: 0 });
@@ -180,12 +232,14 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
   // The camera: every frame, ease toward where you are and look down the road.
   useEffect(() => {
     if (!map) return;
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let frame = 0;
-    let last = performance.now();
+    // The clock starts at the first frame's own timestamp.
+    let last: number | null = null;
     let shown: LatLng | null = null;
     let heading = nav.current.heading;
     const tick = (now: number) => {
-      const dt = Math.min(0.1, (now - last) / 1000);
+      const dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000);
       last = now;
       const n = nav.current;
       if (simulate && path) {
@@ -198,6 +252,33 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
         shown = shown && !simulate ? lerp(shown, n.target, 1 - Math.exp(-dt / 0.4)) : n.target;
         heading = turn(heading, n.heading, 1 - Math.exp(-dt / 0.35));
         if (you) you.position = shown;
+        // Drops: each turns where it waits. Once you're close it comes to you along one eased
+        // path (it follows you as you drive), hopping in an arc, spinning up and swelling,
+        // with the sound building as it comes; it pops the moment it arrives.
+        for (const d of drops.current.values()) {
+          if (d.pulledAt === null && distanceBetween(shown, d.at) < MAGNET) {
+            d.pulledAt = now;
+            d.from = d.at;
+            buildUp(PULL_MS);
+          }
+          const p = d.pulledAt === null ? 0 : Math.min(1, (now - d.pulledAt) / PULL_MS);
+          const e = easeInOut(p);
+          d.angle = (d.angle + (SPIN + (SPIN_PULLED - SPIN) * e) * dt) % 360;
+          if (d.spin && !still) d.spin.style.transform = `rotateY(${d.angle}deg)`;
+          if (d.pulledAt === null) continue;
+          d.at = still ? shown : lerp(d.from, shown, e);
+          if (d.marker) d.marker.position = d.at;
+          d.grow?.style.setProperty("--pull", String(1 + 0.4 * e));
+          d.grow?.style.setProperty("--lift", `${(-Math.sin(Math.PI * p) * 16).toFixed(1)}px`);
+          if (p >= 1) {
+            drops.current.delete(d.drop.id);
+            popped.current.add(d.drop.id);
+            const box = (you as unknown as HTMLElement | null)?.getBoundingClientRect();
+            if (box) collect.current?.(d.drop, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
+            setWaiting((w) => w.filter((x) => x.id !== d.drop.id));
+            setSparkles((s) => [...s, { ...d.drop, at: d.at }]);
+          }
+        }
         if (follow.current.on) {
           map.moveCamera({
             center: offset(shown, heading, CAMERA.ahead),
@@ -279,6 +360,25 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
             <span aria-label="Destination" role="img" className="block size-3.5 rounded-full border-2 border-black bg-foreground" />
           </AdvancedMarker>
         )}
+        {/* What people left along the road: pulled in and popped by the camera loop */}
+        {waiting.map((drop) => (
+          // Where it starts; once it's pulled in, the loop moves the marker itself.
+          <AdvancedMarker
+            key={drop.id}
+            ref={(marker) => attach(drop, { marker })}
+            position={drop.at}
+            anchorLeft="-50%"
+            anchorTop="-88%"
+            zIndex={8}
+          >
+            <DropMarker kind={drop.kind} spinRef={(spin) => attach(drop, { spin })} scaleRef={(grow) => attach(drop, { grow })} />
+          </AdvancedMarker>
+        ))}
+        {sparkles.map((drop) => (
+          <AdvancedMarker key={`sparkle-${drop.id}`} position={drop.at} anchorLeft="-50%" anchorTop="-50%" zIndex={7}>
+            <DropSparkle kind={drop.kind} onDone={() => sparkled(drop.id)} />
+          </AdvancedMarker>
+        ))}
         {/* You: positioned every frame by the camera loop */}
         <AdvancedMarker ref={youRef} anchorLeft="-50%" anchorTop="-50%" zIndex={10}>
           {progress && <MapMarker color={travellers.find((t) => t.ahead === 0)?.color ?? "lime"} label="You" className="size-[20px]" />}
@@ -295,7 +395,7 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
                 {arrived ? "Arrived" : formatDistance((next?.along ?? path.length) - along)}
               </p>
               <p className="truncate text-[11px] text-foreground/70">
-                {arrived || !next ? journey?.destination.name ?? "Destination" : next.instruction ?? "Continue"}
+                {arrived || !next ? demo?.name ?? journey?.destination.name ?? "Destination" : next.instruction ?? "Continue"}
               </p>
             </div>
           </div>
@@ -311,7 +411,7 @@ function Navigator({ travellers, className }: Omit<NavMapProps, "fallback">) {
         </p>
       )}
 
-      {simulate && (
+      {simulate && !demo && (
         <span className="absolute bottom-7 left-2 bg-marker-lime px-1 font-mono text-[9px] uppercase leading-[13px] text-black">
           Demo drive
         </span>

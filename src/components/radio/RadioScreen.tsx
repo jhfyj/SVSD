@@ -8,6 +8,9 @@ import { setMusicSpeaker, startMusic, stopMusic } from "@/lib/music";
 import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
+import type { DemoDrive, Drop } from "@/lib/demo/storyDrive";
+import { CollectedTally, CollectFlight } from "../drops/CollectFlight";
+import type { DropKind } from "../drops/glyphs";
 import { NavMap } from "../nav/NavMap";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
@@ -85,8 +88,15 @@ export type RadioScreenProps = {
   onEndTrip?: () => void;
   /** How many hang-ups, how fast, set off the timeout and how long it lasts (short ones for Storybook). */
   hangUpRule?: HangUpRule;
+  /** A scripted drive for the demo video, with drops to collect along it. */
+  demo?: DemoDrive;
   className?: string;
 };
+
+/** Where collected drops land: the counter's icon in the LCD's top-left corner, in the radio's own px. */
+const LCD_TALLY = { x: 156 + 38, y: 585 + 18 + 18 };
+
+type Flight = { id: string; kind: DropKind; from: { x: number; y: number } };
 
 /** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
 const casing =
@@ -109,6 +119,7 @@ export function RadioScreen({
   arrived: forceArrived,
   onEndTrip,
   hangUpRule = HANG_UP_RULE,
+  demo,
   className,
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
@@ -172,6 +183,23 @@ export function RadioScreen({
     setLeaving(true);
   };
   const root = useRef<HTMLDivElement>(null);
+
+  // Drops picked up on the map fly into the LCD, which keeps count.
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [collected, setCollected] = useState<Partial<Record<DropKind, number>>>({});
+  const [tallyFlash, setTallyFlash] = useState(0);
+  const onCollect = (drop: Drop, at: { x: number; y: number }) => {
+    const box = root.current?.getBoundingClientRect();
+    if (!box) return;
+    // The radio can be drawn scaled (a narrow window), so map the page's px back to its own.
+    const k = box.width / 393;
+    setFlights((f) => [...f, { id: drop.id, kind: drop.kind, from: { x: (at.x - box.left) / k, y: (at.y - box.top) / k } }]);
+  };
+  const landed = (flight: Flight) => {
+    setFlights((f) => f.filter((x) => x.id !== flight.id));
+    setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
+    setTallyFlash((n) => n + 1);
+  };
   useTilt(root);
   // At the destination the button row becomes a single End trip.
   const arrived = useArrived(forceArrived);
@@ -276,7 +304,10 @@ export function RadioScreen({
         style={SCREEN}
       >
         <NavMap
-          travellers={travellers}
+          // In the demo the story is what stands out: only you on the map.
+          travellers={demo ? travellers.filter((t) => t.ahead === 0) : travellers}
+          demo={demo}
+          onCollect={onCollect}
           className="absolute inset-0"
           fallback={<PlaceholderMap travellers={travellers} />}
         />
@@ -336,6 +367,7 @@ export function RadioScreen({
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
           <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+          <CollectedTally counts={collected} flash={tallyFlash} />
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -431,6 +463,10 @@ export function RadioScreen({
             "radial-gradient(circle at calc(50% + var(--tilt-x, 0) * 45%) calc(22% + var(--tilt-y, 0) * 35%), rgb(255 255 255 / 0.22), transparent 60%)",
         }}
       />
+
+      {flights.map((f) => (
+        <CollectFlight key={f.id} kind={f.kind} from={f.from} to={LCD_TALLY} onLanded={() => landed(f)} />
+      ))}
     </div>
   );
 }

@@ -521,3 +521,65 @@ body {
   .sprite-fast .sprite-a { animation: sprite-a 400ms steps(1) infinite; }
   .sprite-fast .sprite-b { animation: sprite-b 400ms steps(1) infinite; }
 }
+
+/*
+  Drops on the map (components/drops): the block's own spin when nothing drives it, the square
+  ring pulsing out across the road under it, the pixel stars left where one was picked up, and
+  the LCD tally flickering as it counts one more. Still for reduced motion.
+*/
+@keyframes voxel-spin {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+@keyframes drop-ring {
+  from {
+    transform: scale(0.45);
+    opacity: 0.95;
+  }
+  to {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+@keyframes drop-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  60% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.3;
+  }
+}
+@keyframes lcd-flash {
+  0%,
+  50% {
+    opacity: 0;
+  }
+  25%,
+  75%,
+  100% {
+    opacity: 1;
+  }
+}
+.drop-twinkle {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .voxel-spin {
+    animation: voxel-spin 2.6s linear infinite;
+  }
+  .drop-ring {
+    animation: drop-ring 1.6s var(--motion-ease-out) infinite;
+  }
+  .drop-twinkle {
+    animation: drop-twinkle 900ms steps(1) both;
+  }
+  .lcd-flash {
+    animation: lcd-flash 360ms steps(1) both;
+  }
+}

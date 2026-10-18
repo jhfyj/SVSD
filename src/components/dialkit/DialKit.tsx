@@ -57,6 +57,8 @@ function subscribe(listener: () => void) {
 
 /** The radio with a fresh ?load=, so its load-in plays again. */
 const loadIn = () => `/radio?load=${Date.now()}`;
+/** The scripted story drive, from the start each time. */
+const storyDrive = () => `/radio?demo=story&t=${Date.now()}`;
 
 /** The stand-in for a screen that isn't built yet. */
 const blank = (screen: string) => `/blank?${new URLSearchParams({ screen })}`;
@@ -181,9 +183,10 @@ export function DialKit() {
         },
         {
           label: "Message unlocks",
-          href: blank("Message unlocks"),
-          todo: "new",
-          note: "A message from @NightOwl unlocks, with an animation.",
+          go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
+          radio: true,
+          active: path === "/radio" && params.get("demo") === "story",
+          note: "Prototype: about 5 s down the I-10, a story waits off the road; the car pulls it in, it pops and flies into the LCD. Plays again on every click.",
         },
         {
           label: "@NightOwl's voice message",
