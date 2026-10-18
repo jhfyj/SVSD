@@ -157,7 +157,7 @@ function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minu
         className="flex flex-col items-center gap-1"
       >
         <span className="font-display text-4xl uppercase tabular-nums">{formatDuration(minutes)}</span>
-        <span className="text-[11px] text-foreground/50">Tap to type your own</span>
+        <span className="text-[10px] text-foreground/50">Tap to type your own</span>
       </button>
     );
   }
@@ -201,7 +201,7 @@ function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minu
         />
         <span className="font-display text-xl uppercase">min</span>
       </div>
-      <button type="submit" className="text-[11px] text-marker-lime">
+      <button type="submit" className="text-[10px] text-marker-lime">
         Set
       </button>
     </form>

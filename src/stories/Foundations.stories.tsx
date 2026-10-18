@@ -51,10 +51,10 @@ export const TextOpacity: StoryObj = {
 export const Typography: StoryObj = {
   render: () => (
     <div className="flex flex-col gap-4 uppercase">
-      {[24, 20, 16, 14, 12, 11, 10].map((s) => (
+      {[20, 16, 15, 13, 12, 10].map((s) => (
         <span key={s} style={{ fontSize: s }}>Geist Mono {s}px · Start journey</span>
       ))}
-      <span className="text-[13px] font-bold">Geist Mono Bold 13px · Label</span>
+      <span className="text-[11px] font-bold">Geist Mono Bold 11px · Label</span>
       <span className="font-display text-5xl">89.9</span>
       <span className="font-display text-2xl">Enter your destination</span>
       <p className="max-w-md text-xs normal-case text-foreground/60">

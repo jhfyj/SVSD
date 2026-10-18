@@ -113,15 +113,15 @@ export function RadioScreen({
       {/* Console */}
       <div className="absolute inset-x-0 top-[585px] h-[267px]">
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
-          <span className="text-[13px] font-bold text-label/80">RADIO</span>
+          <span className="text-[11px] font-bold text-label/80">RADIO</span>
           <Led on={live} />
         </div>
 
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn} onChange={setRadioOn} />
-        <span className="absolute left-[81px] top-[70px] text-[13px] font-bold text-label/80">
+        <span className="absolute left-[81px] top-[70px] text-[11px] font-bold text-label/80">
           OFF
         </span>
-        <span className="absolute left-[84px] top-[111px] text-[13px] font-bold text-label/80">
+        <span className="absolute left-[84px] top-[111px] text-[11px] font-bold text-label/80">
           ON
         </span>
 
@@ -137,12 +137,12 @@ export function RadioScreen({
           {radioOn ? (
             <HardwareButton tone="end" className="flex-1" onClick={onEndCall} disabled={!live}>
               <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
-              <span className="text-[20px] font-bold opacity-80">END CALL</span>
+              <span className="text-base font-bold opacity-80">END CALL</span>
             </HardwareButton>
           ) : (
             <HardwareButton className="flex-1" onClick={onStartStory}>
               <Play size={22} weight="fill" className="opacity-60" aria-hidden />
-              <span className="text-[20px] font-bold opacity-60">START STORY</span>
+              <span className="text-base font-bold opacity-60">START STORY</span>
             </HardwareButton>
           )}
           <HardwareButton

@@ -28,7 +28,7 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
   return (
     <section aria-label="Radio" className={cn("flex w-[351px] flex-col gap-3", className)}>
       <div className="flex items-center justify-between px-4 py-1 [background:var(--panel-gradient)]">
-        <span className="flex items-center gap-2 text-[13px] font-bold uppercase text-label/80">
+        <span className="flex items-center gap-2 text-[11px] font-bold uppercase text-label/80">
           <Led on={state === "connected"} /> Radio
         </span>
         <ToggleSwitch on={on} onChange={(v) => onPower?.(v)} />
@@ -48,7 +48,7 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
       <div className="flex gap-2 p-3 [background:var(--panel-gradient)]">
         <HardwareButton className="flex-1" tone="end" disabled={state !== "connected"} onClick={onEndCall}>
           <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
-          <span className="text-[20px] font-bold opacity-80">END CALL</span>
+          <span className="text-base font-bold opacity-80">END CALL</span>
         </HardwareButton>
         <HardwareButton
           className="w-[70px]"

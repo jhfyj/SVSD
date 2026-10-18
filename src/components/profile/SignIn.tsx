@@ -152,7 +152,7 @@ export function CodeStep({
             key={i}
             aria-hidden
             className={cn(
-              "flex h-[69px] flex-1 items-center justify-center bg-surface text-[28px]",
+              "flex h-[69px] flex-1 items-center justify-center bg-surface text-2xl",
               error && "outline outline-1 outline-danger",
             )}
           >

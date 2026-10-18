@@ -162,7 +162,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 <dt className="sr-only">Stories</dt>
                 <dd className="text-marker-lime">{stories} stories</dd>
               </div>
-              <div className="text-[11px] text-foreground/40">
+              <div className="text-[10px] text-foreground/40">
                 <dt className="sr-only">Distance</dt>
                 <dd>
                   {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "drive"}
@@ -191,7 +191,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               </Chip>
             ))}
           </div>
-          <p className="mt-6 text-center text-[11px] text-foreground/60">
+          <p className="mt-6 text-center text-[10px] text-foreground/60">
             About {stories} stories and {questions} questions
           </p>
         </section>
@@ -240,7 +240,7 @@ function LocationNote({
 }) {
   if (location.status === "ok") return null;
   return (
-    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[11px] text-foreground/60">
+    <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/60">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
         <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">

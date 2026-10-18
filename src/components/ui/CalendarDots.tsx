@@ -25,7 +25,7 @@ export function CalendarDots({ days, active, startOffset = 0, label, className }
     >
       <div className="grid grid-cols-[repeat(7,20px)] gap-x-4">
         {WEEKDAYS.map((d) => (
-          <span key={d} className="text-center text-[11px] leading-[14px] uppercase">{d}</span>
+          <span key={d} className="text-center text-[10px] leading-[14px] uppercase">{d}</span>
         ))}
       </div>
       <div className="grid grid-cols-[repeat(7,20px)] auto-rows-[6px] gap-x-4 gap-y-6">
