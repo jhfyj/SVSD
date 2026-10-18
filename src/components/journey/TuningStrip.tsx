@@ -4,6 +4,7 @@ import { play } from "cuelume";
 import { useEffect, useRef, useState } from "react";
 import { DURATION_STEPS, MAX_MINUTES, formatDuration, nearestStep } from "@/lib/journey/duration";
 import { cn } from "../ui/cn";
+import { MessyText, type MessyLook } from "./MessyText";
 
 /*
   The trip-length picker: a ruler you drag or flick under a fixed marker, like tuning a radio.
@@ -21,10 +22,12 @@ const LABELS: Record<number, string> = {
 export type TuningStripProps = {
   minutes: number;
   onChange: (minutes: number) => void;
+  /** How rough the time readout looks. */
+  look?: MessyLook;
   className?: string;
 };
 
-export function TuningStrip({ minutes, onChange, className }: TuningStripProps) {
+export function TuningStrip({ minutes, onChange, look = "tidy", className }: TuningStripProps) {
   const ref = useRef<HTMLDivElement>(null);
   const index = DURATION_STEPS.indexOf(nearestStep(minutes));
   /** Set while we scroll the strip ourselves, so that scroll doesn't report back as a change. */
@@ -96,10 +99,10 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
 
   return (
     <div className={cn("flex w-full flex-col items-center gap-5", className)}>
-      <TypedDuration minutes={minutes} onChange={onChange} />
+      <TypedDuration minutes={minutes} onChange={onChange} look={look} />
       <div className="relative w-full">
         {/* The fixed marker the ruler slides under. */}
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-0.5 -translate-x-1/2 bg-marker-lime" />
+        <span aria-hidden className="pointer-events-none absolute left-1/2 top-0 z-10 h-8 w-0.5 -translate-x-1/2 bg-foreground" />
         <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
         <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
         <div
@@ -125,7 +128,7 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
             const hour = m % 60 === 0;
             return (
               <span key={m} aria-hidden className="flex shrink-0 snap-center flex-col items-center gap-2" style={{ width: PITCH }}>
-                <span className={cn("w-px", label ? "h-9 bg-foreground" : hour ? "h-6 bg-foreground/60" : "h-4 bg-foreground/30")} />
+                <span className={cn("w-px", label ? "h-5 bg-foreground" : hour ? "h-3.5 bg-foreground/60" : "h-2.5 bg-foreground/30")} />
                 <span className="h-3 text-[10px] leading-3 text-foreground/60">{label}</span>
               </span>
             );
@@ -138,7 +141,7 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
 }
 
 /** The big readout. Tap it to type hours and minutes; Enter or tapping away sets them. */
-function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minutes: number) => void }) {
+function TypedDuration({ minutes, onChange, look }: { minutes: number; onChange: (minutes: number) => void; look: MessyLook }) {
   const [draft, setDraft] = useState<{ h: string; m: string } | null>(null);
   const hours = useRef<HTMLInputElement>(null);
 
@@ -156,7 +159,7 @@ function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minu
         aria-label={`Trip length ${formatDuration(minutes)}. Tap to type your own`}
         className="flex flex-col items-center gap-1"
       >
-        <span className="font-display text-4xl uppercase tabular-nums">{formatDuration(minutes)}</span>
+        <MessyText text={formatDuration(minutes)} look={look} className="font-display text-4xl uppercase tabular-nums" />
         <span className="text-[10px] text-foreground/50">Tap to type your own</span>
       </button>
     );
@@ -167,7 +170,7 @@ function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minu
     setDraft(null);
     if (total > 0) onChange(Math.min(MAX_MINUTES, total));
   };
-  const field = "w-[2.6ch] border-b border-foreground/40 bg-transparent text-center font-display text-4xl tabular-nums outline-none focus:border-marker-lime";
+  const field = "w-[2.6ch] border-b border-foreground/40 bg-transparent text-center font-display text-4xl tabular-nums outline-none focus:border-foreground";
   const digits = (v: string) => v.replace(/\D/g, "").slice(0, 2);
 
   return (
@@ -201,7 +204,7 @@ function TypedDuration({ minutes, onChange }: { minutes: number; onChange: (minu
         />
         <span className="font-display text-xl uppercase">min</span>
       </div>
-      <button type="submit" className="text-[10px] text-marker-lime">
+      <button type="submit" className="text-[10px] text-foreground underline underline-offset-2">
         Set
       </button>
     </form>

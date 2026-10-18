@@ -11,6 +11,7 @@ import { CalendarDots } from "../ui/CalendarDots";
 import { MenuRow } from "../ui/MenuRow";
 import { StatCard } from "../ui/StatCard";
 import { CharacterSprite } from "./CharacterSprite";
+import { ScrambleText } from "@/components/ui/ScrambleText";
 
 export type ProfileViewProps = {
   handle: string;
@@ -118,7 +119,7 @@ export function ProfileView({
           >
             <CharacterSprite character={character} pixel={4.4} className="opacity-80" />
           </button>
-          <h1 className="mt-[18px] text-xl">{handle}</h1>
+          <h1 className="mt-[18px] text-xl"><ScrambleText>{handle}</ScrambleText></h1>
           <p className="mt-1 text-base text-foreground/50">Joined {monthYear(joinedAt)}</p>
         </div>
 
