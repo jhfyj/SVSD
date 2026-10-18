@@ -6,7 +6,7 @@ import { HardwareButton } from "./HardwareButton";
 /**
  * The console keys while the radio asks "What are you up for?": one wide key per intent in a
  * 2 x 2 grid, in place of End call / Mic / Speaker / Settings. The remembered pick is latched
- * down (and lit).
+ * down (and lit). The LCD's side of it is RadioLcd's pick state.
  */
 export function IntentKeys({ current, onPick }: { current?: CallIntent; onPick: (intent: CallIntent) => void }) {
   return (
@@ -27,17 +27,5 @@ export function IntentKeys({ current, onPick }: { current?: CallIntent; onPick: 
         </HardwareButton>
       ))}
     </div>
-  );
-}
-
-/** What the LCD says while you pick. */
-export function IntentPrompt({ keeping }: { keeping?: string }) {
-  return (
-    <p role="status" className="px-3 text-center font-mono uppercase leading-tight text-lcd-ink">
-      <span className="block text-[14px]">What are you up for?</span>
-      <span className="mt-1.5 block text-[11px] normal-case">
-        {keeping ? `Keeping "${keeping}" in 3 s` : "Helps us find your match"}
-      </span>
-    </p>
   );
 }

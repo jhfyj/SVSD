@@ -178,9 +178,10 @@ export function DialKit() {
         },
         {
           label: "Message unlocks",
-          href: blank("Message unlocks"),
-          todo: "new",
-          note: "A message from @NightOwl unlocks, with an animation.",
+          href: "/radio?message=message",
+          radio: true,
+          todo: "change",
+          note: "Built (Angelina): static, then the station locks, the map glows in the message's color. Plays a sample from @Hufflepuff23; the script's @NightOwl unlock isn't recorded yet.",
         },
         {
           label: "@NightOwl's voice message",
@@ -190,9 +191,10 @@ export function DialKit() {
         },
         {
           label: "Reply?",
-          href: blank("Reply?"),
-          todo: "new",
-          note: "AI voice: “Do you want to reply to this message?”",
+          href: "/radio?message=message",
+          radio: true,
+          todo: "change",
+          note: "Built: RESPOND for the first 5 s of their voice, then your reply records. Script has an AI voice asking “Do you want to reply to this message?”",
         },
       ],
     },
@@ -216,10 +218,9 @@ export function DialKit() {
         { label: "Connecting", href: "/radio?call=connecting", radio: true },
         {
           label: "Meet @Mothlight",
-          href: "/radio?call=connected",
+          href: "/radio?me=NightOwl&peer=Mothlight&miles=84",
           radio: true,
-          todo: "change",
-          note: "LCD says CURRENTLY CONNECTED TO. Script: “@NightOwl, meet @Mothlight. You've got 84 miles of road together. Where are you both headed tonight?”",
+          note: "Flip on and pick an intent: the radio says “@NightOwl, meet @Mothlight. You've got 84 miles of road together. To start, where are you both headed tonight?”, a page on the LCD per line.",
         },
         {
           label: "@Mothlight speaking",
@@ -244,9 +245,10 @@ export function DialKit() {
       steps: [
         {
           label: "Question unlocks",
-          href: blank("Question unlocks"),
-          todo: "new",
-          note: "“A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
+          href: "/radio?message=question",
+          radio: true,
+          todo: "change",
+          note: "Built: plays a sample question (@urmom2424, favorite song). Script: “A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
         },
         {
           label: "Answering",

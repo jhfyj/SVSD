@@ -16,7 +16,7 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 
-/** Routes API maneuvers (https://developers.google.com/maps/documentation/routes/reference/rest/v2/Maneuver) as arrows. */
+/** Turn types as arrows. Routes come from OSRM; geo.ts names its maneuvers like these. */
 const ICONS: Record<string, Icon> = {
   TURN_LEFT: ArrowBendUpLeft,
   TURN_RIGHT: ArrowBendUpRight,
