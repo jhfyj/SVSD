@@ -195,7 +195,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
 
       <div className="px-[44px] pb-14 pt-6">
         <Link
-          href="/radio"
+          href="/journey/starting"
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(

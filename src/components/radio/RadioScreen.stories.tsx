@@ -17,7 +17,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Figma "Connected" (node 123:246). Click the switch, buttons and power key to see their states. */
-export const Connected: Story = {};
+export const Connected: Story = { args: { defaultOn: true } };
+
+/** How the screen opens: radio off, Start story showing. */
+export const RadioOff: Story = {};
 
 export const Switch: Story = {
   name: "Rocker switch",

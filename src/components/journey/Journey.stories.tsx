@@ -4,6 +4,7 @@ import { JourneyMap } from "./JourneyMap";
 import { JourneySetup } from "./JourneySetup";
 import { RouteTrail } from "./RouteTrail";
 import { StartJourney } from "./StartJourney";
+import { StartingRadio } from "./StartingRadio";
 import { TuningStrip } from "./TuningStrip";
 
 /** The "getting set up" flow (Figma iPhone 16 - 50 to 58). */
@@ -20,6 +21,9 @@ export const Start: StoryObj = { render: () => <StartJourney href="#" /> };
 
 /** Asks for your location; searches and routes against the live OpenStreetMap services. */
 export const Setup: StoryObj = { render: () => <JourneySetup /> };
+
+/** The splash after Start journey; it stays put here instead of opening the radio. */
+export const Starting: StoryObj = { render: () => <StartingRadio /> };
 
 export const SetupDuration: StoryObj = { render: () => <JourneySetup initialTab="Duration" /> };
 

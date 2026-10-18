@@ -70,7 +70,7 @@ export const StartJourney: StoryObj = {
 
 /** The finalized Figma screen (node 123:246). */
 export const RadioConnected: StoryObj = {
-  render: () => <RadioScreen />,
+  render: () => <RadioScreen defaultOn />,
 };
 
 export const Profile: StoryObj = {
