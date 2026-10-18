@@ -4,13 +4,12 @@ import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } from "@/lib/auth/phone";
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
-import { TopBar } from "../journey/TopBar";
 import { cn } from "../ui/cn";
 import { LcdIcon } from "./LcdIcon";
 
 const CODE_LENGTH = 6;
 
-/** Shared frame for the two sign-in screens: LCD icon on top, the submit button pinned to the bottom. */
+/** Shared frame for the two sign-in screens (no top bar): LCD icon on top, the submit button pinned to the bottom. */
 function SignInScreen({
   icon,
   onSubmit,
@@ -33,8 +32,7 @@ function SignInScreen({
   };
   return (
     <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
-      <TopBar />
-      <form onSubmit={submit} noValidate className="flex flex-1 flex-col pt-[42px]">
+      <form onSubmit={submit} noValidate className="flex flex-1 flex-col pt-[98px]">
         <div className="flex flex-1 flex-col items-center">
           {icon}
           {children}
