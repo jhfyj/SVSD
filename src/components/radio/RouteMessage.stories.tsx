@@ -29,8 +29,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * The glow alone over the placeholder map, driven by a fake voice. Voice: rings roll in from the
- * edges on each syllable and the glow reaches further when it's louder. Reply: it rises from the
+ * The glow alone over the placeholder map, driven by a fake voice. Voice: a wave comes down from
+ * the top on each syllable and the glow reaches further when it's louder. Reply: it rises from the
  * bottom instead. Switch to Off to see it leave.
  */
 export const Glow: Story = {

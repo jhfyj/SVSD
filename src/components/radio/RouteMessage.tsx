@@ -16,7 +16,10 @@ import type { RouteMessageControls } from "./useRouteMessage";
   it's from, and the console offers RESPOND for the first 5 seconds of their voice.
 */
 
-/** voice: their voice rolls in from every edge. reply: your voice rises from the bottom. */
+/**
+ * voice: their voice comes down from the top of the screen, the way it reaches you.
+ * reply: your voice rises from the bottom, from the console and your mic.
+ */
 export type GlowMode = "off" | "voice" | "reply";
 
 /** Size of one dithered pixel, in CSS px (the Figma dither's pixel size). */
@@ -46,23 +49,23 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /**
  * How far each cell is from where the sound comes in, in half-widths of the screen (0 at the source).
- * edge: the nearest side, with the corners pulled in a little (like the Figma corner glow).
- * bottom: the bottom edge only.
+ * The edge it comes from bows toward the middle, so the front reads as a wave, not a ruler line,
+ * and the side edges lift a little near the source like the Figma corner glow.
  */
 function fields(w: number, h: number) {
   const half = w / 2;
-  const k = 0.08;
-  const edge = new Float32Array(w * h);
+  const top = new Float32Array(w * h);
   const bottom = new Float32Array(w * h);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const dx = Math.min(x, w - 1 - x) / half;
-      const dy = Math.min(y, h - 1 - y) / half;
-      edge[y * w + x] = clamp01(-k * Math.log(Math.exp(-dx / k) + Math.exp(-dy / k)));
-      bottom[y * w + x] = (h - 1 - y) / half;
+      const across = (x - (w - 1) / 2) / half; // -1 at the left edge, 1 at the right
+      const bow = 0.12 * (1 - across * across);
+      const side = 0.06 * Math.max(0, Math.abs(across) - 0.6) / 0.4;
+      top[y * w + x] = Math.max(0, y / half - bow - side);
+      bottom[y * w + x] = Math.max(0, (h - 1 - y) / half - bow - side);
     }
   }
-  return { edge, bottom };
+  return { top, bottom };
 }
 
 function rgbOf(el: Element, color: MarkerColor): [number, number, number] {
@@ -75,9 +78,10 @@ type Ripple = { born: number; strength: number };
 
 /**
  * A dithered glow over the map that moves with a voice. Its reach follows how loud they are, and
- * each syllable sends a ring of pixels rolling in from the edges, like sound coming out of the
- * radio's casing. The middle of the screen (the road and you) stays clear. A soft colour wash
- * underneath tints the map like the Figma frames. Reduced motion: a still glow, no rings.
+ * each syllable sends a wave of pixels rolling out from where the voice comes in: down from the
+ * top for theirs, up from the bottom for yours. The middle of the screen (the road and you) stays
+ * clear. A soft colour wash underneath tints the map like the Figma frames. Reduced motion: a still
+ * glow, no waves.
  */
 export function MessageGlow({
   mode,
@@ -153,11 +157,12 @@ export function MessageGlow({
       }
 
       const reply = mode === "reply";
-      const dist = reply ? field.bottom : field.edge;
-      const reach = reply ? 0.3 + 0.7 * env : 0.16 + 0.34 * env;
-      // Rings die out before the middle, so the road and you always stay clear.
-      const life = reply ? 1500 : 1200;
-      const travel = reply ? 1.3 : 0.6;
+      const dist = reply ? field.bottom : field.top;
+      // Both reach about a third of the screen at their loudest, then rings carry on and fade
+      // before the middle, so the road and you always stay clear.
+      const reach = 0.3 + 0.7 * env;
+      const life = 1500;
+      const travel = 1.3;
       ripples = ripples.filter((r) => now - r.born < life);
       const rings = ripples.map((r) => {
         const p = (now - r.born) / life;
@@ -206,9 +211,7 @@ export function MessageGlow({
     if (mode !== "off" && canvas.current && tint.current) {
       rgb.current = rgbOf(canvas.current, color);
       tint.current.style.background =
-        mode === "reply"
-          ? `linear-gradient(to top, var(--marker-${color}) 0%, transparent 45%)`
-          : `radial-gradient(ellipse at center, transparent 50%, var(--marker-${color}) 115%)`;
+        `linear-gradient(to ${mode === "reply" ? "top" : "bottom"}, var(--marker-${color}) 0%, transparent 45%)`;
     }
     wake.current();
   }, [mode, color]);

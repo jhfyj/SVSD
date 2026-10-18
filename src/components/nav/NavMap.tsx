@@ -1,17 +1,13 @@
 "use client";
 
 import { Crosshair } from "@phosphor-icons/react";
-import {
-  AdvancedMarker,
-  APIProvider,
-  Map,
-  Polyline,
-  useAdvancedMarkerRef,
-  useMap,
-} from "@vis.gl/react-google-maps";
+import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { routeBetween, type LatLng, type Route } from "@/lib/journey/geo";
-import { JOURNEY_KEY, type Journey } from "@/lib/journey/session";
+import { useJourney } from "@/lib/journey/session";
+import { mapStyle } from "@/lib/nav/mapStyle";
 import { headingAt, locate, measure, offset, pointAt, slice, type Path } from "@/lib/nav/path";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
@@ -19,19 +15,17 @@ import { formatDistance, ManeuverIcon } from "./Maneuver";
 import { useLivePosition } from "./useLivePosition";
 
 /*
-  The radio's map: a Google vector map, tilted into a simple 3D view, that follows you along the
-  route like Google Maps does when you're navigating. The camera sits behind you facing the road
-  ahead, the route is drawn in white (grey once driven), and the next turn shows up top.
-  The map's tiles are drawn in black and white (see .nav-map in globals.css); the markers keep
-  their colors. Add ?sim to the URL (or ?sim=5 for 5x) to drive the route without moving.
+  The radio's map: OpenStreetMap drawn by MapLibre in our own style (see lib/nav/mapStyle), tilted
+  into a 3D view with buildings, following you along the route like a navigation app. The camera
+  sits behind you facing the road ahead, the route is drawn bright (grey once driven), and the
+  next turn shows up top. Markers are HTML on top, so they keep their colours.
+  Add ?sim to the URL (or ?sim=5 for 5x) to drive the route without moving.
 */
 
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-/** A Map ID with a vector style; Google's DEMO_MAP_ID works for development. */
-const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
+type MapLibre = typeof import("maplibre-gl");
 
 /** Close in and tilted, with the camera aimed a little ahead so you sit low on the screen. */
-const CAMERA = { zoom: 17.5, tilt: 60, ahead: 110 };
+const CAMERA = { zoom: 17, tilt: 60, ahead: 100 };
 /** Demo driving speed, m/s (about 50 km/h), times the ?sim multiplier. */
 const SIM_SPEED = 14;
 /** Metres off the route before you count as off it, and how often to re-route at most. */
@@ -56,42 +50,18 @@ export type NavRoadMessage = {
   at: number;
 };
 
-/** Whether the live Google map is set up; without it the radio fakes passing messages on a timer. */
-export const hasLiveMap = Boolean(API_KEY);
-
 export type NavMapProps = {
   travellers: NavTraveller[];
   /** Messages along the route that haven't played yet. */
   messages?: NavRoadMessage[];
   /** You've driven past a message. */
   onReach?: (id: string) => void;
-  /** Shown instead of the map when there's no Google Maps key (Storybook, a fresh checkout). */
+  /** Shown instead of the map if the browser can't draw it (no WebGL). */
   fallback: ReactNode;
   className?: string;
 };
 
-export function NavMap({ fallback, ...props }: NavMapProps) {
-  if (!API_KEY) return fallback;
-  return (
-    <APIProvider apiKey={API_KEY}>
-      <Navigator {...props} />
-    </APIProvider>
-  );
-}
-
 const noSubscribe = () => () => {};
-const readJourney = () => {
-  try {
-    return sessionStorage.getItem(JOURNEY_KEY);
-  } catch {
-    return null;
-  }
-};
-/** The trip from the setup screen (see saveJourney), read on the client only. */
-function useJourney(): Journey | null {
-  const raw = useSyncExternalStore(noSubscribe, readJourney, () => null);
-  return useMemo(() => (raw ? (JSON.parse(raw) as Journey) : null), [raw]);
-}
 
 /** ?sim drives the route at 2x, ?sim=5 at 5x. */
 function useSimulation() {
@@ -99,9 +69,23 @@ function useSimulation() {
   return sim === null ? null : Number(sim) || 2;
 }
 
+/** The app's theme (lib/theme sets data-theme on <html>), so the map can follow day and night. */
+function subscribeTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => observer.disconnect();
+}
+function useTheme(): "dark" | "light" {
+  return useSyncExternalStore<"dark" | "light">(
+    subscribeTheme,
+    () => (document.documentElement.dataset.theme === "light" ? "light" : "dark"),
+    () => "dark",
+  );
+}
+
 type Step = { along: number; maneuver?: string; instruction?: string };
 
-/** Where each step starts along the path, scaling Google's step lengths to ours. */
+/** Where each step starts along the path, scaling the route's step lengths to ours. */
 function stepStarts(route: Route, path: Path): Step[] {
   const steps = route.steps ?? [];
   const total = steps.reduce((sum, s) => sum + s.distance, 0) || 1;
@@ -116,16 +100,22 @@ function stepStarts(route: Route, path: Path): Step[] {
 const lerp = (a: LatLng, b: LatLng, k: number) => ({ lat: a.lat + (b.lat - a.lat) * k, lng: a.lng + (b.lng - a.lng) * k });
 /** Turn from `a` toward `b` the short way round. */
 const turn = (a: number, b: number, k: number) => (a + ((((b - a + 540) % 360) - 180) * k) + 360) % 360;
+const lngLat = (p: LatLng): [number, number] => [p.lng, p.lat];
 
 type Progress = { along: number; at: LatLng; now: number };
 
-function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMapProps, "fallback">) {
-  const map = useMap();
+export function NavMap({ travellers, messages = [], onReach, fallback, className }: NavMapProps) {
+  const container = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<MapLibreMap | null>(null);
+  const [lib, setLib] = useState<MapLibre | null>(null);
+  const [failed, setFailed] = useState(false);
+  const theme = useTheme();
   const journey = useJourney();
   const [rerouted, setRerouted] = useState<Route | null>(null);
   const route = rerouted ?? journey?.route ?? null;
   const path = useMemo(() => (route && route.points.length > 1 ? measure(route.points) : null), [route]);
   const steps = useMemo(() => (route && path ? stepStarts(route, path) : []), [route, path]);
+  const start = path?.points[0] ?? journey?.destination ?? { lat: 37.7749, lng: -122.4194 };
 
   const simSpeed = useSimulation();
   const live = useLivePosition(simSpeed === null);
@@ -138,7 +128,63 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
   const [progress, setProgress] = useState<Progress | null>(null);
   const [following, setFollowing] = useState(true);
   const follow = useRef({ on: true, zoom: true });
-  const [youRef, you] = useAdvancedMarkerRef();
+  const you = useRef<Marker | null>(null);
+
+  // The map itself, made once. MapLibre is loaded on the client only (it needs the window).
+  const firstView = useRef({ start, theme, zoomed: Boolean(path || journey) });
+  useEffect(() => {
+    let made: MapLibreMap | null = null;
+    let cancelled = false;
+    void import("maplibre-gl").then((maplibre) => {
+      if (cancelled || !container.current) return;
+      const { start, theme, zoomed } = firstView.current;
+      // The tile worker lives in public/ (scripts/copy-map-worker.mjs); the bundler can't find it.
+      maplibre.setWorkerUrl("/map/maplibre/maplibre-gl-worker.mjs");
+      try {
+        made = new maplibre.Map({
+          container: container.current,
+          style: mapStyle(theme),
+          center: lngLat(start),
+          zoom: zoomed ? CAMERA.zoom : 3,
+          pitch: CAMERA.tilt,
+          attributionControl: false,
+          pitchWithRotate: false,
+          touchPitch: false,
+          keyboard: false,
+        });
+      } catch {
+        setFailed(true);
+        return;
+      }
+      // The data's credit stays on the map (the licence asks for it), folded into a small (i) that
+      // opens on tap. MapLibre shows it open once the map loads; it starts folded here instead.
+      made.addControl(new maplibre.AttributionControl({ compact: true }), "bottom-right");
+      const fold = () => container.current?.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
+      made.on("dragstart", () => {
+        follow.current.on = false;
+        setFollowing(false);
+      });
+      made.once("load", () => {
+        fold();
+        setLib(maplibre);
+        setMap(made);
+      });
+    });
+    return () => {
+      cancelled = true;
+      made?.remove();
+    };
+  }, []);
+
+  // Day and night: restyle in place. The route's data is put back by the effect below.
+  const styled = useRef(theme);
+  const [styleVersion, setStyleVersion] = useState(0);
+  useEffect(() => {
+    if (!map || styled.current === theme) return;
+    styled.current = theme;
+    map.setStyle(mapStyle(theme));
+    map.once("style.load", () => setStyleVersion((v) => v + 1));
+  }, [map, theme]);
 
   // A new route starts where you are.
   useEffect(() => {
@@ -196,12 +242,12 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
         // Live fixes come about once a second; glide between them.
         shown = shown && !simulate ? lerp(shown, n.target, 1 - Math.exp(-dt / 0.4)) : n.target;
         heading = turn(heading, n.heading, 1 - Math.exp(-dt / 0.35));
-        if (you) you.position = shown;
+        you.current?.setLngLat(lngLat(shown));
         if (follow.current.on) {
-          map.moveCamera({
-            center: offset(shown, heading, CAMERA.ahead),
-            heading,
-            tilt: CAMERA.tilt,
+          map.jumpTo({
+            center: lngLat(offset(shown, heading, CAMERA.ahead)),
+            bearing: heading,
+            pitch: CAMERA.tilt,
             ...(follow.current.zoom && { zoom: CAMERA.zoom }),
           });
           follow.current.zoom = false;
@@ -211,19 +257,9 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [map, you, path, simulate, speed]);
+  }, [map, path, simulate, speed]);
 
-  // Passing a message: checked whenever your progress updates, a couple of times a second.
-  const reach = useRef(onReach);
-  useEffect(() => {
-    reach.current = onReach;
-  }, [onReach]);
-  useEffect(() => {
-    if (!path || !progress) return;
-    for (const m of messages) if (progress.along >= m.at * path.length) reach.current?.(m.id);
-  }, [path, progress, messages]);
-
-  // The banner, route split and travellers update a couple of times a second.
+  // The banner, route split and markers update a couple of times a second.
   useEffect(() => {
     const id = setInterval(() => {
       const { along, target } = nav.current;
@@ -235,6 +271,16 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
     return () => clearInterval(id);
   }, []);
 
+  // Passing a message: checked whenever your progress updates.
+  const reach = useRef(onReach);
+  useEffect(() => {
+    reach.current = onReach;
+  }, [onReach]);
+  useEffect(() => {
+    if (!path || !progress) return;
+    for (const m of messages) if (progress.along >= m.at * path.length) reach.current?.(m.id);
+  }, [path, progress, messages]);
+
   const recenter = () => {
     follow.current = { on: true, zoom: true };
     setFollowing(true);
@@ -244,66 +290,66 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
   const remaining = path ? Math.max(0, path.length - along) : null;
   const arrived = remaining !== null && progress !== null && remaining < ARRIVED;
   const next = steps.find((s) => s.along > along + 15);
-  const driven = useMemo(() => (path ? slice(path, 0, along) : []), [path, along]);
-  const ahead = useMemo(() => (path ? slice(path, along, path.length) : []), [path, along]);
-  const start = path?.points[0] ?? journey?.destination ?? { lat: 37.7749, lng: -122.4194 };
+
+  // The route: bright ahead of you, grey behind.
+  useEffect(() => {
+    const source = map?.getSource<GeoJSONSource>("route");
+    if (!source || !path) return;
+    const line = (part: string, points: LatLng[]) => ({
+      type: "Feature" as const,
+      properties: { part },
+      geometry: { type: "LineString" as const, coordinates: points.map(lngLat) },
+    });
+    source.setData({
+      type: "FeatureCollection",
+      features: [line("driven", slice(path, 0, along)), line("ahead", slice(path, along, path.length))].filter(
+        (f) => f.geometry.coordinates.length > 1,
+      ),
+    });
+  }, [map, path, along, styleVersion]);
+
+  if (failed) return fallback;
 
   return (
     // cn doesn't merge, so "relative" is only the default: a passed "absolute" would lose to it.
     <div className={cn(className ?? "relative", "size-full")}>
-      <Map
-        className="nav-map absolute inset-0"
-        mapId={MAP_ID}
-        colorScheme="DARK"
-        renderingType="VECTOR"
-        reuseMaps
-        defaultCenter={start}
-        defaultZoom={path || journey ? CAMERA.zoom : 3}
-        defaultTilt={CAMERA.tilt}
-        defaultHeading={0}
-        disableDefaultUI
-        clickableIcons={false}
-        keyboardShortcuts={false}
-        gestureHandling="greedy"
-        onDragstart={() => {
-          follow.current.on = false;
-          setFollowing(false);
-        }}
-      >
-        {/* The route: a dark casing under a white line, greyed out behind you */}
-        <Polyline path={ahead} strokeColor="#000000" strokeOpacity={0.8} strokeWeight={11} zIndex={1} />
-        <Polyline path={ahead} strokeColor="#ffffff" strokeWeight={7} zIndex={2} />
-        <Polyline path={driven} strokeColor="#8a8a8a" strokeWeight={6} zIndex={2} />
+      {/* Sized, not positioned: MapLibre's stylesheet makes the map element position: relative. */}
+      <div ref={container} className="nav-map size-full" />
 
-        {path &&
-          travellers
-            .filter((t) => t.ahead !== 0 && along + t.ahead > 0 && along + t.ahead < path.length)
-            .map((t) => (
-              <AdvancedMarker key={t.id} position={pointAt(path, along + t.ahead)} anchorLeft="-50%" anchorTop="-50%" zIndex={5}>
-                <MapMarker color={t.color} label={t.label} className="size-[20px]" />
-              </AdvancedMarker>
-            ))}
-        {/* Messages ahead, slightly smaller than travellers so they read as places, not people */}
-        {path &&
-          messages
-            .filter((m) => m.at * path.length > along)
-            .map((m) => (
-              <AdvancedMarker key={m.id} position={pointAt(path, m.at * path.length)} anchorLeft="-50%" anchorTop="-50%" zIndex={4}>
-                <MapMarker color={m.color} label={m.label} className="size-[14px]" />
-              </AdvancedMarker>
-            ))}
-        {path && arrived === false && (
-          <AdvancedMarker position={path.points[path.points.length - 1]} anchorLeft="-50%" anchorTop="-50%" zIndex={4}>
-            <span aria-label="Destination" role="img" className="block size-3.5 rounded-full border-2 border-black bg-foreground" />
-          </AdvancedMarker>
-        )}
-        {/* You: positioned every frame by the camera loop */}
-        <AdvancedMarker ref={youRef} anchorLeft="-50%" anchorTop="-50%" zIndex={10}>
-          {progress && <MapMarker color={travellers.find((t) => t.ahead === 0)?.color ?? "lime"} label="You" className="size-[20px]" />}
-        </AdvancedMarker>
-      </Map>
+      {map && lib && (
+        <>
+          {path &&
+            travellers
+              .filter((t) => t.ahead !== 0 && along + t.ahead > 0 && along + t.ahead < path.length)
+              .map((t) => (
+                <Pin key={t.id} lib={lib} map={map} at={pointAt(path, along + t.ahead)} z={5}>
+                  <MapMarker color={t.color} label={t.label} className="block size-[20px]" />
+                </Pin>
+              ))}
+          {/* Messages ahead, slightly smaller than travellers so they read as places, not people */}
+          {path &&
+            messages
+              .filter((m) => m.at * path.length > along)
+              .map((m) => (
+                <Pin key={m.id} lib={lib} map={map} at={pointAt(path, m.at * path.length)} z={4}>
+                  <MapMarker color={m.color} label={m.label} className="block size-[14px]" />
+                </Pin>
+              ))}
+          {path && !arrived && (
+            <Pin lib={lib} map={map} at={path.points[path.points.length - 1]} z={4}>
+              <span aria-label="Destination" role="img" className="block size-3.5 rounded-full border-2 border-black bg-foreground" />
+            </Pin>
+          )}
+          {/* You: moved every frame by the camera loop */}
+          {progress && (
+            <Pin lib={lib} map={map} at={progress.at} z={10} markerRef={you}>
+              <MapMarker color={travellers.find((t) => t.ahead === 0)?.color ?? "lime"} label="You" className="block size-[20px]" />
+            </Pin>
+          )}
+        </>
+      )}
 
-      {/* Next turn, like the green card in Google Maps, in the radio's greys */}
+      {/* Next turn, like a navigation app's banner, in the radio's greys */}
       {path && progress && (
         <div role="status" className="absolute inset-x-2 top-2 border border-foreground/20 bg-background/90 uppercase text-foreground backdrop-blur-sm">
           <div className="flex items-center gap-3 px-3 py-2.5">
@@ -330,7 +376,7 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
       )}
 
       {simulate && (
-        <span className="absolute bottom-7 left-2 bg-marker-lime px-1 font-mono text-[9px] uppercase leading-[13px] text-black">
+        <span className="absolute bottom-2 left-2 bg-marker-lime px-1 font-mono text-[9px] uppercase leading-[13px] text-black">
           Demo drive
         </span>
       )}
@@ -339,7 +385,7 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
         <button
           type="button"
           onClick={recenter}
-          className="absolute bottom-7 right-2 flex min-h-11 items-center gap-1.5 border border-foreground/30 bg-background/90 px-3 text-xs uppercase text-foreground"
+          className="absolute bottom-9 right-2 flex min-h-11 items-center gap-1.5 border border-foreground/30 bg-background/90 px-3 text-xs uppercase text-foreground"
         >
           <Crosshair size={16} aria-hidden />
           Re-centre
@@ -347,6 +393,45 @@ function Navigator({ travellers, messages = [], onReach, className }: Omit<NavMa
       )}
     </div>
   );
+}
+
+/** React content pinned to a spot on the map (a MapLibre marker holding a portal). */
+function Pin({
+  lib,
+  map,
+  at,
+  z,
+  markerRef,
+  children,
+}: {
+  lib: MapLibre;
+  map: MapLibreMap;
+  at: LatLng;
+  z: number;
+  markerRef?: React.RefObject<Marker | null>;
+  children: ReactNode;
+}) {
+  const [element] = useState(() => {
+    const el = document.createElement("div");
+    el.style.zIndex = String(z);
+    return el;
+  });
+  const marker = useRef<Marker | null>(null);
+  const first = useRef(at);
+  useEffect(() => {
+    const m = new lib.Marker({ element }).setLngLat(lngLat(first.current)).addTo(map);
+    marker.current = m;
+    if (markerRef) markerRef.current = m;
+    return () => {
+      m.remove();
+      if (markerRef) markerRef.current = null;
+    };
+  }, [lib, map, element, markerRef]);
+  useEffect(() => {
+    // "You" is moved every frame by the camera loop; this is for everything else.
+    if (!markerRef) marker.current?.setLngLat(lngLat(at));
+  }, [at, markerRef]);
+  return createPortal(children, element);
 }
 
 /** "12 min · 4.3 km · 3:52 AM": time left assumes the rest of the drive goes at the route's pace. */

@@ -8,16 +8,18 @@ import { setMusicSpeaker, startMusic, stopMusic } from "@/lib/music";
 import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { cue } from "@/lib/sound";
-import { hasLiveMap, NavMap } from "../nav/NavMap";
+import { NavMap } from "../nav/NavMap";
+import { useJourney } from "@/lib/journey/session";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
-import { RadioLcd, type CallState } from "./RadioLcd";
+import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
-import { blockHandle, useRadioSettings } from "@/lib/radio-settings";
+import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
+import { announce } from "@/lib/radio/voice";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
 import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/messages";
 import { PowerButton } from "./PowerButton";
@@ -65,6 +67,10 @@ export type RadioScreenProps = {
   outcome?: "connected" | "lost";
   /** How long "Connecting..." shows before the outcome, in ms. */
   connectMs?: number;
+  /** You, as the radio introduces you to them. */
+  me?: string;
+  /** How many miles of road you share with them (mocked until there's matching on routes). */
+  sharedMiles?: number;
   /** The person you get connected to and their character (mocked). */
   peer?: string;
   peerCharacter?: CharacterId;
@@ -74,7 +80,7 @@ export type RadioScreenProps = {
   defaultState?: CallState;
   /** Shorthand for starting connected. */
   defaultOn?: boolean;
-  /** After "Currently connected to", when the other person's audio should start. */
+  /** After the radio introduces you both, when the other person's audio should start. */
   onConnected?: (peer: string) => void;
   travellers?: Traveller[];
   onEndCall?: () => void;
@@ -93,7 +99,7 @@ export type RadioScreenProps = {
   /** Play this message as soon as the screen opens (Storybook, the dial kit). */
   defaultMessage?: RouteMessage;
   /**
-   * Without the live map, how often you "pass" the next message, in ms. The first comes sooner.
+   * Without a route to drive, how often you "pass" the next message, in ms. The first comes sooner.
    * (On real roads they're sparse: one every 20–30 minutes by day, 8–10 at night.)
    */
   messageEveryMs?: number;
@@ -112,6 +118,8 @@ export function RadioScreen({
   time = "3:30 AM",
   outcome = "connected",
   connectMs = 3000,
+  me = "@you",
+  sharedMiles = 84,
   peer = "@sunny_side",
   peerCharacter = "mochi",
   speaking: speakingPinned,
@@ -131,12 +139,19 @@ export function RadioScreen({
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
   const radioOn = state !== "off";
-  // "Currently connected to" shows for a moment when the call comes through.
+  // When the call comes through, the radio introduces you both (two lines, one LCD page each).
   const [greeting, setGreeting] = useState(false);
+  const [introPage, setIntroPage] = useState<0 | 1>(0);
   // Who you're talking to. The first call is `peer`; each End call finds someone new (mocked).
   const [calls, setCalls] = useState(0);
   // Anyone you've reported never comes up again.
-  const { blocked } = useRadioSettings();
+  const { blocked, intent, intentSet } = useRadioSettings();
+  // Flipping the radio on asks what you're up for; that's what matches you (with your stretch of road).
+  const pickIntent = (id: CallIntent) => {
+    saveRadioSettings({ intent: id, intentSet: true });
+    setState("connecting");
+  };
+  const intentInfo = CALL_INTENTS.find((t) => t.id === intent) ?? CALL_INTENTS[0];
   const nextCallers = NEXT_CALLERS.filter((c) => !blocked.includes(c.handle));
   const caller =
     calls === 0 || !nextCallers.length
@@ -219,13 +234,14 @@ export function RadioScreen({
     },
     [messages, passed, listening],
   );
-  // No live map to drive past them: pass the next one every so often instead.
+  // No route to drive past them on (Storybook, no trip set up): pass the next one every so often instead.
+  const onRoute = Boolean(useJourney()?.route);
   const nextAhead = ahead[0]?.id;
   useEffect(() => {
-    if (hasLiveMap || !nextAhead || !listening || messageOn) return;
+    if (onRoute || !nextAhead || !listening || messageOn) return;
     const t = setTimeout(() => reach(nextAhead), passed.length ? messageEveryMs : Math.min(messageEveryMs, 6000));
     return () => clearTimeout(t);
-  }, [nextAhead, listening, messageOn, reach, passed.length, messageEveryMs]);
+  }, [onRoute, nextAhead, listening, messageOn, reach, passed.length, messageEveryMs]);
   // Next in the queue tunes in once the radio's quiet. The first one opening the screen goes straight away.
   const { play } = message;
   useEffect(() => {
@@ -257,6 +273,7 @@ export function RadioScreen({
       // Every call starts with your mic on, even if you'd muted it on the last one.
       setMicMuted(false);
       if (outcome === "connected") {
+        setIntroPage(0);
         setGreeting(true);
         cue("ready", { emphasis: "subtle", theme: "mech" });
       } else {
@@ -285,15 +302,34 @@ export function RadioScreen({
     };
   }, [state, timeoutUntil]);
 
-  // Then their audio starts.
+  // Picking with a remembered intent: keep it after 3 seconds, so turning on stays one motion while driving.
+  useEffect(() => {
+    if (state !== "pick" || !intentSet) return;
+    const t = setTimeout(() => setState("connecting"), 3000);
+    return () => clearTimeout(t);
+  }, [state, intentSet]);
+
+  // The radio introduces you both out loud, a page on the LCD per line, then their audio starts.
   useEffect(() => {
     if (!greeting) return;
-    const t = setTimeout(() => {
+    let live = true;
+    let line: ReturnType<typeof announce> | null = null;
+    void (async () => {
+      const lines = introLines(me, caller.handle, sharedMiles);
+      for (let i = 0; i < lines.length; i++) {
+        if (i > 0) setIntroPage(1);
+        line = announce(lines[i]);
+        await line.done;
+        if (!live) return;
+      }
       setGreeting(false);
       onConnected?.(caller.handle);
-    }, 2500);
-    return () => clearTimeout(t);
-  }, [greeting, caller.handle, onConnected]);
+    })();
+    return () => {
+      live = false;
+      line?.stop();
+    };
+  }, [greeting, caller.handle, onConnected, me, sharedMiles]);
 
   // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
   const [talking, setTalking] = useState(false);
@@ -343,7 +379,7 @@ export function RadioScreen({
           className="absolute inset-0"
           fallback={<PlaceholderMap travellers={travellers} />}
         />
-        {/* A message playing: their voice glows in from the edges; your reply rises from the bottom in your colour. */}
+        {/* A message playing: their voice comes down from the top; your reply rises from the bottom in your colour. */}
         <MessageGlow
           mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
           color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
@@ -377,7 +413,7 @@ export function RadioScreen({
         />
         <div className="absolute left-[30px] top-[20px] flex items-center gap-2">
           <span className="text-[11px] font-bold text-label/80">RADIO</span>
-          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" ? "connecting" : "live"} blink={state === "connecting"} />
+          <Led on={state !== "off" && state !== "thanks"} tone={state === "lost" ? "error" : state === "connecting" || state === "pick" ? "connecting" : "live"} blink={state === "connecting"} />
         </div>
 
         <RockerSwitch className="absolute left-[26px] top-[44px]" on={radioOn}
@@ -389,7 +425,7 @@ export function RadioScreen({
               setTimeoutUntil(until);
               setNow(0); // The countdown's first tick fills this in.
             }
-            setState(on ? (arrived ? "thanks" : until ? "timeout" : "connecting") : "off");
+            setState(on ? (arrived ? "thanks" : until ? "timeout" : "pick") : "off");
             setGreeting(false);
             setHangingUp(false);
             if (on) {
@@ -409,7 +445,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          {messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
+          {messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
         </LcdScreen>
         <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
           <Glare />
@@ -427,7 +463,26 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", arrived && "hidden")}>
+        {/* What you're up for: four big keys, one tap. A remembered pick sits pressed in and lit. */}
+        {state === "pick" && !arrived && (
+          <div role="radiogroup" aria-label="What are you up for?" className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
+            {CALL_INTENTS.map((t) => (
+              <HardwareButton
+                key={t.id}
+                role="radio"
+                aria-checked={intentSet && t.id === intent}
+                aria-pressed={undefined}
+                aria-label={t.label}
+                className="flex-1 px-1"
+                pressed={intentSet && t.id === intent}
+                onClick={() => pickIntent(t.id)}
+              >
+                <span className="text-center text-[11px] font-bold uppercase leading-tight opacity-80">{t.key}</span>
+              </HardwareButton>
+            ))}
+          </div>
+        )}
+        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", (arrived || state === "pick") && "hidden")}>
           {radioOn ? (
             <>
               <HardwareButton
@@ -528,7 +583,7 @@ function Glare() {
   );
 }
 
-/** The dithered map from Figma, shown when Google Maps isn't set up. */
+/** The dithered map from Figma, shown if the browser can't draw the live map (no WebGL). */
 function PlaceholderMap({ travellers }: { travellers: Traveller[] }) {
   return (
     <>

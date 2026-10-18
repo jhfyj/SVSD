@@ -29,6 +29,8 @@ const RADIO = [
   { label: "Connection lost", href: "/radio?call=lost" },
   { label: "Message on the road", href: "/radio?message=message" },
   { label: "Question on the road", href: "/radio?message=question" },
+  // The demo video's call: flip on, Off my chest, then the radio introduces @NightOwl and @Mothlight.
+  { label: "Demo: NightOwl meets Mothlight", href: "/radio?me=NightOwl&peer=Mothlight&miles=84" },
 ];
 
 const listeners = new Set<() => void>();
@@ -180,7 +182,7 @@ export function DialKit() {
           Arrive now
         </Chip>
         <Chip onClick={() => arrival.reset()}>Start drive over</Chip>
-        <p className="mt-1 text-[10px] leading-snug text-muted">Mocked until Google Maps is in.</p>
+        <p className="mt-1 text-[10px] leading-snug text-muted">Mocked until arrival watches your position.</p>
       </Group>
     </aside>
   );

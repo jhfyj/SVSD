@@ -189,3 +189,46 @@ export async function recordReply(): Promise<Recording> {
     },
   };
 }
+
+/** "@Nightowl88" read aloud as "Nightowl 88", "@NightOwl" as "Night Owl". */
+const spoken = (text: string) =>
+  text.replace(/@(\w+)/g, (_, h: string) => h.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/(\D)(\d)/g, "$1 $2"));
+
+/**
+ * The radio's own voice (announcements like who you're meeting), with the browser's speech.
+ * Resolves when it's done; with the sound off, or no speech in the browser, after about as long as
+ * it would take to say, so whatever's on screen still gets read. Cancel with the returned stop.
+ */
+export function announce(text: string): { done: Promise<void>; stop: () => void } {
+  const estimate = 1200 + text.length * 65;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let finish = () => {};
+  const done = new Promise<void>((resolve) => {
+    finish = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+  });
+  const synth = typeof speechSynthesis === "undefined" ? null : speechSynthesis;
+  if (!synth || !isSoundOn()) {
+    timer = setTimeout(finish, estimate);
+    return { done, stop: finish };
+  }
+  const line = new SpeechSynthesisUtterance(spoken(text));
+  line.lang = "en-US";
+  line.rate = 1;
+  const voices = synth.getVoices().filter((v) => v.lang.startsWith("en"));
+  line.voice = voices.find((v) => /Samantha|Google US English/.test(v.name)) ?? voices[0] ?? null;
+  line.addEventListener("end", finish);
+  line.addEventListener("error", finish);
+  // Some browsers drop the end event; never hold the radio up waiting for it.
+  timer = setTimeout(finish, estimate + 4000);
+  synth.speak(line);
+  return {
+    done,
+    stop: () => {
+      synth.cancel();
+      finish();
+    },
+  };
+}

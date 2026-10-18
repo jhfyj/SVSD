@@ -44,6 +44,18 @@ export const ConnectionLost: Story = { args: { defaultState: "lost" } };
 /** Flip the switch on and it fails after Connecting... */
 export const ConnectThenFail: Story = { name: "Connect, then fail", args: { outcome: "lost" } };
 
+/** Flip the radio on and it asks what you're up for: four keys. Your last pick is kept after 3 seconds. */
+export const PickIntent: Story = { name: "Pick what you're up for", args: { defaultState: "pick" } };
+
+/**
+ * The demo video's call: pick Off my chest, then the radio introduces you both out loud,
+ * "@NightOwl, meet @Mothlight. You've got 84 miles of road together", and asks where you're headed.
+ */
+export const IntroduceYouBoth: Story = {
+  name: "Introduce you both",
+  args: { defaultState: "pick", me: "@NightOwl", peer: "@Mothlight", sharedMiles: 84, connectMs: 2000 },
+};
+
 /**
  * Figma "Message" (node 116:91): you pass a magenta marker with the radio off. Static, then their
  * voice; the map glows with it. Press RESPOND within 5 seconds and you record a reply when they finish.
