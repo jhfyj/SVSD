@@ -56,7 +56,7 @@ export function HardwareButton({
       onPointerCancel={release(onPointerCancel)}
       className={cn(
         "group relative flex h-[70px] touch-manipulation select-none items-center justify-center overflow-hidden transition-[box-shadow,filter] duration-75 ease-out",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:pointer-events-none disabled:opacity-50",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:pointer-events-none disabled:opacity-40",
         tone === "end"
           ? down
             ? "[background:var(--end-call-gradient-pressed)] shadow-[var(--button-pressed-shadow)]"

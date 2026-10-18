@@ -169,7 +169,7 @@ The day theme is new, and a few of its values fell below the minimums. They now 
 | **Geist Mono** | `font-mono` (also `font-sans`) | Every word in the product | Weights 400 and 700 |
 | **DSEG14 Classic Mini** | `font-display` | Device readouts only: clock, frequency, counts, countdowns | Stands in for Digital-7, which is personal-use only. If a Digital-7 license is bought it slots in first; nothing else changes. |
 | **Pixel grid** | — | Pictures: weather, characters, sign-in and Allow access icons | 16×16, one ink, square pixels, one-pixel corner steps ([§10](#10-iconography)) |
-| ~~Geist Sans~~ | — | Not used | Still loaded in `layout.tsx`. Remove it. |
+| ~~Geist Sans~~ | — | Not used | No longer loaded. |
 
 ### 4.2 Screen ramp
 
@@ -551,5 +551,6 @@ Code that predates or differs from this spec. Fix it when you're next in the fil
 - **Icon sizes on console keys:** `SpeakerHigh` is 25 and the icon-only End call's `PhoneDisconnect` is 28 (`RadioScreen`, `RadioConsole`); [§10](#10-iconography) says 24 on console keys. Snap them, or record the End call size as an exception.
 - **Control heights:** primary buttons are `min-h-[45px]` (Start journey, trip Done, Customize profile Save, Allow access) or `min-h-11` (sign-in Next, Profile), and `TextInput` is `h-11`; [§5.4](#54-sizes) says 48 (`h-12`).
 - **Fixed widths on the profile flow:** `SignIn`, `CustomizeProfile` and `AllowAccess` size their fields and buttons with `w-[293px]`…`w-[345px]` instead of filling the 305px column inside the 44px gutter.
-- **Misc:** `HardwareButton` disabled `opacity-50` → 40; `CalendarDots` active dot → `bg-foreground`; Geist Sans loaded but unused.
+- **Dimmed state text:** the trip recap shows “Not answered” at `foreground/40` inside a `/70` line; [§3.2](#32-text-tiers) keeps `/40` for placeholders and disabled. Let the words carry the state at `/70`, or mark it another way.
+- **Review-only mockups:** `src/stories/IntentPlacement.stories.tsx` still uses the old gutters, heights and `text-[Npx]` sizes. Bring a mockup up to spec if it's picked for the product.
 - **Input edge on the phone field:** `SignIn`'s phone number is a filled `bg-surface` box with no edge (about 1.1:1 against the cream background). Give it the input edge ([§3.7](#37-contrast-fixes-for-day)) like the other fields, or record the filled field as a recipe.
