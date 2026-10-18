@@ -41,7 +41,7 @@ export type RadioScreenProps = {
 
 /** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
 const casing =
-  "[background:var(--panel-noise),linear-gradient(180deg,#2f2f2f_0%,#272727_55%,#1f1e1e_100%)] shadow-[var(--panel-highlight)]";
+  "[background:var(--panel-noise),var(--casing-gradient)] shadow-[var(--panel-highlight)]";
 
 /** The "Connected" radio screen (Figma node 123:246): map on an inset screen above the radio console. */
 export function RadioScreen({
@@ -80,7 +80,7 @@ export function RadioScreen({
           height={852}
           priority
           unoptimized
-          className="absolute max-w-none [image-rendering:pixelated]"
+          className="absolute max-w-none [filter:var(--map-filter)] [image-rendering:pixelated]"
           style={{ left: -SCREEN.left, top: -SCREEN.top }}
         />
         {travellers.map((t) => (
@@ -122,7 +122,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          <Mascot className="text-[#1f2b1e]" />
+          <Mascot className="text-lcd-ink" />
         </LcdScreen>
 
         <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">

@@ -2,7 +2,7 @@ import { StartJourney } from "@/components/journey";
 
 export default function Home() {
   return (
-    <main className="flex min-h-full flex-1 justify-center bg-black">
+    <main className="flex min-h-full flex-1 justify-center bg-backdrop">
       <StartJourney />
     </main>
   );

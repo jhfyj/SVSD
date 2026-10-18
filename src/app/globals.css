@@ -3,9 +3,14 @@
 /*
   Design tokens from the SVSD Figma file (Section 1, node 123:130).
   See /mnt/project-files/design-system/svsd-figma-design-system.md for where each value comes from.
-  The design is dark only. Use these tokens instead of hardcoding colors in components.
+  Dark is the default (night); light (day) overrides the same tokens below, so components never
+  check the theme. src/lib/theme.ts sets data-theme on <html> by time of day.
+  Use these tokens instead of hardcoding colors in components.
 */
 :root {
+  color-scheme: dark;
+  /* Behind the 393px phone column on wide screens. */
+  --backdrop: #000000;
   --background: #1e1e1e;
   --foreground: #ffffff;
   --muted: #696969;
@@ -16,6 +21,7 @@
   --border-input: rgb(255 255 255 / 0.2);
   --accent: #dedede;
   --accent-foreground: #000000;
+  --accent-hover: #ffffff;
   --danger: #ff5151;
   --lcd: #97bd93;
   --lcd-ink: #1e2a1d;
@@ -39,8 +45,53 @@
   --button-pressed-shadow: inset 0 3px 6px rgb(0 0 0 / 0.7), inset 0 -1px 1px rgb(255 255 255 / 0.06);
   --end-call-gradient-pressed: linear-gradient(180deg, #7a1110 0%, #b83232 100%);
   --power: #ff3535;
+  /* One continuous radio casing behind the map and console. */
+  --casing-gradient: linear-gradient(180deg, #2f2f2f 0%, #272727 55%, #1f1e1e 100%);
+  /* The dithered map is drawn for night; day lifts it toward the light Figma frame. */
+  --map-filter: none;
+  /* Splash spiral and the blueprint grid in the radio load-in (grid ink is rgb channels). */
+  --spiral: #7a2d58;
+  --grid-ink: 255 255 255;
   /* Fine grain on the hardware panels, like the textured plastic in the Figma file. */
   --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/*
+  Day theme: white, cream and warm grays, after the light Connecting frame (Figma 154:1263),
+  softened from its pink-beige toward cream. Hardware stays physical: the rocker switch,
+  the map bezel, the red End call and the LED keep their dark/colored parts.
+*/
+:root[data-theme="light"] {
+  color-scheme: light;
+  --backdrop: #dcd7cf;
+  --background: #f5f2ec;
+  --foreground: #1d1c1a;
+  --muted: #6f6b64;
+  --label: #7a746b;
+  --surface: #e9e5dd;
+  --surface-raised: #fdfcf9;
+  --border: #c7c1b7;
+  --border-input: rgb(29 28 26 / 0.18);
+  --accent: #2a2926;
+  --accent-foreground: #f8f6f1;
+  --accent-hover: #000000;
+  --danger: #d23a3a;
+  --lcd: #b5b3a8;
+  --lcd-ink: #2b2a27;
+  --marker-border: #393939;
+
+  --panel-gradient: linear-gradient(180deg, #f7f2eb 0%, #c9c2b9 100%);
+  --button-gradient: linear-gradient(180deg, #ebe8e2 0%, #c8c2b8 100%);
+  --button-highlight: inset 1px 2px 2px rgb(255 255 255 / 0.7), 0 1px 2px rgb(60 50 40 / 0.18);
+  --lcd-inset: inset 4px 4px 4px rgb(0 0 0 / 0.22);
+  --panel-highlight: inset 1px 2px 2px rgb(255 255 255 / 0.7);
+  --button-gradient-pressed: linear-gradient(180deg, #bdb7ad 0%, #d8d3cb 100%);
+  --button-pressed-shadow: inset 0 3px 6px rgb(60 50 40 / 0.35), inset 0 -1px 1px rgb(255 255 255 / 0.5);
+  --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --casing-gradient: linear-gradient(180deg, #f6f1ea 0%, #e4ddd4 55%, #cbc3b9 100%);
+  --map-filter: brightness(1.3) contrast(0.82) sepia(0.1);
+  --spiral: #c98bb0;
+  --grid-ink: 60 50 40;
 }
 
 /* DSEG14 (OFL) stands in for Digital-7, which is personal-use only. */
@@ -62,6 +113,8 @@
   --color-border-input: var(--border-input);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-hover: var(--accent-hover);
+  --color-backdrop: var(--backdrop);
   --color-danger: var(--danger);
   --color-lcd: var(--lcd);
   --color-lcd-ink: var(--lcd-ink);
@@ -186,9 +239,9 @@ body {
   }
   .radio-intro-grid {
     background:
-      linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px) 14px 0 / 91.25px 100%,
-      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px) 0 0 / 100% 24px,
-      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px) 0 0 / 24px 100%;
+      linear-gradient(90deg, rgb(var(--grid-ink) / 0.05) 1px, transparent 1px) 14px 0 / 91.25px 100%,
+      linear-gradient(rgb(var(--grid-ink) / 0.035) 1px, transparent 1px) 0 0 / 100% 24px,
+      linear-gradient(90deg, rgb(var(--grid-ink) / 0.035) 1px, transparent 1px) 0 0 / 24px 100%;
     animation: intro-pop 400ms ease-out both;
   }
   .radio-intro-line {

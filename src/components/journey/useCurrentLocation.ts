@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { LatLng } from "@/lib/journey/geo";
+import { rememberPlace } from "@/lib/theme";
 
 export type LocationState =
   | { status: "locating" }
@@ -18,7 +19,11 @@ export function useCurrentLocation() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => setState({ status: "ok", position: { lat: coords.latitude, lng: coords.longitude } }),
+      ({ coords }) => {
+        setState({ status: "ok", position: { lat: coords.latitude, lng: coords.longitude } });
+        // Lets day and night follow your sunrise and sunset.
+        rememberPlace(coords.latitude, coords.longitude);
+      },
       (error) =>
         setState(
           error.code === error.PERMISSION_DENIED
