@@ -88,6 +88,11 @@
   --danger: #d23a3a;
   --lcd: #b5b3a8;
   --lcd-ink: #2b2a27;
+  /* Markers darkened and saturated so lime and magenta text and dots read on cream (≥4.5:1). */
+  --marker-lime: #5f7300;
+  --marker-sky: #1f6fb0;
+  --marker-magenta: #b01ea8;
+  --marker-orange: #b8501a;
   --character: rgb(29 28 26 / 0.22);
   --character-lit: #2f8f3a;
   --marker-border: #393939;

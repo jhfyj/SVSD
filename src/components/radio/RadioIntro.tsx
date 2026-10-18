@@ -115,7 +115,7 @@ function Frame({ part, at, flash }: { part: Part; at: number; flash: number }) {
       ))}
       <span
         className={cn(
-          "radio-intro-tag absolute left-0 whitespace-nowrap bg-marker-lime px-1 font-mono text-[9px] uppercase leading-[13px] text-black",
+          "radio-intro-tag absolute left-0 whitespace-nowrap bg-marker-lime px-1 font-mono text-[9px] uppercase leading-[13px] text-background",
           y < 20 ? "top-full mt-1" : "bottom-full mb-1",
         )}
       >
