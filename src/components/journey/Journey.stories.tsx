@@ -10,7 +10,7 @@ import { TuningStrip } from "./TuningStrip";
 const meta: Meta = { title: "Journey", parameters: { layout: "centered" } };
 export default meta;
 
-/** A walk from Union Square to 1 Irving Pl and on east, for the trail stories. */
+/** A drive from Union Square to 1 Irving Pl and on east, for the trail stories. */
 const SAMPLE_ROUTE = [
   [40.7359, -73.9911], [40.7372, -73.9895], [40.7352, -73.985], [40.7365, -73.983],
   [40.7346, -73.979], [40.733, -73.975], [40.7302, -73.972], [40.728, -73.9715],

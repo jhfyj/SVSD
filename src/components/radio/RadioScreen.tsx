@@ -1,7 +1,7 @@
 "use client";
 
 import { Microphone, PartlyCloudyNight } from "@carbon/icons-react";
-import { PhoneDisconnect, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
+import { PhoneDisconnect, Play, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useState } from "react";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
@@ -31,6 +31,8 @@ export type RadioScreenProps = {
   connected?: boolean;
   travellers?: Traveller[];
   onEndCall?: () => void;
+  /** The wide button while the radio is off: play a story instead of calling. */
+  onStartStory?: () => void;
   onPower?: () => void;
   className?: string;
 };
@@ -45,6 +47,7 @@ export function RadioScreen({
   connected = true,
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
+  onStartStory,
   onPower,
   className,
 }: RadioScreenProps) {
@@ -92,10 +95,9 @@ export function RadioScreen({
 
       {/* Top bar */}
       <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
-        <div className="flex items-center gap-1">
-          <PartlyCloudyNight size={16} aria-label="Partly cloudy" />
-          {/* 20px in Digital-7; the wider DSEG14 fallback is set smaller to match its width */}
-          <span className="font-display text-[15px] leading-none">{time}</span>
+        <div className="flex items-center gap-1.5">
+          <PartlyCloudyNight size={20} aria-label="Partly cloudy" />
+          <span className="font-display text-[20px] leading-none">{time}</span>
         </div>
         <PowerButton onClick={onPower} />
       </header>
@@ -122,10 +124,17 @@ export function RadioScreen({
         </LcdScreen>
 
         <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
-          <HardwareButton tone="end" className="flex-1" onClick={onEndCall} disabled={!live}>
-            <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
-            <span className="text-[20px] font-bold opacity-80">END CALL</span>
-          </HardwareButton>
+          {radioOn ? (
+            <HardwareButton tone="end" className="flex-1" onClick={onEndCall} disabled={!live}>
+              <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
+              <span className="text-[20px] font-bold opacity-80">END CALL</span>
+            </HardwareButton>
+          ) : (
+            <HardwareButton className="flex-1" onClick={onStartStory}>
+              <Play size={22} weight="fill" className="opacity-60" aria-hidden />
+              <span className="text-[20px] font-bold opacity-60">START STORY</span>
+            </HardwareButton>
+          )}
           <HardwareButton
             className="w-[70px]"
             pressed={micMuted}

@@ -31,7 +31,7 @@ export function TuningStrip({ minutes, onChange, className }: TuningStripProps) 
   const last = useRef(index);
   const placed = useRef(false);
 
-  // Follow the value when it changes from outside (a quick pick, the walk time).
+  // Follow the value when it changes from outside (a quick pick, the drive time).
   useEffect(() => {
     const el = ref.current;
     if (!el || Math.round(el.scrollLeft / PITCH) === index) return;

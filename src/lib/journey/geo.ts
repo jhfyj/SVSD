@@ -1,7 +1,7 @@
 /*
-  Address search and walking routes, from free OpenStreetMap services that need no API key:
+  Address search and driving routes, from free OpenStreetMap services that need no API key:
   - Photon (photon.komoot.io) for the destination autocomplete, biased toward where you are.
-  - OSRM on the FOSSGIS server (routing.openstreetmap.de) for the walking route.
+  - OSRM on the FOSSGIS server (routing.openstreetmap.de) for the driving route.
   Both are shared demo servers with fair-use limits, fine for the hackathon. For production,
   swap these two functions for a keyed provider (Mapbox, Stadia, Geoapify) or a self-hosted one.
 */
@@ -19,16 +19,16 @@ export type Place = LatLng & {
 export type Route = {
   /** The path, from origin to destination. */
   points: LatLng[];
-  /** Walking time in seconds. */
+  /** Driving time in seconds. */
   duration: number;
   /** Metres. */
   distance: number;
-  /** True when no walking route was found and the path is a straight line. */
+  /** True when no driving route was found and the path is a straight line. */
   straight?: boolean;
 };
 
 const PHOTON = "https://photon.komoot.io/api/";
-const OSRM = "https://routing.openstreetmap.de/routed-foot/route/v1/foot/";
+const OSRM = "https://routing.openstreetmap.de/routed-car/route/v1/driving/";
 
 type PhotonFeature = {
   geometry: { coordinates: [number, number] };
@@ -82,9 +82,9 @@ export function distanceBetween(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-const WALKING_SPEED = 1.35; // m/s, about 5 km/h
+const DRIVING_SPEED = 13.9; // m/s, about 50 km/h
 
-/** The walking route from `from` to `to`; a straight line when there isn't one. */
+/** The driving route from `from` to `to`; a straight line when there isn't one. */
 export async function routeBetween(from: LatLng, to: LatLng, signal?: AbortSignal): Promise<Route> {
   const coords = `${from.lng},${from.lat};${to.lng},${to.lat}`;
   try {
@@ -105,5 +105,5 @@ export async function routeBetween(from: LatLng, to: LatLng, signal?: AbortSigna
     if (signal?.aborted) throw error;
   }
   const distance = distanceBetween(from, to);
-  return { points: [from, to], distance, duration: distance / WALKING_SPEED, straight: true };
+  return { points: [from, to], distance, duration: distance / DRIVING_SPEED, straight: true };
 }

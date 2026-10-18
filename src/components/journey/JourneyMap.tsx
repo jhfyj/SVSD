@@ -9,7 +9,7 @@ import { RouteTrail } from "./RouteTrail";
 
 /*
   The Destination screen's stage: the whole dotted earth (land mask from the week 6 world clock),
-  which zooms into the walk once there's a route and hands over to the dotted trail.
+  which zooms into the drive once there's a route and hands over to the dotted trail.
   The earth is drawn in degrees (x = longitude, y = -latitude) and zoomed by animating its viewBox;
   the zoom ends exactly where the trail puts its first and last dots, so the pins land on them.
 */
@@ -70,7 +70,7 @@ function between(a: View, b: View, t: number): View {
 export type JourneyMapProps = {
   here: LatLng | null;
   destination: LatLng | null;
-  /** The walking route; when set, the map zooms into it and draws the trail. */
+  /** The driving route; when set, the map zooms into it and draws the trail. */
   route: LatLng[] | null;
   stories?: number;
   questions?: number;
@@ -78,7 +78,7 @@ export type JourneyMapProps = {
 };
 
 export function JourneyMap({ here, destination, route, stories = 0, questions = 0, className }: JourneyMapProps) {
-  // The world is centred on you, so a walk never straddles its edge.
+  // The world is centred on you, so a drive never straddles its edge.
   const center = here?.lng ?? 0;
   const west = center - 180;
   const land = useMemo(() => landPath(west), [west]);
@@ -109,7 +109,7 @@ export function JourneyMap({ here, destination, route, stories = 0, questions = 
     return { x: x + BOX.x * sx, y: y + BOX.y * sy, w: BOX.w * sx, h: BOX.h * sy };
   }, [route, west]);
 
-  // 0 is the whole earth, 1 is zoomed into the walk.
+  // 0 is the whole earth, 1 is zoomed into the drive.
   // Coming back to the tab with a route already drawn shows it straight away.
   const [t, setT] = useState(zoomed ? 1 : 0);
   const tRef = useRef(t);
@@ -150,7 +150,7 @@ export function JourneyMap({ here, destination, route, stories = 0, questions = 
       className={cn("relative w-full overflow-hidden", className)}
       style={{ aspectRatio: `${BOX.w} / ${BOX.h}` }}
       role="img"
-      aria-label={arrived ? "Your walking route" : here ? "World map with your location" : "World map"}
+      aria-label={arrived ? "Your driving route" : here ? "World map with your location" : "World map"}
     >
       <svg
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}

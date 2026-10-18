@@ -48,7 +48,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
     };
   }, [searching, query, here]);
 
-  // The walking route from here to the destination
+  // The driving route from here to the destination
   const routeKey = destination && here ? `${here.lat},${here.lng}>${destination.id}` : null;
   const [route, setRoute] = useState<{ key: string; route: Route } | null>(null);
   const currentRoute = route && route.key === routeKey ? route.route : null;
@@ -62,7 +62,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
     return () => controller.abort();
   }, [routeKey, destination, here]);
 
-  // Trip length: what you set on the Duration tab, else the walk's length.
+  // Trip length: what you set on the Duration tab, else the drive's length.
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
   const routeMinutes = currentRoute ? nearestStep(currentRoute.duration / 60) : null;
   const minutes = chosenMinutes ?? routeMinutes ?? DEFAULT_MINUTES;
@@ -89,7 +89,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
 
       {tab === "Destination" ? (
         <section aria-label="Destination" className="flex flex-1 flex-col">
-          <label htmlFor="destination" className="mt-6 block text-center font-display text-base">
+          <label htmlFor="destination" className="mt-6 block text-center font-mono text-base uppercase">
             Enter your destination
           </label>
           <div className="relative mx-[31px] mt-4">
@@ -160,7 +160,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               <div className="text-[11px] text-foreground/40">
                 <dt className="sr-only">Distance</dt>
                 <dd>
-                  {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "walk"}
+                  {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "drive"}
                 </dd>
               </div>
               <div className="text-right">
@@ -177,7 +177,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
           <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
             {routeMinutes !== null && (
               <Chip selected={minutes === routeMinutes} onClick={() => setChosenMinutes(null)}>
-                Walk · {formatDuration(routeMinutes)}
+                Drive · {formatDuration(routeMinutes)}
               </Chip>
             )}
             {PRESETS.map((m) => (
