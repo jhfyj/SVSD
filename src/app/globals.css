@@ -219,6 +219,22 @@ body {
   }
 }
 
+/* Pixel icons on the sign-in and Allow access screens float up and down, a pixel step at a time. */
+@keyframes pixel-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pixel-float {
+    animation: pixel-float 2.4s steps(8) infinite;
+  }
+}
+
 /* The route trail lights up one dot at a time. */
 @keyframes trail-in {
   from {

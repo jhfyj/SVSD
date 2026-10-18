@@ -1,15 +1,14 @@
 "use client";
 
-import { ArrowLeft, Location, Microphone, Notification } from "@carbon/icons-react";
-import type { ReactNode } from "react";
+import { ArrowLeft } from "@carbon/icons-react";
+import { PixelIcon } from "./LcdIcon";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
 import { cue } from "@/lib/sound";
-import { cn } from "../ui/cn";
 
-const ITEMS: { kind: PermissionKind; label: string; why: string; icon: ReactNode }[] = [
-  { kind: "microphone", label: "MICROPHONE", why: "Talk on the radio and say a word to reply.", icon: <Microphone size={20} /> },
-  { kind: "notifications", label: "NOTIFICATIONS", why: "Know when a message or question comes in.", icon: <Notification size={20} /> },
-  { kind: "location", label: "LOCATION", why: "Draw your trail and find stories along the way.", icon: <Location size={20} /> },
+const ITEMS: { kind: PermissionKind; label: string; why: string; delay: number }[] = [
+  { kind: "microphone", label: "MICROPHONE", why: "Talk on the radio and say a word to reply.", delay: 0 },
+  { kind: "notifications", label: "NOTIFICATIONS", why: "Know when a message or question comes in.", delay: 400 },
+  { kind: "location", label: "LOCATION", why: "Draw your trail and find stories along the way.", delay: 800 },
 ];
 
 /** What to do when the browser won't ask again. */
@@ -40,7 +39,7 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
     <li className="flex flex-col gap-2 border border-border p-3">
       <div className="flex items-center gap-3">
         <span aria-hidden className="flex size-11 shrink-0 items-center justify-center bg-lcd text-lcd-ink shadow-[var(--lcd-inset)]">
-          {item.icon}
+          <PixelIcon icon={kind} pixel={2} delay={item.delay} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-base leading-5">{item.label}</span>
@@ -63,11 +62,21 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
             ON
           </span>
         )}
-        {state === "denied" && <span className="shrink-0 text-xs text-danger">OFF</span>}
-        {state === "unsupported" && <span className="shrink-0 text-xs text-foreground/50">N/A</span>}
+        {state === "denied" && (
+          <span className="flex shrink-0 items-center gap-1.5 text-xs">
+            <span aria-hidden className="size-2 rounded-full bg-power shadow-[0_0_6px_var(--power)]" />
+            OFF
+          </span>
+        )}
+        {state === "unsupported" && (
+          <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground/50">
+            <span aria-hidden className="size-2 rounded-full border border-current" />
+            N/A
+          </span>
+        )}
         {state === "checking" && <span className="shrink-0 text-xs text-foreground/50">…</span>}
       </div>
-      {hint && <p className={cn("text-xs", state === "denied" ? "text-danger" : "text-foreground/60")}>{hint}</p>}
+      {hint && <p className="text-xs text-foreground/60">{hint}</p>}
     </li>
   );
 }
