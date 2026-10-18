@@ -9,6 +9,7 @@ import { cn } from "../ui/cn";
 import { HardwareButton } from "./HardwareButton";
 import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
+import { Mascot } from "./Mascot";
 import { PowerButton } from "./PowerButton";
 import { RockerSwitch } from "./RockerSwitch";
 
@@ -116,7 +117,7 @@ export function RadioScreen({
 
         <LcdScreen className={cn("absolute left-[156px] top-[18px] h-[130px] w-[221px] transition-[filter]", !radioOn && "brightness-[0.55]")}>
           {radioOn && (
-            <Image src="/radio/mascot.png" alt="Mascot" width={111} height={105} unoptimized className="[image-rendering:pixelated]" />
+            <Mascot className="text-[#1f2b1e]" />
           )}
         </LcdScreen>
 

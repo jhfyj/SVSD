@@ -2,6 +2,7 @@ export * from "./Led";
 export * from "./ToggleSwitch";
 export * from "./RockerSwitch";
 export * from "./LcdScreen";
+export * from "./Mascot";
 export * from "./HardwareButton";
 export * from "./PowerButton";
 export * from "./RadioConsole";
