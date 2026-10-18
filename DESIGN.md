@@ -125,7 +125,7 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 | LCD window | `bg-lcd shadow-[var(--lcd-inset)]` |
 | Rocker switch (same in both themes) | `rocker-housing`, `rocker-well`, `--rocker-paddle` + `--rocker-paddle-edge`, `rocker-glyph` |
 
-**Light source:** top-left, and on the radio it **moves with the phone.** `useTilt` turns device tilt into `--tilt-x` / `--tilt-y` (±25° / ±20°, eased toward the target at 0.12 per frame so it feels heavy) and the casing's highlight follows. Glow is only for emitters: LEDs, the power key, lit keys.
+**Light source:** from above, and **fixed**. Nothing on the radio follows the cursor or the phone's tilt: the casing highlight stays put, and there's no glare sweeping across the map or the LCD glass (removed as distracting). Glow is only for emitters: LEDs, the power key, lit keys.
 
 ### 3.5 The map
 
@@ -442,7 +442,6 @@ Press tilt — pointer down on the square or a tab key
 ```
 
 **Other physical motion in the product:**
-- **Casing light** (`useTilt`): the highlight follows the phone's tilt, ±25° / ±20°, catching up 12% per frame so it feels heavy.
 - **Map camera** (`NavMap`): tilted follow view behind you, facing the road ahead.
 - **Power off:** the whole radio drops out of the bottom in 8 hard steps (480ms), then back to Start your journey.
 

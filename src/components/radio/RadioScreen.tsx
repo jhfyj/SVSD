@@ -33,7 +33,6 @@ import { PowerButton } from "./PowerButton";
 import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
 import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
-import { useTilt } from "./useTilt";
 
 /** Mic and Settings during a call (and Drop/Settings beside a message): square keys, as tall as the row (70px). */
 const CALL_KEY = "w-[70px] shrink-0";
@@ -242,7 +241,6 @@ export function RadioScreen({
     setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
     setTallyFlash((n) => n + 1);
   };
-  useTilt(root);
   // At the destination the button row becomes a single End trip.
   const arrived = useArrived(forceArrived);
 
@@ -443,7 +441,6 @@ export function RadioScreen({
         )}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
-        <Glare />
       </section>
 
       {/* Top bar */}
@@ -507,9 +504,6 @@ export function RadioScreen({
           {drop.active && state !== "pick" ? <DropLcd controls={drop} /> : messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
           <CollectedTally counts={collected} flash={tallyFlash} />
         </LcdScreen>
-        <div className="pointer-events-none absolute left-[156px] top-[18px] h-[130px] w-[221px] overflow-hidden">
-          <Glare />
-        </div>
 
         {arrived && (
           <div className="absolute left-[26px] top-[166px] flex w-[351px]">
@@ -612,40 +606,16 @@ export function RadioScreen({
         </div>
       </div>
 
-      {/* Light on the casing, sliding the way the phone tilts */}
+      {/* Light on the casing, from above. It stays put: it doesn't follow the cursor or the phone's tilt. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 mix-blend-soft-light"
-        style={{
-          background:
-            "radial-gradient(circle at calc(50% + var(--tilt-x, 0) * 45%) calc(22% + var(--tilt-y, 0) * 35%), rgb(255 255 255 / 0.22), transparent 60%)",
-        }}
+        style={{ background: "radial-gradient(circle at 50% 22%, rgb(255 255 255 / 0.22), transparent 60%)" }}
       />
 
       {flights.map((f) => (
         <CollectFlight key={f.id} kind={f.kind} from={f.from} to={LCD_TALLY} onLanded={() => landed(f)} />
       ))}
-    </div>
-  );
-}
-
-/**
- * A streak of light across glass. It sits off the edge while the phone is held still and
- * sweeps across once you tilt far enough (right or toward you from one side, left or away
- * from the other), like a real reflection catching the screen. Blends with what's under it,
- * so it reads on dark and light themes alike.
- */
-function Glare() {
-  const band = (sign: 1 | -1) => ({
-    // p rises from 0 at rest to about ±1 at full tilt; the band crosses the glass around p = ±0.5.
-    left: `calc((var(--tilt-x, 0) + var(--tilt-y, 0) * 0.5) * 200% ${sign > 0 ? "- 80%" : "+ 120%"})`,
-  });
-  const streak =
-    "linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.05) 35%, rgb(255 255 255 / 0.28) 50%, rgb(255 255 255 / 0.05) 65%, transparent 100%)";
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden mix-blend-screen">
-      <div className="absolute -inset-y-4 w-[60%] -skew-x-12" style={{ ...band(1), background: streak }} />
-      <div className="absolute -inset-y-4 w-[60%] -skew-x-12" style={{ ...band(-1), background: streak }} />
     </div>
   );
 }
