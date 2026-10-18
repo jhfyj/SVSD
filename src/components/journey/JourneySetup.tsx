@@ -102,6 +102,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               type="search"
               autoComplete="off"
               enterKeyHint="search"
+              data-cuelume-type=""
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
