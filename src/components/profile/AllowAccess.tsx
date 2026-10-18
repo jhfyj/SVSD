@@ -119,7 +119,8 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         <button
           type="button"
           onClick={onDone}
-          data-cuelume-navigate=""
+          data-cuelume-tap=""
+          data-cuelume-theme="mech"
           className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
         >
           {firstTime ? (allOn ? "LET'S GO" : "CONTINUE") : "DONE"}

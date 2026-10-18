@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { buildTrail } from "@/lib/journey/trail";
 import type { TripSummary } from "@/lib/trip/trip";
 import { cn } from "../ui/cn";
+import { plural } from "@/lib/plural";
 
 const WIDTH = 300;
 const HEIGHT = 200;
@@ -31,7 +32,7 @@ export function TripMap({ trip, className }: { trip: TripSummary; className?: st
       viewBox={`${-PAD} ${-PAD} ${WIDTH + PAD * 2} ${HEIGHT + PAD * 2}`}
       className={cn("block w-full overflow-visible", className)}
       role="img"
-      aria-label={`Your route from ${trip.from} to ${trip.to}, with ${trip.questions.length} questions and ${trip.calls.length} calls along it`}
+      aria-label={`Your route from ${trip.from} to ${trip.to}, with ${plural(trip.questions.length, "question")} and ${plural(trip.calls.length, "call")} along it`}
     >
       {dots.map((dot, i) => {
         const style = { animationDelay: `${i * 35}ms` };
