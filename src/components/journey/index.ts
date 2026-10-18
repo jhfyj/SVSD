@@ -5,3 +5,4 @@ export * from "./StartJourney";
 export * from "./TopBar";
 export * from "./JourneyMap";
 export * from "./StartingRadio";
+export * from "./IntentPicker";
