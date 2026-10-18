@@ -72,7 +72,7 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
           ))}
         </div>
       </div>
-      <div aria-hidden className="pointer-events-none absolute inset-x-[6px] bottom-1 h-[84px] bg-linear-to-b from-[rgb(41_41_41/0)] to-background" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-[6px] bottom-1 h-[84px] bg-linear-to-b from-background/0 to-background" />
     </div>
   );
 }
