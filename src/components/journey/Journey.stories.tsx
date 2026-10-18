@@ -8,6 +8,7 @@ import { StartJourney } from "./StartJourney";
 import { StartingRadio } from "./StartingRadio";
 import { WeatherSprite } from "./WeatherIcon";
 import type { Sky } from "@/lib/weather";
+import { sampleHistory } from "@/lib/journey/history";
 
 /** The "getting set up" flow (Figma iPhone 16 - 50 to 58). */
 const meta: Meta = { title: "Journey", parameters: { layout: "centered" } };
@@ -19,7 +20,10 @@ const SAMPLE_ROUTE = [
   [40.7346, -73.979], [40.733, -73.975], [40.7302, -73.972], [40.728, -73.9715],
 ].map(([lat, lng]) => ({ lat, lng }));
 
-export const Start: StoryObj = { render: () => <StartJourney href="#" /> };
+export const Start: StoryObj = { render: () => <StartJourney href="#" journeys={sampleHistory()} /> };
+
+/** A first visit, before any journeys. */
+export const StartFirstTime: StoryObj = { render: () => <StartJourney href="#" journeys={[]} /> };
 
 /** What brings you here today: pick one intent, then Next opens trip setup. */
 export const Intents: StoryObj = { render: () => <IntentPicker href="#" /> };

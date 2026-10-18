@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration } from "@/lib/journey/duration";
 import { saveJourney } from "@/lib/journey/session";
+import { recordJourney } from "@/lib/journey/history";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { cn } from "../ui/cn";
@@ -180,15 +181,19 @@ export function JourneySetup() {
           // Remember the drive for the radio (arrival, and the live map's navigation) and the trip recap.
           onClick={() => {
             saveJourney(destination ? { destination, route: currentRoute } : null);
-            if (destination && currentRoute)
-              saveTrip({
+            if (destination && currentRoute) {
+              const trip = {
                 from: "",
                 to: destination.detail.split(",")[0] || destination.name,
                 route: currentRoute.points,
                 minutes,
                 miles: Math.max(1, Math.round(currentRoute.distance / 1609.34)),
                 startedAt: Date.now(),
-              });
+              };
+              saveTrip(trip);
+              // For Recent journeys on the start screen.
+              recordJourney({ destination, route: currentRoute }, trip);
+            }
           }}
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
