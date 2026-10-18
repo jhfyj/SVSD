@@ -10,3 +10,4 @@ export * from "./MapMarker";
 export * from "./MessageCard";
 export * from "./StatusBar";
 export * from "./icons";
+export * from "./ScrambleText";

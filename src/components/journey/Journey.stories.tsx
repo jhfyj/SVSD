@@ -1,11 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
+import { IntentPicker } from "./IntentPicker";
 import { JourneyMap } from "./JourneyMap";
 import { JourneySetup } from "./JourneySetup";
 import { RouteTrail } from "./RouteTrail";
 import { StartJourney } from "./StartJourney";
 import { StartingRadio } from "./StartingRadio";
-import { TuningStrip } from "./TuningStrip";
+import { WeatherSprite } from "./WeatherIcon";
+import type { Sky } from "@/lib/weather";
+import { sampleHistory } from "@/lib/journey/history";
 
 /** The "getting set up" flow (Figma iPhone 16 - 50 to 58). */
 const meta: Meta = { title: "Journey", parameters: { layout: "centered" } };
@@ -17,27 +20,19 @@ const SAMPLE_ROUTE = [
   [40.7346, -73.979], [40.733, -73.975], [40.7302, -73.972], [40.728, -73.9715],
 ].map(([lat, lng]) => ({ lat, lng }));
 
-export const Start: StoryObj = { render: () => <StartJourney href="#" /> };
+export const Start: StoryObj = { render: () => <StartJourney href="#" journeys={sampleHistory()} /> };
+
+/** A first visit, before any journeys. */
+export const StartFirstTime: StoryObj = { render: () => <StartJourney href="#" journeys={[]} /> };
+
+/** What brings you here today: pick one intent, then Next opens trip setup. */
+export const Intents: StoryObj = { render: () => <IntentPicker href="#" /> };
 
 /** Asks for your location; searches and routes against the live OpenStreetMap services. */
 export const Setup: StoryObj = { render: () => <JourneySetup /> };
 
 /** The splash after Start journey; it stays put here instead of opening the radio. */
 export const Starting: StoryObj = { render: () => <StartingRadio /> };
-
-export const SetupDuration: StoryObj = { render: () => <JourneySetup initialTab="Duration" /> };
-
-/** Trip length, 5 min to 8 hr: drag, flick, or use the arrow keys. */
-export const Duration: StoryObj = {
-  render: function Render() {
-    const [minutes, setMinutes] = useState(50);
-    return (
-      <div className="w-[393px] bg-background py-6">
-        <TuningStrip minutes={minutes} onChange={setMinutes} />
-      </div>
-    );
-  },
-};
 
 export const Trail: StoryObj = {
   render: () => (
@@ -74,4 +69,17 @@ export const EarthToTrail: StoryObj = {
       </div>
     );
   },
+};
+
+const SKIES: Sky[] = ["clear", "partly", "cloudy", "fog", "rain", "snow", "storm"];
+
+/** Every top-bar weather sprite, day and night, at 4× so the two frames are easy to see. */
+export const Weather: StoryObj = {
+  render: () => (
+    <div className="grid grid-cols-7 gap-6 bg-background p-6 text-foreground">
+      {[false, true].flatMap((night) =>
+        SKIES.map((sky) => <WeatherSprite key={`${sky}-${night}`} weather={{ sky, night }} pixel={4} />),
+      )}
+    </div>
+  ),
 };

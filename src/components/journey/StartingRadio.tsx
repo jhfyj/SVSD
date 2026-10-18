@@ -1,37 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
-import { TopBar } from "./TopBar";
+import { ScrambleText } from "@/components/ui/ScrambleText";
 
 /*
-  The splash after "Start journey" (Figma node 116:2974): the dial tunes up to the station while
-  a spiral draws itself in, like the trip being gathered in around you, then the radio opens.
+  The splash after "Start journey" (Figma node 116:2974): a tuning dial under the FM readout hunts
+  left and right across the band, each swing smaller and slower, then eases onto the station and
+  holds, and the radio opens.
 */
 
 const STATION = 89.9;
 const TUNE_FROM = 87.5;
-const TUNE_MS = 2200;
+const TUNE_MS = 2600;
 /** How long the splash stays before handing over to the radio. */
 export const STARTING_MS = 3400;
 
-/** An outward spiral from just off centre, the way the Figma line winds out past the screen. */
-function spiralPath() {
-  const cx = 196;
-  const cy = 440;
-  const turns = 3.3;
-  const steps = 260;
-  const points: string[] = [];
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const angle = Math.PI * 0.35 + t * turns * Math.PI * 2;
-    const r = 18 + t * 380;
-    // Slightly taller than wide, like the hand-drawn original.
-    points.push(`${(cx + Math.cos(angle) * r).toFixed(1)},${(cy + Math.sin(angle) * r * 1.12).toFixed(1)}`);
-  }
-  return `M${points.join("L")}`;
+/** The dial's band and spacing: a tick every 0.1 MHz, PX apart. */
+const BAND_FROM = 86;
+const BAND_TO = 94;
+const PX = 8;
+const TICKS = Math.round((BAND_TO - BAND_FROM) * 10) + 1;
+
+/**
+ * Where the dial sits at t (0–1): starts at TUNE_FROM and swings around the station, each swing
+ * smaller (the envelope) and slower (the phase runs out of speed), until it rests on STATION.
+ */
+function tuned(t: number) {
+  const envelope = (1 - t) ** 2.2;
+  const phase = Math.PI * 3 * (1 - (1 - t) ** 2);
+  return STATION + (TUNE_FROM - STATION) * envelope * Math.cos(phase);
 }
-const SPIRAL = spiralPath();
 
 export type StartingRadioProps = {
   /** Called once the splash has played (the app opens the radio here). */
@@ -47,10 +47,18 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
     let frame = 0;
+    // The tick mark under the needle, so each one that passes it clicks: the same detent as the
+    // duration strip. At most one per frame, so fast swings blur and the settle slows to single ticks.
+    let mark = Math.round(TUNE_FROM * 10);
     const tick = (now: number) => {
       const t = still ? 1 : Math.min(1, (now - start) / TUNE_MS);
-      const eased = 1 - (1 - t) ** 3;
-      setFrequency(TUNE_FROM + (STATION - TUNE_FROM) * eased);
+      const f = tuned(t);
+      const next = Math.round(f * 10);
+      if (!still && next !== mark) {
+        cue("select", { volume: 0.35, direction: next > mark ? "forward" : "back" });
+        mark = next;
+      }
+      setFrequency(f);
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -67,34 +75,45 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   return (
     <div
       className={cn(
-        "relative flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
+        "grain flex min-h-dvh w-[min(393px,100vw)] flex-col overflow-hidden bg-background text-foreground",
         // Fades out just before the radio's blueprint takes over.
         onDone && "motion-safe:animate-[intro-pop_400ms_ease-in_3000ms_reverse_both]",
         className,
       )}
     >
-      <svg aria-hidden viewBox="0 0 393 852" preserveAspectRatio="xMidYMid slice" className="pointer-events-none absolute inset-0 h-full w-full">
-        <path
-          d={SPIRAL}
-          pathLength={1}
-          fill="none"
-          stroke="#7a2d58"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeDasharray={1}
-          className="motion-safe:animate-[spiral-in_3s_cubic-bezier(0.4,0,0.2,1)_both]"
-        />
-      </svg>
-
-      <TopBar />
-
-      <div role="status" className="relative flex flex-1 flex-col items-center justify-center gap-12 pb-24">
+      <div role="status" className="relative flex flex-1 flex-col items-center justify-center gap-10 pb-24">
         <p className="flex items-baseline gap-2 font-display">
           <span className="text-xl text-foreground/50">FM</span>
           <span className="text-5xl tabular-nums">{frequency.toFixed(1)}</span>
         </p>
-        <p className="font-mono text-xl uppercase">Starting your radio</p>
+        <Dial frequency={frequency} />
+        <p className="font-mono text-xl uppercase"><ScrambleText>Starting your radio</ScrambleText></p>
       </div>
+    </div>
+  );
+}
+
+/** The dial: a ruler of ticks sliding under a fixed needle, centred on `frequency`, fading out at the ends. */
+function Dial({ frequency }: { frequency: number }) {
+  return (
+    <div aria-hidden className="relative h-12 w-[297px] overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_20%,black_80%,transparent)]">
+      <div
+        className="absolute inset-y-0 left-1/2 flex items-center"
+        style={{ transform: `translateX(${-(frequency - BAND_FROM) * 10 * PX}px)` }}
+      >
+        {Array.from({ length: TICKS }, (_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "w-px shrink-0",
+              i % 10 === 0 ? "h-6 bg-foreground" : i % 5 === 0 ? "h-4 bg-foreground/60" : "h-2.5 bg-foreground/35",
+            )}
+            style={{ marginRight: i < TICKS - 1 ? PX - 1 : 0 }}
+          />
+        ))}
+      </div>
+      {/* The needle */}
+      <span className="absolute inset-y-1.5 left-1/2 w-px -translate-x-1/2 bg-foreground" />
     </div>
   );
 }

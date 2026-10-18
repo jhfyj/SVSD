@@ -12,6 +12,8 @@ export function PowerButton({ onClick, className }: { onClick?: () => void; clas
       type="button"
       aria-label="Power"
       onClick={onClick}
+      data-cuelume-tap=""
+      data-cuelume-emphasis="strong"
       onPointerDown={() => setHeld(true)}
       onPointerUp={() => setHeld(false)}
       onPointerLeave={() => setHeld(false)}

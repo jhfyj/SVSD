@@ -6,11 +6,12 @@ export type StatCardProps = {
   className?: string;
 };
 
+/** Profile stat (Figma node 123:635): big number left, small label bottom right. */
 export function StatCard({ value, label, className }: StatCardProps) {
   return (
-    <div className={cn("flex flex-col gap-1 border border-border bg-surface p-4 uppercase", className)}>
+    <div className={cn("flex items-end justify-between bg-surface p-3", className)}>
       <span className="text-2xl">{value}</span>
-      <span className="text-[11px] text-foreground/60">{label}</span>
+      <span className="text-xs text-foreground/60">{label}</span>
     </div>
   );
 }
