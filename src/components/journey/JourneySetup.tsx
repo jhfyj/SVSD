@@ -3,20 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
+import { formatDuration, nearestStep } from "@/lib/journey/duration";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
 import { cn } from "../ui/cn";
-import { DurationDial, formatDuration } from "./DurationDial";
-import { RouteTrail } from "./RouteTrail";
+import { JourneyMap } from "./JourneyMap";
 import { TopBar } from "./TopBar";
+import { TuningStrip } from "./TuningStrip";
 import { useCurrentLocation } from "./useCurrentLocation";
-import { WorldDotMap } from "./WorldDotMap";
 
 const TABS = ["Destination", "Duration"] as const;
 type Tab = (typeof TABS)[number];
 
-const PRESETS = [15, 30, 45, 60, 90];
+const PRESETS = [30, 60, 120, 240, 480];
 const DEFAULT_MINUTES = 30;
 
 /** Destination and Duration (iPhone 16 - 50 to 58): pick where you're going and for how long. */
@@ -64,7 +64,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
 
   // Trip length: what you set on the Duration tab, else the walk's length.
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
-  const routeMinutes = currentRoute ? Math.max(5, Math.round(currentRoute.duration / 60)) : null;
+  const routeMinutes = currentRoute ? nearestStep(currentRoute.duration / 60) : null;
   const minutes = chosenMinutes ?? routeMinutes ?? DEFAULT_MINUTES;
   const { stories, questions } = contentFor(minutes);
   const ready = destination ? currentRoute !== null : chosenMinutes !== null;
@@ -119,65 +119,62 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
           </div>
           <LocationNote location={location} onRetry={retry} />
 
-          {destination ? (
-            <div className="flex flex-1 flex-col px-[44px]">
-              <div className="mt-10 flex h-40 items-center justify-center">
-                {currentRoute ? (
-                  <RouteTrail points={currentRoute.points} stories={stories} questions={questions} />
-                ) : here ? (
-                  <p className="text-sm text-foreground/60">Drawing your trail…</p>
-                ) : null}
+          <div className="relative mt-12">
+            <JourneyMap
+              here={here}
+              destination={destination}
+              route={currentRoute?.points ?? null}
+              stories={stories}
+              questions={questions}
+            />
+            {shownResults && (
+              <div className="absolute inset-x-[31px] top-0 z-10 bg-background">
+                {shownResults.error ? (
+                  <p className="text-sm text-danger">{shownResults.error}</p>
+                ) : shownResults.places.length ? (
+                  <AddressList
+                    items={shownResults.places}
+                    onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
+                  />
+                ) : (
+                  <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
+                )}
               </div>
-              {currentRoute && (
-                <dl className="mt-10 grid grid-cols-2 gap-y-2 text-base">
-                  <div>
-                    <dt className="sr-only">Trip</dt>
-                    <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
-                  </div>
-                  <div className="text-right">
-                    <dt className="sr-only">Stories</dt>
-                    <dd className="text-marker-lime">{stories} stories</dd>
-                  </div>
-                  <div className="text-[11px] text-foreground/40">
-                    <dt className="sr-only">Distance</dt>
-                    <dd>
-                      {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "walk"}
-                    </dd>
-                  </div>
-                  <div className="text-right">
-                    <dt className="sr-only">Questions</dt>
-                    <dd className="text-marker-magenta">{questions} questions</dd>
-                  </div>
-                </dl>
-              )}
-            </div>
-          ) : shownResults ? (
-            <div className="mx-[31px] mt-4">
-              {shownResults.error ? (
-                <p className="text-sm text-danger">{shownResults.error}</p>
-              ) : shownResults.places.length ? (
-                <AddressList
-                  items={shownResults.places}
-                  onSelect={(item) => pick(shownResults.places.find((p) => p.id === item.id)!)}
-                />
-              ) : (
-                <p className="text-sm text-foreground/60">No places match “{query.trim()}”</p>
-              )}
-            </div>
-          ) : (
-            <div className="mt-auto mb-24 -mx-4 overflow-hidden">
-              <WorldDotMap
-                centerLng={here ? here.lng + 60 : -10}
-                pins={here ? [{ id: "you", tone: "you", ...here }] : []}
-              />
-            </div>
+            )}
+          </div>
+          {destination && here && !currentRoute && (
+            <p role="status" className="mt-4 text-center text-sm text-foreground/60">
+              Drawing your trail…
+            </p>
+          )}
+          {currentRoute && (
+            <dl className="mx-[44px] mt-10 grid grid-cols-2 gap-y-2 text-base motion-safe:animate-[trail-in_400ms_ease-out_1.6s_both]">
+              <div>
+                <dt className="sr-only">Trip</dt>
+                <dd className="text-foreground/60">{formatDuration(minutes)} trip</dd>
+              </div>
+              <div className="text-right">
+                <dt className="sr-only">Stories</dt>
+                <dd className="text-marker-lime">{stories} stories</dd>
+              </div>
+              <div className="text-[11px] text-foreground/40">
+                <dt className="sr-only">Distance</dt>
+                <dd>
+                  {(currentRoute.distance / 1000).toFixed(1)} km {currentRoute.straight ? "as the crow flies" : "walk"}
+                </dd>
+              </div>
+              <div className="text-right">
+                <dt className="sr-only">Questions</dt>
+                <dd className="text-marker-magenta">{questions} questions</dd>
+              </div>
+            </dl>
           )}
         </section>
       ) : (
         <section aria-label="Duration" className="flex flex-1 flex-col items-center px-9">
           <p className="mt-8 text-center font-display text-base">How long’s your trip</p>
-          <DurationDial minutes={minutes} onChange={setChosenMinutes} className="mt-8" />
-          <div role="group" aria-label="Quick picks" className="mt-8 flex w-full flex-wrap justify-center gap-2">
+          <TuningStrip minutes={minutes} onChange={setChosenMinutes} className="-mx-9 mt-12 w-[calc(100%+4.5rem)]" />
+          <div role="group" aria-label="Quick picks" className="mt-12 flex w-full flex-wrap justify-center gap-2">
             {routeMinutes !== null && (
               <Chip selected={minutes === routeMinutes} onClick={() => setChosenMinutes(null)}>
                 Walk · {formatDuration(routeMinutes)}
