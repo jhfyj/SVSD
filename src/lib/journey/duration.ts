@@ -1,12 +1,17 @@
 /*
   Trip lengths the picker stops at: fine steps for short trips, coarser ones for long days out.
-  5 min steps to 1 hr, 15 min steps to 3 hr, 30 min steps to 8 hr.
+  5 min steps to 1 hr, 15 min steps to 3 hr, 30 min steps to 8 hr, then hours to a full day.
+  Longer trips can be typed in (see MAX_MINUTES).
 */
 export const DURATION_STEPS: number[] = [
   ...Array.from({ length: 12 }, (_, i) => 5 + i * 5),
   ...Array.from({ length: 8 }, (_, i) => 75 + i * 15),
   ...Array.from({ length: 10 }, (_, i) => 210 + i * 30),
+  ...Array.from({ length: 16 }, (_, i) => 540 + i * 60),
 ];
+
+/** The longest trip you can type in: 99 hours. */
+export const MAX_MINUTES = 99 * 60 + 59;
 
 /** The step closest to `minutes`. */
 export function nearestStep(minutes: number) {

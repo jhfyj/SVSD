@@ -5,6 +5,7 @@ import { Microphone } from "@carbon/icons-react";
 import { PhoneDisconnect } from "@phosphor-icons/react";
 import { HardwareButton } from "./HardwareButton";
 import { PowerButton } from "./PowerButton";
+import { RadioIntro } from "./RadioIntro";
 import { RadioScreen } from "./RadioScreen";
 import { RockerSwitch } from "./RockerSwitch";
 
@@ -17,7 +18,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Figma "Connected" (node 123:246). Click the switch, buttons and power key to see their states. */
-export const Connected: Story = {};
+export const Connected: Story = { args: { defaultOn: true } };
+
+/** How the screen opens: radio off, Start story showing. */
+export const RadioOff: Story = {};
 
 export const Switch: Story = {
   name: "Rocker switch",
@@ -50,5 +54,14 @@ export const ButtonStates: Story = {
       </HardwareButton>
       <HardwareButton className="w-[70px]" pressed><Microphone size={24} className="opacity-60" /></HardwareButton>
     </div>
+  ),
+};
+
+/** The load-in after the splash: blueprint frames, then the radio sweeps in. Reload the story to replay. */
+export const LoadIn: Story = {
+  render: (args) => (
+    <RadioIntro>
+      <RadioScreen {...args} />
+    </RadioIntro>
   ),
 };

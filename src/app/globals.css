@@ -91,3 +91,119 @@ body {
     transform: scale(0.2);
   }
 }
+
+/* The splash spiral draws itself from the centre out. */
+@keyframes spiral-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/*
+  Radio load-in (RadioIntro): blueprint frames draw in one by one, then a scan line sweeps
+  down and the real radio fills in behind it. Skipped entirely for reduced motion.
+*/
+@keyframes intro-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes intro-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes intro-pop {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes intro-reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes intro-hide {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+@keyframes intro-scan {
+  from {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  2%,
+  95% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(852px);
+    opacity: 0;
+  }
+}
+
+.radio-intro-blueprint,
+.radio-intro-scan {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .radio-intro .radio-intro-blueprint,
+  .radio-intro .radio-intro-scan {
+    display: block;
+  }
+  .radio-intro .radio-intro-page {
+    animation: intro-reveal var(--sweep-ms) linear var(--sweep-at) both;
+  }
+  .radio-intro .radio-intro-blueprint {
+    animation: intro-hide var(--sweep-ms) linear var(--sweep-at) both;
+  }
+  .radio-intro .radio-intro-scan {
+    box-shadow: 0 0 12px 1px var(--marker-lime);
+    animation: intro-scan var(--sweep-ms) linear var(--sweep-at) both;
+  }
+  .radio-intro-grid {
+    background:
+      linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px) 14px 0 / 91.25px 100%,
+      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px) 0 0 / 100% 24px,
+      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px) 0 0 / 24px 100%;
+    animation: intro-pop 400ms ease-out both;
+  }
+  .radio-intro-line {
+    background: var(--marker-lime);
+  }
+  .radio-intro-top {
+    transform-origin: left;
+    animation: intro-x 140ms linear var(--at) both;
+  }
+  .radio-intro-right {
+    transform-origin: top;
+    animation: intro-y 140ms linear calc(var(--at) + 140ms) both;
+  }
+  .radio-intro-bottom {
+    transform-origin: right;
+    animation: intro-x 140ms linear calc(var(--at) + 280ms) both;
+  }
+  .radio-intro-left {
+    transform-origin: bottom;
+    animation: intro-y 140ms linear calc(var(--at) + 420ms) both;
+  }
+  .radio-intro-hatch {
+    background: repeating-linear-gradient(-45deg, rgb(212 236 33 / 0.14) 0 1px, transparent 1px 7px);
+    animation: intro-pop 200ms steps(3) calc(var(--at) + 420ms) both;
+  }
+  .radio-intro-handle,
+  .radio-intro-tag {
+    animation: intro-pop 120ms steps(2) calc(var(--at) + 560ms) both;
+  }
+}
