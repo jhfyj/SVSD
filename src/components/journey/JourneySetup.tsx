@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration, nearestStep } from "@/lib/journey/duration";
+import { cue } from "@/lib/sound";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
@@ -53,6 +54,11 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const [route, setRoute] = useState<{ key: string; route: Route } | null>(null);
   const currentRoute = route && route.key === routeKey ? route.route : null;
 
+  // A soft note when the trail is ready to draw.
+  useEffect(() => {
+    if (currentRoute) cue("ready", { emphasis: "subtle" });
+  }, [currentRoute]);
+
   useEffect(() => {
     if (!routeKey || !destination || !here) return;
     const controller = new AbortController();
@@ -81,7 +87,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
   const shownResults = searching && results.query === query.trim() ? results : null;
 
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
       <div className="px-9 pt-4">
         <SegmentedTabs label="Trip setup" options={TABS} value={tab} onChange={setTab} className="p-2 [&>button]:text-xl" />
@@ -102,6 +108,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
               type="search"
               autoComplete="off"
               enterKeyHint="search"
+              data-cuelume-type=""
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -115,6 +122,8 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
                 type="button"
                 aria-label="Clear destination"
                 onClick={clear}
+                data-cuelume-close=""
+                data-cuelume-emphasis="subtle"
                 className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground/60 hover:text-foreground"
               >
                 ×
@@ -200,6 +209,7 @@ export function JourneySetup({ initialTab = "Destination" }: { initialTab?: Tab 
       <div className="px-[44px] pb-14 pt-6">
         <Link
           href="/journey/starting"
+          data-cuelume-navigate=""
           aria-disabled={!ready}
           tabIndex={ready ? undefined : -1}
           className={cn(
@@ -221,6 +231,7 @@ function Chip({ selected, children, onClick }: { selected: boolean; children: Re
       type="button"
       aria-pressed={selected}
       onClick={onClick}
+      data-cuelume-select=""
       className={cn(
         "min-h-11 border px-3 text-xs uppercase transition-colors",
         selected ? "border-foreground bg-surface-raised text-foreground" : "border-border text-foreground/60 hover:text-foreground",
@@ -243,7 +254,7 @@ function LocationNote({
     <p role="status" className="mx-[31px] mt-2 flex items-center justify-between text-[10px] text-foreground/60">
       {location.status === "locating" ? "Finding where you are…" : location.message}
       {location.status !== "locating" && (
-        <button type="button" onClick={onRetry} className="-my-3 min-h-11 px-2 text-foreground underline">
+        <button type="button" onClick={onRetry} data-cuelume-tap="" className="-my-3 min-h-11 px-2 text-foreground underline">
           Try again
         </button>
       )}

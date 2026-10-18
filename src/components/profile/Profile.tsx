@@ -7,6 +7,7 @@ import { formatDuration } from "@/lib/journey/duration";
 import type { CharacterId } from "@/lib/profile/characters";
 import type { Journey } from "@/lib/profile/sample";
 import { TopBar } from "../journey/TopBar";
+import { SoundToggle } from "../sound/SoundToggle";
 import { CalendarDots } from "../ui/CalendarDots";
 import { MenuRow } from "../ui/MenuRow";
 import { StatCard } from "../ui/StatCard";
@@ -116,13 +117,14 @@ export function ProfileView({
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
 
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
       <div className="flex flex-col px-11 pb-[77px] pt-[79px]">
         <div className="flex flex-col items-center">
           <button
             type="button"
             onClick={onEditCharacter}
+            data-cuelume-open=""
             disabled={!onEditCharacter}
             aria-label="Change character"
             className="relative flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd text-lcd-ink shadow-[var(--lcd-inset)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
@@ -148,16 +150,19 @@ export function ProfileView({
         <div className="mt-[29px] flex flex-col gap-[17px]">
           <MenuRow icon={<Settings size={16} />} label="Settings" onClick={onSettings} />
           <MenuRow icon={<IncidentReporter size={16} />} label="Report" onClick={onReport} />
+          <SoundToggle />
         </div>
 
         <div className="mt-[19px] flex flex-col items-start gap-2 text-xs">
-          <button type="button" onClick={onSignOut} className="text-foreground/80 underline-offset-4 hover:underline">
+          <button type="button" onClick={onSignOut} data-cuelume-close="" className="text-foreground/80 underline-offset-4 hover:underline">
             SIGN OUT
           </button>
           <button
             type="button"
             onClick={() => (confirmDelete ? onDeleteAccount?.() : setConfirmDelete(true))}
             onBlur={() => setConfirmDelete(false)}
+            data-cuelume-tap={confirmDelete ? "close" : "attention"}
+            data-cuelume-emphasis={confirmDelete ? "strong" : undefined}
             className="text-danger underline-offset-4 hover:underline"
           >
             {confirmDelete ? "TAP AGAIN TO DELETE YOUR ACCOUNT" : "DELETE ACCOUNT"}

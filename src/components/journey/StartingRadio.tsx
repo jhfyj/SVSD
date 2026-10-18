@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { TopBar } from "./TopBar";
 import { ScrambleText } from "@/components/ui/ScrambleText";
@@ -47,6 +48,8 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   useEffect(() => {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
+    // One breath that rises with the dial.
+    if (!still) cue("count", { duration: TUNE_MS });
     let frame = 0;
     const tick = (now: number) => {
       const t = still ? 1 : Math.min(1, (now - start) / TUNE_MS);
@@ -68,7 +71,7 @@ export function StartingRadio({ onDone, className }: StartingRadioProps) {
   return (
     <div
       className={cn(
-        "rain flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
+        "grain flex min-h-dvh w-full max-w-[393px] flex-col overflow-hidden bg-background text-foreground",
         // Fades out just before the radio's blueprint takes over.
         onDone && "motion-safe:animate-[intro-pop_400ms_ease-in_3000ms_reverse_both]",
         className,

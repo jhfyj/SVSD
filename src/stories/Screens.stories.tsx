@@ -12,7 +12,7 @@ export default meta;
 
 function Phone({ children }: { children: ReactNode }) {
   return (
-    <div className="rain flex h-[852px] w-[393px] flex-col overflow-hidden border border-border bg-background uppercase">
+    <div className="grain flex h-[852px] w-[393px] flex-col overflow-hidden border border-border bg-background uppercase">
       <StatusBar time="9:41" />
       <div className="flex flex-1 flex-col gap-4 px-8 pb-8 pt-4">{children}</div>
     </div>

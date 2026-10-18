@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "../ui/cn";
+import { ScrambleText } from "../ui/ScrambleText";
 import { TopBar } from "./TopBar";
 
 /** Copy from the SVSD product doc: one row per way to spend the drive. */
@@ -19,10 +20,10 @@ export type IntentId = (typeof INTENTS)[number]["id"];
 export function IntentPicker({ href = "/journey", initial = "listen" }: { href?: string; initial?: IntentId }) {
   const [intent, setIntent] = useState<IntentId>(initial);
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
       <fieldset className="mx-12 mt-[218px] flex flex-col">
-        <legend className="mb-9 text-sm tracking-wide">What brings you here today</legend>
+        <legend className="mb-9 text-sm tracking-wide"><ScrambleText>What brings you here today</ScrambleText></legend>
         <div className="flex flex-col gap-[18px]">
           {INTENTS.map((item) => {
             const on = item.id === intent;
@@ -40,6 +41,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
                   value={item.id}
                   checked={on}
                   onChange={() => setIntent(item.id)}
+                  data-cuelume-select=""
                   className="peer sr-only"
                 />
                 <span
@@ -60,6 +62,7 @@ export function IntentPicker({ href = "/journey", initial = "listen" }: { href?:
       </fieldset>
       <Link
         href={`${href}?intent=${intent}`}
+        data-cuelume-navigate=""
         className="mx-11 mb-[61px] mt-auto flex h-[47px] items-center justify-center rounded-token border border-foreground text-sm tracking-wide transition-colors hover:bg-surface focus-visible:bg-surface"
       >
         Next

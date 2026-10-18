@@ -3,6 +3,7 @@
 import { ArrowLeft, Location, Microphone, Notification } from "@carbon/icons-react";
 import type { ReactNode } from "react";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 
 const ITEMS: { kind: PermissionKind; label: string; why: string; icon: ReactNode }[] = [
@@ -49,6 +50,7 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
           <button
             type="button"
             onClick={onAllow}
+            data-cuelume-tap=""
             aria-label={`Allow ${item.label.toLowerCase()}`}
             className="min-h-11 shrink-0 border border-foreground px-3 text-xs transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
           >
@@ -83,12 +85,15 @@ export type AllowAccessViewProps = {
 export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = true }: AllowAccessViewProps) {
   const allOn = Object.values(states).every((s) => s === "granted" || s === "unsupported");
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <header className="relative mt-[59px] flex h-[26px] items-center justify-center">
         {onBack && (
           <button
             type="button"
-            onClick={onBack}
+            onClick={() => {
+              cue("navigate", { direction: "back" });
+              onBack();
+            }}
             aria-label="Back"
             className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
           >
@@ -110,6 +115,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         <button
           type="button"
           onClick={onDone}
+          data-cuelume-navigate=""
           className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
         >
           {firstTime ? (allOn ? "LET'S GO" : "CONTINUE") : "DONE"}

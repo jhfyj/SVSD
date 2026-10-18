@@ -4,6 +4,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } from "@/lib/auth/phone";
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
+import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { LcdIcon } from "./LcdIcon";
 import { ScrambleText } from "@/components/ui/ScrambleText";
@@ -32,7 +33,7 @@ function SignInScreen({
     if (canSubmit && !busyLabel) onSubmit();
   };
   return (
-    <div className="rain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
+    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <form onSubmit={submit} noValidate className="flex flex-1 flex-col pt-[98px]">
         <div className="flex flex-1 flex-col items-center">
           {icon}
@@ -41,6 +42,7 @@ function SignInScreen({
         <div className={cn("flex pb-[33px] pt-8", submitLabel ? "justify-center" : "justify-end pr-[30px]")}>
           <button
             type="submit"
+            data-cuelume-tap=""
             disabled={!canSubmit || !!busyLabel}
             aria-busy={!!busyLabel}
             className={cn(
@@ -88,6 +90,7 @@ export function PhoneStep({ digits, onDigitsChange, onNext, sending, error }: Ph
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
+          data-cuelume-type=""
           aria-label="Phone number"
           aria-invalid={!!error}
           autoFocus
@@ -162,6 +165,7 @@ export function CodeStep({
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
+          data-cuelume-type=""
           pattern="[0-9]*"
           maxLength={CODE_LENGTH}
           aria-label="Verification code"
@@ -176,10 +180,10 @@ export function CodeStep({
       </div>
       {error && <p role="alert" className="mt-3 w-[345px] text-xs text-danger">{error}</p>}
       <div className="mt-6 flex w-[345px] justify-between text-xs text-foreground/60">
-        <button type="button" onClick={onChangeNumber} className="min-h-11 uppercase underline-offset-4 hover:underline">
+        <button type="button" onClick={onChangeNumber} data-cuelume-tap="" className="min-h-11 uppercase underline-offset-4 hover:underline">
           Change number
         </button>
-        <button type="button" onClick={onResend} className="min-h-11 uppercase underline-offset-4 hover:underline">
+        <button type="button" onClick={onResend} data-cuelume-tap="" className="min-h-11 uppercase underline-offset-4 hover:underline">
           Resend code
         </button>
       </div>
@@ -209,7 +213,9 @@ export function PhoneSignIn({ send = sendCode, verify = verifyCode, onSignedIn }
       await send(phone);
       setCode("");
       setStep("code");
+      cue("ready", { emphasis: "subtle" });
     } catch (e) {
+      cue("error");
       setError(e instanceof Error ? e.message : "Couldn't send a code. Try again.");
     } finally {
       setBusy(false);
@@ -221,8 +227,10 @@ export function PhoneSignIn({ send = sendCode, verify = verifyCode, onSignedIn }
     setError(undefined);
     try {
       const session = await verify(phone, value);
+      cue("success");
       onSignedIn?.(session);
     } catch (e) {
+      cue("error");
       setError(e instanceof Error ? e.message : "That code didn't match. Try again.");
       setCode("");
     } finally {

@@ -26,7 +26,7 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
   const on = state !== "off";
 
   return (
-    <section aria-label="Radio" className={cn("flex w-[351px] flex-col gap-3", className)}>
+    <section aria-label="Radio" data-cuelume-theme="mech" className={cn("flex w-[351px] flex-col gap-3", className)}>
       <div className="flex items-center justify-between px-4 py-1 [background:var(--panel-gradient)]">
         <span className="flex items-center gap-2 text-[11px] font-bold uppercase text-label/80">
           <Led on={state === "connected"} /> Radio
@@ -46,7 +46,14 @@ export function RadioConsole({ state, frequency = "89.9", onPower, onEndCall, cl
       </LcdScreen>
 
       <div className="flex gap-2 p-3 [background:var(--panel-gradient)]">
-        <HardwareButton className="flex-1" tone="end" disabled={state !== "connected"} onClick={onEndCall}>
+        <HardwareButton
+          className="flex-1"
+          tone="end"
+          disabled={state !== "connected"}
+          onClick={onEndCall}
+          data-cuelume-tap="close"
+          data-cuelume-emphasis="strong"
+        >
           <PhoneDisconnect size={24} className="opacity-80" aria-hidden />
           <span className="text-base font-bold opacity-80">END CALL</span>
         </HardwareButton>

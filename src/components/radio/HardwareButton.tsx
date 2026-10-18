@@ -39,6 +39,7 @@ export function HardwareButton({
       type={type}
       aria-pressed={pressed}
       data-down={down || undefined}
+      {...(pressed === undefined ? { "data-cuelume-tap": "" } : { "data-cuelume-toggle": "" })}
       onPointerDown={(e) => {
         setHeld(true);
         onPointerDown?.(e);
