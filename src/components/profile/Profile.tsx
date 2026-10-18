@@ -1,6 +1,7 @@
 "use client";
 
 import { IncidentReporter, Settings } from "@carbon/icons-react";
+import Link from "next/link";
 import { useState } from "react";
 import { formatDuration } from "@/lib/journey/duration";
 import type { CharacterId } from "@/lib/profile/characters";
@@ -61,7 +62,18 @@ function HistoryList({ history, now }: { history: Journey[]; now: Date }) {
   return (
     <div className="relative h-[374px] border border-muted">
       <div tabIndex={0} aria-label="Journey history" className="h-full overflow-y-auto px-[19px] pb-[84px] pt-4 focus-visible:outline-2 focus-visible:outline-foreground">
-        {groups.length === 0 && <p className="pt-2 text-sm text-foreground/60">NO JOURNEYS YET</p>}
+        {groups.length === 0 && (
+          <div className="flex h-full flex-col items-center justify-center gap-4 pb-8 text-center">
+            <p className="text-sm text-foreground/60">NO JOURNEYS YET</p>
+            <Link
+              href="/intents"
+              className="inline-flex min-h-11 items-center justify-center gap-2 bg-foreground px-5 text-sm text-accent-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+            >
+              <span aria-hidden className="size-1.5 bg-current" />
+              START YOUR FIRST JOURNEY
+            </Link>
+          </div>
+        )}
         <div className="flex flex-col gap-[23px]">
           {groups.map((g) => (
             <section key={g.label} className="flex flex-col gap-3">

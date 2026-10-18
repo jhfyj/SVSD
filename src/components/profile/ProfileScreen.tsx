@@ -24,6 +24,8 @@ export function ProfileScreen() {
   const onboarded = useOnboarded(session?.phone);
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(false);
+  // Right after sign-up the account has no journeys yet; later visits show the placeholder history.
+  const [justJoined, setJustJoined] = useState(false);
 
   if (session === undefined || (session && (character === undefined || onboarded === undefined))) {
     return (
@@ -48,10 +50,22 @@ export function ProfileScreen() {
     );
   }
 
-  if (!onboarded) return <AllowAccess onDone={() => markOnboarded(session.phone)} />;
+  if (!onboarded) {
+    return (
+      <AllowAccess
+        onDone={() => {
+          setJustJoined(true);
+          markOnboarded(session.phone);
+        }}
+      />
+    );
+  }
   if (settings) return <AllowAccess firstTime={false} onDone={() => setSettings(false)} onBack={() => setSettings(false)} />;
 
-  const { totalCalls, month, activeDays, history } = sampleProfile();
+  const sample = sampleProfile();
+  const { totalCalls, month, activeDays, history } = justJoined
+    ? { ...sample, totalCalls: 0, activeDays: [], history: [] }
+    : sample;
   return (
     <ProfileView
       handle={`@traveller${session.phone.slice(-4)}`}

@@ -97,7 +97,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         )}
         <h1 className="text-xl">{firstTime ? "BEFORE YOU GO" : "SETTINGS"}</h1>
       </header>
-      <p className="mx-auto mt-[19px] w-[293px] text-center text-base text-foreground/70">
+      <p className="mx-auto mt-3 w-[260px] text-center text-xs leading-relaxed text-foreground/60">
         Turn on your microphone, notifications and location so the radio can work on the road.
       </p>
       <ul className="mx-11 mt-[29px] flex flex-col gap-[17px]">
