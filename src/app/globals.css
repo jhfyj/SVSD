@@ -245,6 +245,23 @@ body {
   }
 }
 
+/* While someone types the code, the message bubble's dots hop one pixel, one after another. */
+@keyframes dot-hop {
+  0%,
+  40%,
+  100% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-1px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dot-hop {
+    animation: dot-hop 0.9s steps(1) infinite;
+  }
+}
+
 /* The route trail lights up one dot at a time. */
 @keyframes trail-in {
   from {

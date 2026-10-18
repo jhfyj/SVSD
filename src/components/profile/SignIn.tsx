@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { COUNTRY_CODE, formatPhone, isCompletePhone, maskPhone, phoneDigits } from "@/lib/auth/phone";
 import { sendCode, verifyCode, type Session } from "@/lib/auth/session";
 import { cue } from "@/lib/sound";
@@ -131,14 +131,23 @@ export function CodeStep({
   defaultFocused = true,
 }: CodeStepProps) {
   const [focused, setFocused] = useState(defaultFocused);
+  // The bubble's dots hop for a moment after each keystroke.
+  const [typedAt, setTypedAt] = useState(0);
+  const typing = typedAt > 0 && !error && !checking;
+  useEffect(() => {
+    if (!typedAt) return;
+    const t = setTimeout(() => setTypedAt(0), 1200);
+    return () => clearTimeout(t);
+  }, [typedAt]);
   const change = (value: string) => {
     const next = value.replace(/\D/g, "").slice(0, CODE_LENGTH);
+    setTypedAt(Date.now());
     onCodeChange(next);
     if (next.length === CODE_LENGTH && next !== code && !checking) onNext(next);
   };
   return (
     <SignInScreen
-      icon={<LcdIcon icon="message" label="Message" />}
+      icon={error ? <LcdIcon icon="warning" label="Wrong code" /> : <LcdIcon icon="message" label="Message" typing={typing} />}
       onSubmit={() => onNext(code)}
       canSubmit={code.length === CODE_LENGTH}
       busyLabel={checking ? "CHECKING…" : undefined}
