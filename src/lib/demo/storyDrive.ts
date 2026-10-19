@@ -7,20 +7,21 @@ import { I10_EAST } from "./i10";
 export type Pickup = { id: string; kind: DropKind; at: LatLng };
 
 /** A scripted drive for the demo video: a fixed route, a fixed speed and what's waiting along it. */
-export type DemoDrive = { name: string; route: Route; speed: number; pickups: Pickup[] };
+export type DemoDrive = { name: string; route: Route; speed: number; pickups: Pickup[]; startDelayMs?: number };
 
 /** m/s: about 50 mph, quick enough to feel like a freeway at the radio map's zoom. */
 const SPEED = 22;
 /** Where the story waits: this far along the drive, this far off the right side of the road. */
-const STORY_ALONG = 150;
+// The pickup pulls in at 60 m, so place it ~170 m ahead for a five-second drive-in at 22 m/s.
+const STORY_ALONG = 170;
 const STORY_OFF = 26;
 
 const path = measure(I10_EAST);
 const heading = headingAt(path, STORY_ALONG) ?? 90;
 
 /**
- * Flow 2 · Message unlocks: about five seconds down the I-10, a story from @NightOwl sits just
- * off the road, and the car pulls it in as it passes.
+ * Flow 2 · Message unlocks: wait three seconds, then drive for about three seconds before the
+ * story from @Hufflepuff23 pulls in from the road.
  */
 export const STORY_DRIVE: DemoDrive = {
   name: "Downtown LA",
@@ -35,4 +36,14 @@ export const STORY_DRIVE: DemoDrive = {
     ],
   },
   pickups: [{ id: "nightowl-burrito", kind: "story", at: offset(pointAt(path, STORY_ALONG), heading + 90, STORY_OFF) }],
+};
+
+/** Navigation-only route for the company call demo: it moves without triggering a story pickup. */
+export const COMPANY_DRIVE: DemoDrive = { ...STORY_DRIVE, name: "NightOwl's route", pickups: [] };
+
+/** The question-answer demo starts already moving, then pulls a question mark in from the road. */
+export const QUESTION_DRIVE: DemoDrive = {
+  ...STORY_DRIVE,
+  name: "NightOwl's question route",
+  pickups: [{ id: "nightowl-road-question", kind: "question", at: offset(pointAt(path, 88), (headingAt(path, 88) ?? heading) + 90, STORY_OFF) }],
 };

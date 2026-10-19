@@ -311,6 +311,7 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
   useEffect(() => {
     if (!map) return;
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let driveStartsAt: number | null = null;
     let frame = 0;
     // The clock starts at the first frame's own timestamp.
     let last: number | null = null;
@@ -320,9 +321,11 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
     const tick = (now: number) => {
       const dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000);
       last = now;
+      driveStartsAt ??= now + (demo?.startDelayMs ?? 0);
       const n = nav.current;
       if (simulate && path) {
-        n.along = Math.min(path.length, n.along + speed * dt);
+        const driveDt = Math.max(0, now - Math.max(now - dt * 1000, driveStartsAt)) / 1000;
+        n.along = Math.min(path.length, n.along + speed * driveDt);
         n.target = pointAt(path, n.along);
         n.heading = headingAt(path, n.along) ?? n.heading;
       }
@@ -390,7 +393,7 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [map, path, simulate, speed]);
+  }, [map, path, simulate, speed, demo?.startDelayMs]);
 
   // The banner, route split and markers update a couple of times a second.
   useEffect(() => {
@@ -504,7 +507,7 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
 
       {/* Next turn, like a navigation app's banner, in the radio's greys */}
       {path && progress && (
-        <div role="status" className="absolute inset-x-2 top-2 border border-foreground/20 bg-background/90 uppercase text-foreground backdrop-blur-sm">
+        <div role="status" className="absolute inset-x-2 top-2 z-30 border border-foreground/20 bg-background/90 uppercase text-foreground backdrop-blur-sm">
           <div className="flex items-center gap-3 px-3 py-2.5">
             <ManeuverIcon maneuver={arrived || !next ? "ARRIVE" : next.maneuver} />
             <div className="min-w-0">

@@ -77,16 +77,26 @@ export function RadioLcd({ state, peerCharacter, peer, greeting, intro, hint, sp
   if (greeting && intro) {
     return intro.page === 0 ? (
       <LcdText>
-        <span className="block text-[12px]">{intro.me}, meet</span>
-        <span className="mt-0.5 block text-[18px]">{peer}</span>
-        <span className="mt-1.5 block text-[11px]">
-          {intro.miles} {intro.miles === 1 ? "mile" : "miles"} of road together
+        <span className="flex items-center gap-1.5 text-left">
+          <CharacterSprite character={peerCharacter} pixel={2.3} playing={false} className="shrink-0" />
+          <span>
+            <span className="block text-[10px]">{intro.me}, meet</span>
+            <span className="block text-[15px]">{peer}</span>
+            <span className="mt-1 block text-[10px]">
+              {intro.miles} {intro.miles === 1 ? "mile" : "miles"} of road together
+            </span>
+          </span>
         </span>
       </LcdText>
     ) : (
       <LcdText>
-        <span className="block text-[11px]">To start,</span>
-        <span className="mt-0.5 block">where are you both headed tonight?</span>
+        <span className="flex items-center gap-1.5 text-left">
+          <CharacterSprite character={peerCharacter} pixel={2.3} playing={false} className="shrink-0" />
+          <span>
+            <span className="block text-[10px]">To start,</span>
+            <span className="mt-0.5 block text-[12px]">where are you both headed tonight?</span>
+          </span>
+        </span>
       </LcdText>
     );
   }

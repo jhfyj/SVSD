@@ -37,9 +37,12 @@ export type Trip = {
   miles: number;
   /** When Start journey was tapped, ms since epoch. */
   startedAt: number;
+  storyCount?: number;
+  questionCount?: number;
+  noteCount?: number;
 };
 
-export type TripSummary = Trip & { stories: number; questions: TripQuestion[]; calls: TripCall[] };
+export type TripSummary = Trip & { stories: number; questions: TripQuestion[]; calls: TripCall[]; notes: number };
 
 const KEY = "svsd-trip";
 
@@ -80,9 +83,16 @@ const HANDLES = ["@Hufflepuff23", "@Nightowl88"];
 
 /** Mocked story, question and call log for a trip, paced like the setup preview. */
 export function tripEvents(trip: Trip): TripSummary {
-  const { stories, questions: count } = contentFor(trip.minutes);
-  const n = Math.min(QUESTIONS.length, count);
-  const questions = QUESTIONS.slice(0, n).map((q, i) => ({ ...q, id: `q${i + 1}`, at: (i + 0.6) / (n + 0.2) }));
+  const counts = contentFor(trip.minutes, trip.to);
+  const stories = trip.storyCount ?? counts.stories;
+  const count = trip.questionCount ?? counts.questions;
+  const notes = trip.noteCount ?? counts.notes;
+  const n = count;
+  const questions = Array.from({ length: n }, (_, i) => ({
+    ...QUESTIONS[i % QUESTIONS.length],
+    id: `q${i + 1}`,
+    at: (i + 0.6) / (n + 0.2),
+  }));
   // One call on a short drive, two on a longer one.
   const calls: TripCall[] = (trip.minutes >= 90 ? [0.15, 0.6] : [0.3]).map((start, i) => {
     const span = 0.25;
@@ -94,7 +104,7 @@ export function tripEvents(trip: Trip): TripSummary {
       minutes: Math.max(1, Math.round(trip.minutes * span)),
     };
   });
-  return { ...trip, stories, questions, calls };
+  return { ...trip, stories, questions, calls, notes };
 }
 
 /** Miles of the drive a call shared. */

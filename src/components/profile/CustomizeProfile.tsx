@@ -17,7 +17,7 @@ export type CustomizeProfileProps = {
 
 /**
  * Customize profile (Figma node 154:1304): pick one of eight LCD pets. The picked one lights up
- * green and plays its two-frame loop, in the grid and in the avatar up top. The others stay unlit pixels.
+ * green and bobs in the grid and in the avatar up top. The others stay unlit pixels.
  */
 export function CustomizeProfile({ initial = DEFAULT_CHARACTER, onSave, onBack, saving }: CustomizeProfileProps) {
   const [picked, setPicked] = useState<CharacterId>(initial);
