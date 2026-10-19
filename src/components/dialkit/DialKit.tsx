@@ -562,7 +562,15 @@ export function DialKit() {
  * on the hosted site, and only after a two-finger hold. Tap a number to start that flow from its
  * first screen (the app's own keys carry you on from there); tap anywhere else to hide it.
  */
-function FlowPicker({ flows, onPick, onClose }: { flows: Flow[]; onPick: (f: Flow) => void; onClose: () => void }) {
+export function FlowPicker<F extends Pick<Flow, "n" | "title">>({
+  flows,
+  onPick,
+  onClose,
+}: {
+  flows: F[];
+  onPick: (f: F) => void;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-[60] font-mono text-foreground" role="dialog" aria-label="Start a flow">
       <button type="button" aria-label="Close" className="absolute inset-0 cursor-default" onClick={onClose} />
