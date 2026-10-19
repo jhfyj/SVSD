@@ -3,7 +3,7 @@ import { ProfileScreen } from "@/components/profile";
 
 export const metadata = { title: "Profile · SVSD" };
 
-type Params = Promise<{ settings?: string }>;
+type Params = Promise<{ settings?: string; welcome?: string }>;
 
 export default function ProfilePage({ searchParams }: { searchParams: Params }) {
   return (
@@ -15,8 +15,11 @@ export default function ProfilePage({ searchParams }: { searchParams: Params }) 
   );
 }
 
-/** `?settings=1` opens straight into Settings (the radio's settings button links here). */
+/**
+ * `?settings=1` opens straight into Settings (the radio's settings button links here).
+ * `?welcome=1` is sign-up from the overview cards: sign in, pick your avatar, then home.
+ */
 async function Profile({ searchParams }: { searchParams: Params }) {
-  const { settings } = await searchParams;
-  return <ProfileScreen openSettings={settings === "1"} />;
+  const { settings, welcome } = await searchParams;
+  return <ProfileScreen openSettings={settings === "1"} welcome={welcome === "1"} />;
 }

@@ -34,11 +34,11 @@ const CARDS: Record<OverviewStep, { title: string; label: string; scene: ReactNo
 
 export type OverviewProps = {
   step: OverviewStep;
-  /** Where NEXT goes on the last card. */
+  /** Where NEXT goes on the last card: sign in with your number, then pick your avatar (flow 1). */
   doneHref?: string;
 };
 
-export function Overview({ step, doneHref = "/" }: OverviewProps) {
+export function Overview({ step, doneHref = "/profile?welcome=1" }: OverviewProps) {
   const card = CARDS[step];
   const next = step < 3 ? `/overview?step=${step + 1}` : doneHref;
   return (

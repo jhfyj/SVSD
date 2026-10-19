@@ -13,10 +13,12 @@ import { PhoneSignIn } from "./SignIn";
 
 /**
  * /profile: the phone sign-in until there's a session, then the profile. A new account (no
- * character yet) picks its character on Customize profile, then sees Allow access (mic,
- * notifications, location) once. Settings on the profile opens Allow access again.
+ * character yet) picks its character on Customize profile, then goes straight to Start your
+ * journey (flow 1: Overview 1-3, sign in, avatar, home). `welcome` (from the overview cards)
+ * always shows the avatar step after sign-in, even for a number that already has one.
+ * Allow access shows once, the first time the profile opens; Settings opens it again.
  */
-export function ProfileScreen({ openSettings = false }: { openSettings?: boolean }) {
+export function ProfileScreen({ openSettings = false, welcome = false }: { openSettings?: boolean; welcome?: boolean }) {
   const session = useSession();
   const router = useRouter();
   const character = useCharacter(session?.phone);
@@ -33,16 +35,19 @@ export function ProfileScreen({ openSettings = false }: { openSettings?: boolean
   }
   if (!session) return <PhoneSignIn />;
 
-  if (!character || editing) {
+  if (!character || editing || welcome) {
+    // Signing up: once the avatar is picked, on to Start your journey (not the profile).
+    const signingUp = !character || welcome;
     return (
       <CustomizeProfile
         initial={character ?? undefined}
         onSave={(id) => {
           saveCharacter(session.phone, id);
+          if (signingUp && !editing) return router.push("/");
           setEditing(false);
         }}
         // Backing out of sign-up returns to the phone screen; editing just closes.
-        onBack={character ? () => setEditing(false) : signOut}
+        onBack={character && !welcome ? () => setEditing(false) : signOut}
       />
     );
   }
