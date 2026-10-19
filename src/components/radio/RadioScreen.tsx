@@ -37,7 +37,6 @@ import { RockerSwitch } from "./RockerSwitch";
 import { Nightfall, NightLcd, RestSign } from "./NightDrive";
 import { useNightDrive } from "./useNightDrive";
 import type { NightStart } from "@/lib/radio/nightDrive";
-import { CharacterSprite } from "../profile/CharacterSprite";
 
 /** Mic and Settings during a call (and Drop/Settings beside a message): square keys, as tall as the row (70px). */
 const CALL_KEY = "w-[70px] shrink-0";
@@ -641,29 +640,16 @@ export function RadioScreen({
                   className={companyTurn?.speaker === "NightOwl" ? "inset-x-0 bottom-0 h-[132px]" : "inset-x-0 top-0 h-[132px]"}
                 />
               )}
+              {/* A pickup (story or question) and the AI are only their colour glowing down from the top:
+                  no banner, no words over the map. */}
               {questionDemo && (questionStage === "unlocking" || questionStage === "answering") && (
                 <>
                   <MessageGlow mode="voice" color="sky" level={callVoiceLevel} className="inset-x-0 top-0 h-[132px]" />
-                  <CallSpeakerOverlay
-                    speaker={questionStage === "unlocking" ? "AI" : "@urmom6767"}
-                    character={questionStage === "unlocking" ? null : "squirrel"}
-                    line={questionStage === "unlocking" ? "You just unlocked a question from @NightOwl." : ROAD_ANSWER}
-                    speaking
-                    color="sky"
-                  />
                 </>
               )}
               {storyDemo && (storyStage === "story" || storyStage === "prompt") && (
                 <>
                   <MessageGlow mode="voice" color={storyStage === "prompt" ? "sky" : "magenta"} level={callVoiceLevel} className="inset-x-0 top-0 h-[245px]" />
-                  <CallSpeakerOverlay
-                    speaker={storyStage === "prompt" ? "AI" : "@Hufflepuff23"}
-                    character={storyStage === "prompt" ? null : "squirrel"}
-                    line={storyStage === "prompt" ? "Would you like to reply to this message?" : BURRITO_TRANSCRIPT}
-                    speaking
-                    color={storyStage === "prompt" ? "sky" : "magenta"}
-                    className="top-[92px]"
-                  />
                 </>
               )}
               {dropRecording ? (
@@ -915,45 +901,6 @@ export function RadioScreen({
       {flights.map((f) => (
         <CollectFlight key={f.id} kind={f.kind} from={f.from} to={LCD_TALLY} onLanded={() => landed(f)} />
       ))}
-    </div>
-  );
-}
-
-function CallSpeakerOverlay({
-  speaker,
-  character,
-  line,
-  speaking,
-  color = "magenta",
-  className,
-}: {
-  speaker: string;
-  character: CharacterId | null;
-  line: string;
-  speaking: boolean;
-  color?: MarkerColor;
-  className?: string;
-}) {
-  const palettes: Record<MarkerColor, { text: string; ring: string; innerRing: string }> = {
-    lime: { text: "text-marker-lime", ring: "border-marker-lime/80", innerRing: "border-marker-lime/70" },
-    sky: { text: "text-marker-sky", ring: "border-marker-sky/80", innerRing: "border-marker-sky/70" },
-    magenta: { text: "text-marker-magenta", ring: "border-marker-magenta/80", innerRing: "border-marker-magenta/70" },
-    orange: { text: "text-marker-orange", ring: "border-marker-orange/80", innerRing: "border-marker-orange/70" },
-  };
-  const palette = palettes[color];
-  return (
-    <div className={cn("absolute inset-x-2 top-2 z-20 flex min-h-[88px] items-center gap-3 rounded-md border border-white/15 bg-[#10110fcc] px-3 py-2 text-white shadow-lg backdrop-blur-[2px]", className)}>
-      <div className="call-voice-rings relative grid size-[60px] shrink-0 place-items-center">
-        <span className={`call-ring call-ring-one absolute size-14 rounded-full border-2 ${palette.ring}`} />
-        <span className={`call-ring call-ring-two absolute size-11 rounded-full border ${palette.innerRing}`} />
-        <div className={`relative z-10 grid size-9 place-items-center rounded-full bg-[#27212a] ${palette.text}`}>
-          {character ? <CharacterSprite character={character} pixel={2} playing={speaking} /> : <span className="font-mono text-[10px] font-bold">AI</span>}
-        </div>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className={`font-mono text-[10px] font-bold tracking-[0.12em] ${palette.text}`}>{speaker} {speaking ? "· SPEAKING" : "· INTRO"}</p>
-        <p className="mt-1 line-clamp-3 font-mono text-[11px] leading-[1.25] text-white/90">{line}</p>
-      </div>
     </div>
   );
 }

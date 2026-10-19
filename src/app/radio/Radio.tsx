@@ -70,7 +70,9 @@ export function Radio() {
   const nightParam = params.get("night") as NightStart | null;
   const night = nightParam && NIGHT_STARTS.includes(nightParam) ? nightParam : undefined;
   const meCharacter = useCharacter(session?.phone) ?? DEFAULT_CHARACTER;
-  const midDrive = ["call", "message", "messages", "timeout", "arrived", "demo", "night"].some((k) => params.has(k));
+  // ?demo=story is Flow 2, a new journey: it waits on Start journey like any new journey. The other
+  // demos (company, question) are mid-drive moments.
+  const midDrive = ["call", "message", "messages", "timeout", "arrived", "night"].some((k) => params.has(k)) || ((companyDemo || questionDemo) && !storyDemo);
   return (
     <RadioIntro key={params.get("load") ?? "radio"} skip={!!night || (!!demo && !params.has("load"))}>
       <RadioScreen
