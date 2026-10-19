@@ -106,9 +106,10 @@ export function NightLcd({
   }
   if (phase === "rest" || phase === "stopped") {
     return (
-      <figure role="status" className="flex flex-col items-center gap-1.5 text-lcd-ink">
+      <figure role="status" className="flex flex-col items-center gap-2 text-lcd-ink">
         <Dozing character={character} />
-        <figcaption className="font-mono text-[11px] leading-none">
+        {/* Kept off the LCD's edges: a long line wraps onto two balanced lines instead. */}
+        <figcaption className="max-w-[170px] text-balance text-center font-mono text-[11px] leading-tight">
           {phase === "stopped"
             ? `Take ${REST_AREA.breakMinutes} min · stories wait`
             : routed
@@ -163,10 +164,12 @@ const Z = ["#####", "...#.", "..#..", ".#...", "#####"];
 /** Your character, dozing: held still on one frame while z's climb beside it. */
 function Dozing({ character }: { character: CharacterId }) {
   return (
-    <span className="flex items-start">
+    // The z's hang off the head's right side without taking up room, so the character itself
+    // sits centred over the line below.
+    <span className="relative flex">
       <CharacterSprite character={character} pixel={3} playing={false} />
       {/* Small to big, climbing up and away from the head. */}
-      <span aria-hidden className="lcd-dots ml-1 -mt-2 flex items-end gap-[3px]">
+      <span aria-hidden className="lcd-dots absolute left-full top-[-8px] ml-1 flex items-end gap-[3px]">
         {[2, 2, 3].map((px, i) => (
           <span key={i} style={{ marginBottom: i * 6 }}>
             <svg width={5 * px} height={5 * px} viewBox="0 0 5 5" shapeRendering="crispEdges" fill="currentColor">
