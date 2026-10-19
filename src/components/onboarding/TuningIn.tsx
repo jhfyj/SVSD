@@ -6,7 +6,6 @@ import { PixelGlyph } from "@/components/drops/VoxelIcon";
 import { CharacterSprite } from "@/components/profile/CharacterSprite";
 import { Led } from "@/components/radio/Led";
 import { LcdScreen } from "@/components/radio/LcdScreen";
-import { ScrambleText } from "@/components/ui/ScrambleText";
 import { cn } from "@/components/ui/cn";
 import type { CharacterId } from "@/lib/profile/characters";
 import type { DropKind } from "@/lib/radio/drops";
@@ -16,8 +15,9 @@ import { tuneIn } from "@/lib/radio/voice";
   The first thing flow 1 shows while the app gets going: the radio tuning in to Caravan.
   The LED blinks amber, the LCD opens in hard frames and its dial hunts across the band (with the
   radio's static-and-whistle tuning sound), then locks ON AIR and the LED turns green. A dotted road
-  draws itself one dot per frame, a story, a question and a tip pop up along it, a little caravan of
-  roadside characters hops in, and CARAVAN scrambles into place. Then it fades and hands over.
+  draws itself one dot per frame, then a caravan comes in from the left along it, every other one a
+  roadside character and a pickup (a story, a question, a tip), hopping as they go. Then it fades
+  and hands over.
   Everything digital steps (DESIGN.md §9); only the light fades ease out. Tap to skip. Reduced
   motion: the finished frame, held for a moment.
 */
@@ -28,11 +28,9 @@ const AT = {
   // Just after the dial's last step (lcd + 150 + 920), so ON AIR shows on the station it locked to.
   lock: 1450,
   road: 1500,
-  caravan: 2000,
-  word: 2400,
-  tagline: 3100,
-  out: 4100,
-  next: 4340,
+  caravan: 1700,
+  out: 3600,
+  next: 3840,
 };
 const STILL_MS = 1600;
 
@@ -42,13 +40,15 @@ const DIAL_STEP_MS = [0, 70, 140, 220, 320, 440, 580, 740, 920];
 
 const DOTS = 21;
 const DOT_MS = 35;
-/** Which road dots something waits on. */
-const PICKUPS: { dot: number; kind: DropKind }[] = [
-  { dot: 5, kind: "story" },
-  { dot: 11, kind: "question" },
-  { dot: 17, kind: "tip" },
+/** The caravan, front to back: every other one a roadside character, then a pickup. */
+const CARAVAN: ({ character: CharacterId } | { pickup: DropKind })[] = [
+  { character: "raccoon" },
+  { pickup: "story" },
+  { character: "fox" },
+  { pickup: "question" },
+  { character: "rabbit" },
+  { pickup: "tip" },
 ];
-const CARAVAN: CharacterId[] = ["raccoon", "fox", "rabbit", "frog"];
 
 const at = (ms: number) => ({ "--at": `${ms}ms` }) as CSSProperties;
 
@@ -121,31 +121,16 @@ export function TuningIn({ next = "/overview?step=1" }: { next?: string }) {
             <span key={i} className="tune-dot size-1.5 rounded-full bg-foreground/40" style={at(AT.road + i * DOT_MS)} />
           ))}
         </div>
-        {PICKUPS.map(({ dot, kind }) => (
-          <span
-            key={kind}
-            className="tune-pop absolute bottom-5 -translate-x-1/2"
-            style={{ left: `calc(${(dot / (DOTS - 1)) * 100}% )`, ...at(AT.road + dot * DOT_MS + 60) }}
-          >
-            <PixelGlyph kind={kind} px={2} />
-          </span>
-        ))}
-        <div className="tune-march absolute -bottom-9 left-0 flex gap-1" style={at(AT.caravan)}>
-          {CARAVAN.map((c) => (
-            <CharacterSprite key={c} character={c} pixel={2} className="text-foreground" />
-          ))}
+        {/* Comes in from off the left edge and stops in the middle of the road. */}
+        <div className="tune-march absolute bottom-4 left-1/2 flex items-end gap-2" style={at(AT.caravan)}>
+          {CARAVAN.map((c) =>
+            "character" in c ? (
+              <CharacterSprite key={c.character} character={c.character} pixel={2} className="text-foreground" />
+            ) : (
+              <PixelGlyph key={c.pickup} kind={c.pickup} px={2} />
+            ),
+          )}
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-col items-center gap-2 text-center">
-        <h1 className="tune-show text-2xl uppercase" style={at(AT.word)}>
-          <ScrambleText delay={AT.word} duration={700}>
-            Caravan
-          </ScrambleText>
-        </h1>
-        <p className="tune-fade text-sm text-foreground/70" style={at(AT.tagline)}>
-          Stories for the long way home.
-        </p>
       </div>
     </button>
   );
