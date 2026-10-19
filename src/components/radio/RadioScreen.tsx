@@ -1058,7 +1058,10 @@ export function RadioScreen({
             <>
               {/* Where Music used to be: Start journey, then End journey (straight to the recap; no pause).
                   Flow 4 has no End journey: the drive just keeps going (only Flow 5 ends it). */}
-              {questionDemo ? null : started ? (
+              {questionDemo ? (
+                // Flow 4 has no End journey; the wide slot stays empty so Drop and Settings keep their places.
+                <div className="flex-1" aria-hidden />
+              ) : started ? (
                 <HardwareButton tone="end" className="flex-1" onClick={endJourney} data-cuelume-emphasis="strong">
                   <FlagCheckered size={24} className="opacity-80" aria-hidden />
                   <span className="text-base font-bold opacity-80">END JOURNEY</span>
@@ -1071,18 +1074,17 @@ export function RadioScreen({
               )}
             </>
           )}
-          {/* Drop is for planting your own thing while you drive alone: not on a call (you're
-              talking to someone) and not while a message plays (that has its own Respond). In Flow 4
-              it steps aside only while the question has the screen, then it's back: planting your
-              own answer is the end of that flow. */}
-          {!radioOn && (!questionDemo || questionStage === "driving") && (
+          {/* Drop is for planting your own thing while you drive alone, so it's on the console the
+              whole drive (not on a call: you're talking to someone). Always the same 70px square in
+              the same place, whatever else the row is doing. While something else has the mic or the
+              screen (a message, Flow 4's question listening or playing, Night mode), it's there but
+              greyed out: one voice at a time. */}
+          {!radioOn && (
           <HardwareButton
-            // Flow 4: with no End journey, Drop takes the wide slot.
-            className={questionDemo ? "flex-1" : CALL_KEY}
+            className={CALL_KEY}
             // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
             pressed={dropRecording}
-            // Waits while Night mode is listening to you, too: one voice at a time.
-            disabled={drop.phase === "sorting" || messageOn || nightTalking}
+            disabled={drop.phase === "sorting" || messageOn || nightTalking || (questionDemo && questionStage !== "driving")}
             onClick={toggleDrop}
             aria-label={dropRecording ? "Drop it here" : "Leave a drop"}
           >
