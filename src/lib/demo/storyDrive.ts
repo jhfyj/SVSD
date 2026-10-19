@@ -20,6 +20,22 @@ const path = measure(I10_EAST);
 const heading = headingAt(path, STORY_ALONG) ?? 90;
 
 /**
+ * Past the end of the recorded stretch, the same freeway on toward downtown (from the saved
+ * Santa Monica to DTLA route), so Flows 2 to 4 keep driving instead of running out of road and
+ * arriving. Only Flow 5 arrives. About 4.5 km more, three-odd minutes at the demo speed.
+ */
+const ONWARD = [
+  { lat: 34.03523, lng: -118.3278 },
+  { lat: 34.03538, lng: -118.32605 },
+  { lat: 34.03662, lng: -118.31754 },
+  { lat: 34.0366, lng: -118.31743 },
+  { lat: 34.03679, lng: -118.3144 },
+  { lat: 34.03688, lng: -118.31182 },
+];
+const LONG_POINTS = [...I10_EAST, ...ONWARD];
+const longPath = measure(LONG_POINTS);
+
+/**
  * Flow 2 · Message unlocks: wait three seconds, then drive for about three seconds before the
  * story from @Hufflepuff23 pulls in from the road.
  */
@@ -27,12 +43,12 @@ export const STORY_DRIVE: DemoDrive = {
   name: "Downtown LA",
   speed: SPEED,
   route: {
-    points: I10_EAST,
-    distance: path.length,
-    duration: path.length / SPEED,
+    points: LONG_POINTS,
+    distance: longPath.length,
+    duration: longPath.length / SPEED,
     steps: [
       { maneuver: "STRAIGHT", instruction: "Head east on I-10", distance: 900 },
-      { maneuver: "STRAIGHT", instruction: "Continue on I-10 E toward Los Angeles", distance: path.length - 900 },
+      { maneuver: "STRAIGHT", instruction: "Continue on I-10 E toward Los Angeles", distance: longPath.length - 900 },
     ],
   },
   pickups: [{ id: "nightowl-burrito", kind: "story", at: offset(pointAt(path, STORY_ALONG), heading + 90, STORY_OFF) }],

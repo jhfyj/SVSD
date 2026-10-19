@@ -118,7 +118,9 @@ export function Radio() {
         peer={peer}
         peerCharacter={companyDemo ? "rabbit" : undefined}
         sharedMiles={miles}
-        arrived={arriveRun === null ? undefined : arrivedRun === arriveRun}
+        // Only Flow 5 ends the journey. Flows 2 to 4 (story, company, question) never arrive, so
+        // the thank-you and End journey can't take over while they play: the drive keeps going.
+        arrived={arriveRun !== null ? arrivedRun === arriveRun : storyDemo || companyDemo || questionDemo ? false : undefined}
         // A new journey opens on Start journey (plain ?sim too: press it and the demo drive sets off).
         // Every other dial kit moment (a call state, a message, the demo, Night mode) is mid-drive.
         started={midDrive}

@@ -1056,8 +1056,9 @@ export function RadioScreen({
             <MessageKeys controls={message} color={MESSAGE_COLOR[message.message.kind]} squareKey={CALL_KEY} />
           ) : (
             <>
-              {/* Where Music used to be: Start journey, then End journey (straight to the recap; no pause). */}
-              {started ? (
+              {/* Where Music used to be: Start journey, then End journey (straight to the recap; no pause).
+                  Flow 4 has no End journey: the drive just keeps going (only Flow 5 ends it). */}
+              {questionDemo ? null : started ? (
                 <HardwareButton tone="end" className="flex-1" onClick={endJourney} data-cuelume-emphasis="strong">
                   <FlagCheckered size={24} className="opacity-80" aria-hidden />
                   <span className="text-base font-bold opacity-80">END JOURNEY</span>
@@ -1076,7 +1077,8 @@ export function RadioScreen({
               own answer is the end of that flow. */}
           {!radioOn && (!questionDemo || questionStage === "driving") && (
           <HardwareButton
-            className={CALL_KEY}
+            // Flow 4: with no End journey, Drop takes the wide slot.
+            className={questionDemo ? "flex-1" : CALL_KEY}
             // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
             pressed={dropRecording}
             // Waits while Night mode is listening to you, too: one voice at a time.
