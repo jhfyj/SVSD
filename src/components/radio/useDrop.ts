@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { DROP_MIN_MS, DROP_SHOW_MS, DROP_SORT_MS, sampleTranscript, saveDrop, sortDrop, transcribe, type Drop } from "@/lib/radio/drops";
 import { quietClock } from "@/lib/radio/quiet";
-import { recordReply, type Level, type Recording } from "@/lib/radio/voice";
+import { playVoice, recordReply, type Level, type Recording, type Voice } from "@/lib/radio/voice";
 import { cue } from "@/lib/sound";
 
 /**
@@ -33,8 +33,15 @@ export type DropControls = {
   toggle: () => void;
 };
 
+/**
+ * A scripted drop for the demo: instead of the mic, Drop plays this recording as if you were saying
+ * it (same screen, same glow from your voice), then sorts `text` and leaves it on the road when the
+ * recording ends. No permission prompt. Pass a stable object (a module constant).
+ */
+export type DropScript = { src: string; text: string };
+
 /** One console key leaves something on the road: tap to record, tap again to drop it here. */
-export function useDrop(): DropControls {
+export function useDrop(script?: DropScript): DropControls {
   const [phase, setPhase] = useState<DropPhase>("idle");
   const [drops, setDrops] = useState<Drop[]>([]);
   const [elapsed, setElapsed] = useState<number | null>(null);
@@ -43,9 +50,25 @@ export function useDrop(): DropControls {
   const recording = useRef<Recording | null>(null);
   const words = useRef<ReturnType<typeof transcribe> | null>(null);
   const started = useRef(0);
+  const voice = useRef<Voice | null>(null);
 
   // Drop it: stop the mic, sort what you said, and leave it on the road.
   const finish = useCallback(async () => {
+    if (script) {
+      // Tapped again before the recording got going: never mind.
+      if (!voice.current) return setPhase("idle");
+      voice.current.stop();
+      voice.current = null;
+      level.current = null;
+      setPhase("sorting");
+      await new Promise((r) => setTimeout(r, DROP_SORT_MS));
+      const drop: Drop = { id: `drop-${Date.now()}`, kind: sortDrop(script.text), text: script.text, src: script.src, droppedAt: Date.now() };
+      saveDrop(drop);
+      setDrops((d) => [...d, drop]);
+      cue("success", { theme: "mech" });
+      setPhase("dropped");
+      return;
+    }
     const rec = recording.current;
     // Tapped again before the mic came up (e.g. at the browser's prompt): never mind.
     if (!rec) return setPhase("idle");
@@ -80,7 +103,7 @@ export function useDrop(): DropControls {
     setDrops((d) => [...d, drop]);
     cue("success", { theme: "mech" });
     setPhase("dropped");
-  }, []);
+  }, [script]);
 
   const toggle = useCallback(() => {
     if (phase === "recording") return void finish();
@@ -104,6 +127,27 @@ export function useDrop(): DropControls {
     if (phase !== "recording") return;
     let live = true;
     let tick: ReturnType<typeof setInterval> | undefined;
+    if (script) {
+      // The scripted drop: the recording plays as your voice, and drops itself when it ends.
+      cue("ready", { theme: "mech" });
+      const v = playVoice(script.src, true);
+      voice.current = v;
+      level.current = v.level;
+      // The time counts up from when your voice starts, like the mic going live.
+      void v.started.then(() => {
+        if (!live) return;
+        started.current = Date.now();
+        setElapsed(0);
+        tick = setInterval(() => setElapsed(Date.now() - started.current), 100);
+      });
+      const done = () => live && void finish();
+      v.done.then(done, done);
+      return () => {
+        live = false;
+        clearInterval(tick);
+        setElapsed(null);
+      };
+    }
     recordReply().then(
       (rec) => {
         if (!live) return rec.cancel();
@@ -138,13 +182,14 @@ export function useDrop(): DropControls {
       setElapsed(null);
       setSendsIn(null);
     };
-  }, [phase, finish, discard]);
+  }, [phase, finish, discard, script]);
 
   // Leaving the radio mid-recording throws it away.
   useEffect(
     () => () => {
       recording.current?.cancel();
       void words.current?.stop();
+      voice.current?.stop();
     },
     [],
   );

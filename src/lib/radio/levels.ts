@@ -26,5 +26,6 @@ export const VOICE_GAIN: Record<string, number> = {
   "/voices/mothlight-hope-so.m4a": 4.45, // -31.4, peak -14.6
   "/voices/nightowl-feel-your-pain.m4a": 1.2, // -23.1, peak -2.7 (trimmed: no "go" before, no "oh wow" after)
   "/voices/nightowl-what-got-you-through.m4a": 1.7, // -25.4, peak -8.9
+  "/voices/you-waymo-showdown.m4a": 1.5, // -24.4, peak -5.5
   "/voices/urmom-driving-to-sf.m4a": 3.2, // -27.9, peak -9.5
 };

@@ -19,3 +19,12 @@ export const NIGHTOWL_FEEL_YOUR_PAIN = "/voices/nightowl-feel-your-pain.m4a";
 export const NIGHTOWL_WHAT_GOT_YOU_THROUGH = "/voices/nightowl-what-got-you-through.m4a";
 /** …and @urmom6767's answer. */
 export const URMOM_DRIVING_TO_SF = "/voices/urmom-driving-to-sf.m4a";
+
+/**
+ * Then, still in Flow 4, you press Drop and tell a story of your own (Emily's "Ashton Ave"
+ * recording): it's sorted into a story and left on the road.
+ */
+export const YOU_WAYMO_SHOWDOWN = {
+  src: "/voices/you-waymo-showdown.m4a",
+  text: "Funny story actually. Last time I came up to SF, I saw like a showdown between three different Waymo cars. It was actually crazy.",
+};
