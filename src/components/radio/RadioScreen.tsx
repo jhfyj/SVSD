@@ -35,6 +35,7 @@ import {
   NIGHTOWL_FEEL_YOUR_PAIN,
   NIGHTOWL_WHAT_GOT_YOU_THROUGH,
   URMOM_DRIVING_TO_SF,
+  YOU_WAYMO_SHOWDOWN,
 } from "@/lib/radio/demoVoices";
 import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
@@ -319,7 +320,8 @@ export function RadioScreen({
   const [micMuted, setMicMuted] = useState(false);
   // Drop (where Speaker used to be): one key leaves something on the road for whoever drives it next.
   // Tap to record, tap again to drop it here; it's sorted into a message or a question and left on the map.
-  const drop = useDrop();
+  // Flow 4: after answering the question, Drop tells your own story from a recording (no mic).
+  const drop = useDrop(questionDemo ? YOU_WAYMO_SHOWDOWN : undefined);
   const dropRecording = drop.phase === "recording";
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Start journey: until you press it the map waits at your start and nothing on the road plays.
