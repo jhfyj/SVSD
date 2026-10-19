@@ -1,6 +1,6 @@
 "use client";
 
-import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon, X } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { DROP_LABEL, type Drop } from "@/lib/radio/drops";
@@ -378,6 +378,19 @@ export function RadioScreen({
   // Night mode: the radio checks in with you, and tells you to stop when your answers slow down.
   const nightDrive = useNightDrive({ start: night, onNightfall });
   const nightTalking = nightDrive.busy && !radioOn;
+  // The square Settings key, always at the right end of the key row (the usual row, a call, and
+  // Night mode's rerouting and rest-area rows).
+  const settingsKey = (
+    <HardwareButton
+      className={CALL_KEY}
+      pressed={settingsOpen}
+      onClick={() => setSettingsOpen(!settingsOpen)}
+      aria-label={settingsOpen ? "Close settings" : "Settings"}
+      aria-expanded={settingsOpen}
+    >
+      <GearSix size={24} className="opacity-60" aria-hidden />
+    </HardwareButton>
+  );
 
   // Messages on the road. Each plays once, as you pass it, and only while the radio's off: they never
   // talk over a live call. Pass one mid-call and it's gone; pass two close together and they queue.
@@ -859,22 +872,29 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        {/* Rerouting, the key row is one wide key, pressed in and lit: the route's already set, nothing
-            to tap. Parked at the rest area, it's the way back: stories come back on, the dot moves again. */}
+        {/* Rerouting: TO REST AREA stays pressed in and lit (the route's set, nothing to tap), with
+            Exit where Drop sits, to drop the reroute and carry on along your original route, and
+            Settings in its usual place. Parked at the rest area, the wide key is the way back: the
+            dot moves again. */}
         {nightDrive.phase === "stopped" && !radioOn && !arrived && (
-          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+          <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
             <HardwareButton className="flex-1" onClick={nightDrive.backOnTheRoad} aria-label="Back on the road">
               <RoadHorizon size={24} className="opacity-80" aria-hidden />
               <span className="text-[13px] font-bold opacity-80">BACK ON THE ROAD</span>
             </HardwareButton>
+            {settingsKey}
           </div>
         )}
         {nightDrive.phase === "rerouting" && !radioOn && !arrived && (
-          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+          <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
             <HardwareButton className="flex-1" pressed aria-disabled aria-label="Rerouting to the rest area">
               <NavigationArrow size={24} aria-hidden />
               <span className="text-[13px] font-bold opacity-80">TO REST AREA</span>
             </HardwareButton>
+            <HardwareButton className={CALL_KEY} onClick={nightDrive.exitReroute} aria-label="Exit rerouting, back to your route">
+              <X size={24} className="opacity-60" aria-hidden />
+            </HardwareButton>
+            {settingsKey}
           </div>
         )}
         {/* What you're up for: the console keys become the four intents, a 2 x 2 grid of wide keys.
@@ -983,15 +1003,8 @@ export function RadioScreen({
           </HardwareButton>
           )}
           {/* Settings stays on the console during a call too, square like Mic. */}
-          <HardwareButton
-            className={CALL_KEY}
-            pressed={settingsOpen}
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            aria-label={settingsOpen ? "Close settings" : "Settings"}
-            aria-expanded={settingsOpen}
-          >
-            <GearSix size={24} className="opacity-60" aria-hidden />
-          </HardwareButton>
+          {settingsKey}
+
         </div>
       </div>
 

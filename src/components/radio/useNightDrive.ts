@@ -32,6 +32,8 @@ export type NightDriveControls = {
   parked: boolean;
   /** Leaving the rest area: the drive picks up again, and the radio doesn't check in again straight away. */
   backOnTheRoad: () => void;
+  /** Rerouting, you tap Exit: the reroute is dropped and you carry on along your original route. */
+  exitReroute: () => void;
   /** You went live (Company on) mid check-in: the radio stops asking and leaves you to your call. */
   interrupt: () => void;
 };
@@ -141,6 +143,12 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
     resting: phase === "rerouting" || phase === "stopped",
     parked: phase === "stopped",
     backOnTheRoad: () => {
+      calm.current = true;
+      setPhase("night");
+    },
+    exitReroute: () => {
+      if (phase !== "rerouting") return;
+      // Like after a rest: the quiet night radio doesn't check in again on its own straight away.
       calm.current = true;
       setPhase("night");
     },
