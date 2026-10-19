@@ -9,7 +9,7 @@ import type { DemoDrive, Pickup } from "@/lib/demo/storyDrive";
 import { distanceBetween, routeBetween, type LatLng, type Route } from "@/lib/journey/geo";
 import { useJourney } from "@/lib/journey/session";
 import { DEMO_DESTINATION, DEMO_ROUTE } from "@/lib/journey/demoRoute";
-import { mapStyle } from "@/lib/nav/mapStyle";
+import { MAP_FADE_MS, mapStyle, mixPalette, PAINTED, palette, type Palette } from "@/lib/nav/mapStyle";
 import { headingAt, locate, measure, offset, pointAt, slice, type Path } from "@/lib/nav/path";
 import type { DropKind } from "@/lib/radio/drops";
 import { buildUp } from "@/lib/sound";
@@ -115,16 +115,23 @@ function useSimulation() {
   return sim === null ? null : Number(sim) || 2;
 }
 
-/** The app's theme (lib/theme sets data-theme on <html>), so the map can follow day and night. */
+/**
+ * The app's theme (lib/theme sets data-theme on <html>), so the map can follow day and night.
+ * data-map-theme, when set, wins: Night mode's sunset sets it so the map starts going dark with the
+ * sun, before the rest of the app switches theme under the relight (see Nightfall).
+ */
 function subscribeTheme(onChange: () => void) {
   const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-map-theme"] });
   return () => observer.disconnect();
 }
 function useTheme(): "dark" | "light" {
   return useSyncExternalStore<"dark" | "light">(
     subscribeTheme,
-    () => (document.documentElement.dataset.theme === "light" ? "light" : "dark"),
+    () => {
+      const { mapTheme, theme } = document.documentElement.dataset;
+      return (mapTheme ?? theme) === "light" ? "light" : "dark";
+    },
     () => "dark",
   );
 }
@@ -260,14 +267,36 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
     };
   }, []);
 
-  // Day and night: restyle in place. The route's data is put back by the effect below.
+  // Day and night: the colours slide from one palette to the other in place. The map is never
+  // restyled or reloaded, so it never blanks out mid-drive. Reduced motion: the colours just switch.
   const styled = useRef(theme);
-  const [styleVersion, setStyleVersion] = useState(0);
+  const shown = useRef<Palette>(palette(theme));
+  const [styleVersion] = useState(0);
+  // The map's first look (made before the page knew its theme) snaps; only a change while you watch fades.
+  const settled = useRef(false);
   useEffect(() => {
-    if (!map || styled.current === theme) return;
+    if (!map) return;
+    const first = !settled.current;
+    settled.current = true;
+    if (styled.current === theme) return;
     styled.current = theme;
-    map.setStyle(mapStyle(theme));
-    map.once("style.load", () => setStyleVersion((v) => v + 1));
+    const from = shown.current;
+    const to = palette(theme);
+    const still = first || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const began = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const t = still ? 1 : Math.min(1, (now - began) / MAP_FADE_MS);
+      // Ease out, like the dusk light over it.
+      const p = mixPalette(from, to, 1 - (1 - t) ** 2);
+      shown.current = p;
+      for (const [layer, prop, key] of PAINTED) {
+        if (map.getLayer(layer)) map.setPaintProperty(layer, prop as Parameters<MapLibreMap["setPaintProperty"]>[1], p[key]);
+      }
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
   }, [map, theme]);
 
   // A new route starts where you are.

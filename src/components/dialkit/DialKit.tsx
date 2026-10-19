@@ -397,7 +397,7 @@ export function DialKit() {
           },
           radio: true,
           active: path === "/radio" && params.get("night") === "checkin",
-          note: "“Still with me? Tell me one thing you can see.” Listening; Jay's slow answer rises from the bottom of the map.",
+          note: "“Still with me? Tell me one thing you can see.” Listening; no answer comes, so NOTHING HEARD, then it reroutes to the rest area by itself.",
         },
         {
           label: "Rest area",
@@ -407,7 +407,7 @@ export function DialKit() {
           },
           radio: true,
           active: path === "/radio" && params.get("night") === "rest",
-          note: "REST AREA 9 MI takes over the map; stories paused until you're back. Route to rest area folds the sign to a strip; 7 s later you're parked: Back on the road brings stories back.",
+          note: "Rerouting to the rest area by itself; stories keep coming. Exit (the X key, where Drop sits) drops the reroute and carries on along your route; Settings stays. 7 s later you're parked: the dot stops on the map until Back on the road, then the drive picks up again.",
         },
         { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => { pickTheme("dark"); pickAmber(true); }, note: "Turns the Night amber switch on: any radio state at night goes amber. Switch it off under Night amber." },
       ],

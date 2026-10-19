@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { CharacterId } from "@/lib/profile/characters";
 import { CHECK_IN, DRIVING_TONIGHT, REST_AREA, type NightPhase } from "@/lib/radio/nightDrive";
 import type { Level } from "@/lib/radio/voice";
@@ -11,8 +11,8 @@ import { cn } from "../ui/cn";
 /*
   What Night mode looks like on the radio (Flow 6). The amber itself is only tokens
   (.radio-night in globals.css), so every radio state turns amber at night without code here, when the Night amber switch is on (off by default, lib/theme).
-  This file is the moments: the sun setting, the radio relighting, the check-in on the LCD and
-  the rest-area sign that takes over the map.
+  This file is the moments: the sun setting, the radio relighting, the check-in on the LCD, and the reroute
+  and rest stop there.
 */
 
 type Rect = { left: number; top: number; width: number; height: number };
@@ -38,13 +38,29 @@ const SUN_PIXEL = 5;
  *   reduced: not shown
  */
 export function Nightfall({ phase, map }: { phase: NightPhase; map: Rect }) {
-  if (phase !== "dusk" && phase !== "relight") return null;
+  const falling = phase === "dusk" || phase === "relight";
+  // The map never goes away: from the first frame of sunset it slides its own colours from day to
+  // night (NavMap, over DUSK_MS), so it's already the night map by the time the rest switches.
+  useEffect(() => {
+    if (!falling) return;
+    const root = document.documentElement;
+    root.dataset.mapTheme = "dark";
+    return () => {
+      delete root.dataset.mapTheme;
+    };
+  }, [falling]);
+  if (!falling) return null;
+  // The dimming and the flicker are the casing's, never the map's: both are cut around the screen.
+  const { left, top, width, height } = map;
+  const [r, b] = [left + width, top + height];
+  const aroundMap = {
+    clipPath: `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${left}px ${top}px, ${r}px ${top}px, ${r}px ${b}px, ${left}px ${b}px, ${left}px ${top}px)`,
+  };
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       {phase === "dusk" && (
         <>
-          <div className="night-dusk-map absolute bg-sun mix-blend-multiply" style={map} />
-          <div className="night-dusk-casing absolute inset-0 bg-nightfall mix-blend-multiply" />
+          <div className="night-dusk-casing absolute inset-0 bg-nightfall mix-blend-multiply" style={aroundMap} />
           <div className="absolute overflow-hidden" style={map}>
             <WeatherSprite
               weather={{ sky: "clear", night: false }}
@@ -54,7 +70,7 @@ export function Nightfall({ phase, map }: { phase: NightPhase; map: Rect }) {
           </div>
         </>
       )}
-      {phase === "relight" && <div className="night-relight absolute inset-0 bg-nightfall" />}
+      {phase === "relight" && <div className="night-relight absolute inset-0 bg-nightfall" style={aroundMap} />}
     </div>
   );
 }
@@ -64,12 +80,10 @@ export function NightLcd({
   phase,
   level,
   character,
-  routed,
 }: {
   phase: NightPhase;
   level: React.RefObject<Level | null>;
   character: CharacterId;
-  routed: boolean;
 }) {
   if (phase === "nightOn") {
     return (
@@ -104,16 +118,30 @@ export function NightLcd({
       </Lcd>
     );
   }
-  if (phase === "rest" || phase === "stopped") {
+  // No answer: it says so, then reroutes you by itself. Nothing takes over the map; the road stays.
+  if (phase === "nothing") {
     return (
-      <figure role="status" className="flex flex-col items-center gap-1.5 text-lcd-ink">
+      <Lcd className="lcd-flash">
+        <span className="block">NOTHING HEARD</span>
+        <span className="mt-1 block text-[11px] normal-case">Let&apos;s take a break</span>
+      </Lcd>
+    );
+  }
+  if (phase === "rerouting") {
+    return (
+      <Lcd>
+        <span className="block">REROUTING</span>
+        <span className="mt-1 block text-[11px] normal-case">Rest area in {REST_AREA.miles} mi</span>
+      </Lcd>
+    );
+  }
+  if (phase === "stopped") {
+    return (
+      <figure role="status" className="flex flex-col items-center gap-2 text-lcd-ink">
         <Dozing character={character} />
-        <figcaption className="font-mono text-[11px] leading-none">
-          {phase === "stopped"
-            ? `Take ${REST_AREA.breakMinutes} min · stories wait`
-            : routed
-              ? `Route set · rest area ${REST_AREA.miles} mi`
-              : "Stories paused until you're back"}
+        {/* Kept off the LCD's edges: a long line wraps onto two balanced lines instead. */}
+        <figcaption className="max-w-[170px] text-balance text-center font-mono text-[11px] leading-tight">
+          {`Take ${REST_AREA.breakMinutes} min`}
         </figcaption>
       </figure>
     );
@@ -163,10 +191,12 @@ const Z = ["#####", "...#.", "..#..", ".#...", "#####"];
 /** Your character, dozing: held still on one frame while z's climb beside it. */
 function Dozing({ character }: { character: CharacterId }) {
   return (
-    <span className="flex items-start">
+    // The z's hang off the head's right side without taking up room, so the character itself
+    // sits centred over the line below.
+    <span className="relative flex">
       <CharacterSprite character={character} pixel={3} playing={false} />
       {/* Small to big, climbing up and away from the head. */}
-      <span aria-hidden className="lcd-dots ml-1 -mt-2 flex items-end gap-[3px]">
+      <span aria-hidden className="lcd-dots absolute left-full top-[-8px] ml-1 flex items-end gap-[3px]">
         {[2, 2, 3].map((px, i) => (
           <span key={i} style={{ marginBottom: i * 6 }}>
             <svg width={5 * px} height={5 * px} viewBox="0 0 5 5" shapeRendering="crispEdges" fill="currentColor">
@@ -176,56 +206,5 @@ function Dozing({ character }: { character: CharacterId }) {
         ))}
       </span>
     </span>
-  );
-}
-
-/** The sign's words, and a separator before they repeat. */
-const SIGN = `REST AREA ${REST_AREA.miles} MI · `;
-/** Rows on the sign. The middle one is the sign; the rest echo it, dimmer, so the screen stays dark. */
-const ROWS = 5;
-const HERO_ROW = 2;
-
-/**
- * The rest-area takeover on the map: a dot-matrix road sign scrolling REST AREA 9 MI in hard
- * 4px steps, every letter bobbing in a wave. Rows switch on one after another (100ms apart, in
- * hard frames) and alternate direction. Only the middle row is full strength; the others echo it
- * at 40% so the sign says STOP without lighting up the car.
- * Folded (once the route's set): the sign shrinks to its one bright row in a strip along the
- * bottom of the map, so the road and the way to the rest area show again. The strip switches on
- * from the bottom in 4 hard steps.
- * Reduced motion: the rows are still and the strip just appears.
- */
-export function RestSign({ folded = false }: { folded?: boolean }) {
-  const label = `Rest area in ${REST_AREA.miles} miles`;
-  if (folded) {
-    return (
-      <div role="img" aria-label={label} className="night-sign-fold absolute inset-x-0 bottom-0 z-10 flex h-[72px] items-center overflow-hidden border-t border-foreground/40 bg-nightfall text-foreground">
-        <SignRow row={0} />
-      </div>
-    );
-  }
-  return (
-    <div role="img" aria-label={label} className="absolute inset-0 z-10 grid grid-rows-5 items-center overflow-hidden bg-nightfall py-3 text-foreground">
-      {Array.from({ length: ROWS }, (_, row) => (
-        <SignRow key={row} row={row} echo={row !== HERO_ROW} />
-      ))}
-    </div>
-  );
-}
-
-/** One row of the sign: two copies of the words, so sliding one copy's width loops without a seam. */
-function SignRow({ row, echo = false }: { row: number; echo?: boolean }) {
-  return (
-    <div
-      aria-hidden
-      className={cn("night-sign-row flex w-max whitespace-pre text-[40px] font-bold leading-none", row % 2 === 1 && "night-sign-row-back", echo && "opacity-40")}
-      style={{ "--row": row } as CSSProperties}
-    >
-      {[...SIGN.repeat(2)].map((c, i) => (
-        <span key={i} className="night-sign-letter inline-block" style={{ "--i": (i % SIGN.length) + row * 3 } as CSSProperties}>
-          {c}
-        </span>
-      ))}
-    </div>
   );
 }

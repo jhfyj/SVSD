@@ -1,6 +1,6 @@
 "use client";
 
-import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon, X } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { DROP_LABEL, type Drop } from "@/lib/radio/drops";
@@ -43,7 +43,7 @@ import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/m
 import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
 import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
-import { Nightfall, NightLcd, RestSign } from "./NightDrive";
+import { Nightfall, NightLcd } from "./NightDrive";
 import { useNightDrive } from "./useNightDrive";
 import type { NightStart } from "@/lib/radio/nightDrive";
 
@@ -153,7 +153,7 @@ export type RadioScreenProps = {
 };
 
 /** Night mode phases that put something on the LCD (the sunset itself keeps the usual LCD). */
-const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "rest", "stopped"];
+const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "nothing", "rerouting", "stopped"];
 
 /** Flow 3 (5 · Company): the four turns after the intro, in the drivers' own recorded voices. */
 const COMPANY_TURNS = [
@@ -378,6 +378,19 @@ export function RadioScreen({
   // Night mode: the radio checks in with you, and tells you to stop when your answers slow down.
   const nightDrive = useNightDrive({ start: night, onNightfall });
   const nightTalking = nightDrive.busy && !radioOn;
+  // The square Settings key, always at the right end of the key row (the usual row, a call, and
+  // Night mode's rerouting and rest-area rows).
+  const settingsKey = (
+    <HardwareButton
+      className={CALL_KEY}
+      pressed={settingsOpen}
+      onClick={() => setSettingsOpen(!settingsOpen)}
+      aria-label={settingsOpen ? "Close settings" : "Settings"}
+      aria-expanded={settingsOpen}
+    >
+      <GearSix size={24} className="opacity-60" aria-hidden />
+    </HardwareButton>
+  );
 
   // Messages on the road. Each plays once, as you pass it, and only while the radio's off: they never
   // talk over a live call. Pass one mid-call and it's gone; pass two close together and they queue.
@@ -405,17 +418,19 @@ export function RadioScreen({
         .map((m) => ({ id: m.id, at: m.at, color: MESSAGE_COLOR[m.kind], label: `${m.kind === "question" ? "Question" : "Message"} from ${m.from}` })),
     [messages, passed],
   );
-  // Stories wait while Night mode talks to you, and stay paused at the rest area until you're back.
+  // Stories keep coming in Night mode, rest area included (Jen: especially when you're tired). One
+  // you pass while Night mode is speaking waits in the queue and plays as soon as it's done.
   // Nothing on the road plays before Start journey.
-  const listening = started && state === "off" && !arrived && !leaving && !nightDrive.busy;
+  const collecting = started && state === "off" && !arrived && !leaving;
+  const listening = collecting && !nightDrive.busy;
   const reach = useCallback(
     (id: string) => {
       const m = messages.find((x) => x.id === id);
       if (!m || passed.includes(id)) return;
       setPassed((p) => [...p, id]);
-      if (listening) setQueue((q) => [...q, m]);
+      if (collecting) setQueue((q) => [...q, m]);
     },
-    [messages, passed, listening],
+    [messages, passed, collecting],
   );
   // No route to drive past them on (Storybook, no trip set up): pass the next one every so often instead.
   const onRoute = Boolean(useJourney()?.route);
@@ -702,7 +717,8 @@ export function RadioScreen({
       >
         <NavMap
           // The map waits at your start until Start journey.
-          paused={!started}
+          // Before Start journey, and parked at the rest area: the dot holds still until you're back on the road.
+          paused={!started || nightDrive.parked}
           travellers={travellers}
           messages={ahead}
           onReach={reach}
@@ -767,7 +783,6 @@ export function RadioScreen({
         />
         {/* Night mode's rest area takes over the map: the road can wait. Once the route's set it
             folds to a strip, so you can see the way there. */}
-        {nightDrive.phase === "rest" && <RestSign folded={nightDrive.routed} />}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
       </section>
@@ -832,7 +847,7 @@ export function RadioScreen({
           ) : drop.active && state !== "pick" ? (
             <DropLcd controls={drop} />
           ) : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? (
-            <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} routed={nightDrive.routed} />
+            <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} />
           ) : messageOn ? (
             <MessageLcd controls={message} />
           ) : (
@@ -857,27 +872,29 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        {/* Told to stop, the key row is one wide key: route there (lit once it's set). Parked at the
-            rest area, it's the way back: stories come back on. */}
+        {/* Rerouting: TO REST AREA stays pressed in and lit (the route's set, nothing to tap), with
+            Exit where Drop sits, to drop the reroute and carry on along your original route, and
+            Settings in its usual place. Parked at the rest area, the wide key is the way back: the
+            dot moves again. */}
         {nightDrive.phase === "stopped" && !radioOn && !arrived && (
-          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+          <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
             <HardwareButton className="flex-1" onClick={nightDrive.backOnTheRoad} aria-label="Back on the road">
               <RoadHorizon size={24} className="opacity-80" aria-hidden />
               <span className="text-[13px] font-bold opacity-80">BACK ON THE ROAD</span>
             </HardwareButton>
+            {settingsKey}
           </div>
         )}
-        {nightDrive.phase === "rest" && !radioOn && !arrived && (
-          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
-            <HardwareButton
-              className="flex-1"
-              pressed={nightDrive.routed}
-              onClick={nightDrive.routed ? undefined : nightDrive.route}
-              aria-label={nightDrive.routed ? "Route to the rest area set" : "Route to the rest area"}
-            >
-              <NavigationArrow size={24} className={nightDrive.routed ? undefined : "opacity-80"} aria-hidden />
-              <span className="text-[13px] font-bold opacity-80">{nightDrive.routed ? "ROUTE SET" : "ROUTE TO REST AREA"}</span>
+        {nightDrive.phase === "rerouting" && !radioOn && !arrived && (
+          <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
+            <HardwareButton className="flex-1" pressed aria-disabled aria-label="Rerouting to the rest area">
+              <NavigationArrow size={24} aria-hidden />
+              <span className="text-[13px] font-bold opacity-80">TO REST AREA</span>
             </HardwareButton>
+            <HardwareButton className={CALL_KEY} onClick={nightDrive.exitReroute} aria-label="Exit rerouting, back to your route">
+              <X size={24} className="opacity-60" aria-hidden />
+            </HardwareButton>
+            {settingsKey}
           </div>
         )}
         {/* What you're up for: the console keys become the four intents, a 2 x 2 grid of wide keys.
@@ -986,15 +1003,8 @@ export function RadioScreen({
           </HardwareButton>
           )}
           {/* Settings stays on the console during a call too, square like Mic. */}
-          <HardwareButton
-            className={CALL_KEY}
-            pressed={settingsOpen}
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            aria-label={settingsOpen ? "Close settings" : "Settings"}
-            aria-expanded={settingsOpen}
-          >
-            <GearSix size={24} className="opacity-60" aria-hidden />
-          </HardwareButton>
+          {settingsKey}
+
         </div>
       </div>
 

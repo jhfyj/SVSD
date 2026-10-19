@@ -3,36 +3,37 @@
 import { useEffect, useRef, useState } from "react";
 import { cue } from "@/lib/sound";
 import {
-  ANSWER_BEAT_MS,
-  ANSWER_MS,
-  CHECK_IN,
+  AFTER_LINE_MS,
   DAY_MS,
   DUSK_MS,
+  LISTEN_MS,
   NIGHT_HOLD_MS,
   NIGHT_ON_MS,
+  NIGHT_VOICE,
+  NOTHING_MS,
   RELIGHT_MS,
   REST_ARRIVE_MS,
-  REST_LINE,
   STOPPED_LINE,
-  sleepyAnswer,
   type NightPhase,
   type NightStart,
 } from "@/lib/radio/nightDrive";
-import { announce, type Level } from "@/lib/radio/voice";
+import { START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
+import { announce, playVoice, whenSoundAllowed, type Level } from "@/lib/radio/voice";
 
 export type NightDriveControls = {
   phase: NightPhase;
   /** Your voice while you answer the check-in (a stand-in, see sleepyAnswer). */
   level: React.RefObject<Level | null>;
-  /** Talking to you or waiting on you: stories on the road hold off, and Drop and Music wait. */
+  /** Talking to you or waiting on you: stories on the road hold off (they queue and play after), and Drop and Music wait. */
   busy: boolean;
-  /** Told to stop, or stopped: stories are paused until you're back on the road. */
+  /** Rerouted to the rest area, or parked there: the usual keys step aside. Stories keep coming. */
   resting: boolean;
-  /** You asked for the route to the rest area. */
-  routed: boolean;
-  route: () => void;
-  /** Leaving the rest area: stories come back, and the radio doesn't check in again straight away. */
+  /** Parked at the rest area: the drive holds still on the map. */
+  parked: boolean;
+  /** Leaving the rest area: the drive picks up again, and the radio doesn't check in again straight away. */
   backOnTheRoad: () => void;
+  /** Rerouting, you tap Exit: the reroute is dropped and you carry on along your original route. */
+  exitReroute: () => void;
   /** You went live (Company on) mid check-in: the radio stops asking and leaves you to your call. */
   interrupt: () => void;
 };
@@ -47,9 +48,8 @@ const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)"
  */
 export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNightfall?: () => void }): NightDriveControls {
   const [phase, setPhase] = useState<NightPhase>(() =>
-    start === "fall" ? "day" : start === "checkin" ? "checkin" : start === "rest" ? "rest" : "off",
+    start === "fall" ? "day" : start === "checkin" ? "checkin" : start === "rest" ? "rerouting" : "off",
   );
-  const [routed, setRouted] = useState(false);
   const level = useRef<Level | null>(null);
   // After a rest (or a check-in you cut short), the quiet night radio doesn't check in again on its own.
   const calm = useRef(false);
@@ -58,11 +58,40 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
     nightfall.current = onNightfall;
   }, [onNightfall]);
 
+  // Night mode plays by itself, so nobody taps once it's going. If the page opened straight into it
+  // (a reload, a shared link), the browser would block every line, so the script waits on the first
+  // tap anywhere: the day radio just keeps driving until then. Already tapped: it starts at once.
+  const [ready, setReady] = useState(false);
+  useEffect(() => whenSoundAllowed(() => setReady(true)), []);
+
+  // A recorded line is playing: stories on the road hold off until it's done, then carry on.
+  const [speaking, setSpeaking] = useState(false);
+  // "214 driving tonight" is said once, the first time night settles in, not after every rest.
+  const toldTonight = useRef(start === "rest");
+
   useEffect(() => {
+    if (!ready) return;
     let t: ReturnType<typeof setTimeout> | undefined;
-    let line: ReturnType<typeof announce> | null = null;
+    const lines: { stop: () => void }[] = [];
     let live = true;
     const after = (ms: number, next: NightPhase) => (t = setTimeout(() => setPhase(next), ms));
+    // A silent line still holds stories off for as long as it would take to say.
+    const hold = (line: { done: Promise<void>; stop: () => void }) => {
+      lines.push(line);
+      setSpeaking(true);
+      void line.done.then(() => live && setSpeaking(false));
+    };    // Play one of Night mode's recordings; then (and at least `min` ms after it began) go on to `next`.
+    const say = (src: string, next?: NightPhase, min = 0) => {
+      const began = Date.now();
+      const v = speak(src);
+      lines.push(v);
+      setSpeaking(true);
+      void v.done.then(() => {
+        if (!live) return;
+        setSpeaking(false);
+        if (next) after(Math.max(AFTER_LINE_MS, min - (Date.now() - began)), next);
+      });
+    };
 
     if (phase === "day") after(DAY_MS, "dusk");
     if (phase === "dusk") {
@@ -78,55 +107,58 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
       cue("toggle", { theme: "mech", emphasis: "strong" });
       after(RELIGHT_MS, "nightOn");
     }
-    if (phase === "nightOn") after(NIGHT_ON_MS, "night");
-    if (phase === "night" && !calm.current) after(NIGHT_HOLD_MS, "checkin");
+    if (phase === "nightOn") say(NIGHT_VOICE.on, "night", NIGHT_ON_MS);
+    if (phase === "night") {
+      const next: NightPhase | undefined = calm.current ? undefined : "checkin";
+      if (!toldTonight.current) {
+        toldTonight.current = true;
+        say(NIGHT_VOICE.tonight, next, NIGHT_HOLD_MS);
+      } else if (next) after(NIGHT_HOLD_MS, next);
+    }
     if (phase === "checkin") {
       // Asked out loud, like a person would: a soft blip to get your attention, then the question.
       cue("ready", { theme: "mech", emphasis: "subtle" });
-      line = announce(`${CHECK_IN.title} ${CHECK_IN.ask}`);
-      void line.done.then(() => live && setPhase("listening"));
+      say(NIGHT_VOICE.checkIn, "listening");
     }
+    // No answer comes: it listens a while, says NOTHING HEARD, then reroutes you by itself.
     if (phase === "listening") {
-      level.current = sleepyAnswer();
-      after(ANSWER_MS + ANSWER_BEAT_MS, "rest");
+      level.current = null;
+      after(LISTEN_MS, "nothing");
     }
-    if (phase === "rest") {
+    if (phase === "nothing") say(NIGHT_VOICE.nothing, "rerouting", NOTHING_MS);
+    if (phase === "rerouting") {
       level.current = null;
       cue("attention", { theme: "mech" });
-      line = announce(REST_LINE);
+      say(NIGHT_VOICE.rerouting);
+      // Driving the 9 miles there (mocked), then parked.
+      after(REST_ARRIVE_MS, "stopped");
     }
     if (phase === "stopped") {
       cue("ready", { theme: "mech", emphasis: "subtle" });
-      line = announce(STOPPED_LINE);
+      // No recording for this one yet: silent, but it still holds stories off for as long as it would take.
+      hold(announce(STOPPED_LINE));
     }
     return () => {
       live = false;
       clearTimeout(t);
-      line?.stop();
+      lines.forEach((l) => l.stop());
+      setSpeaking(false);
     };
-  }, [phase]);
-
-  // Route set: pulling in at the rest area (mocked; on the road it's the car parking there).
-  // Its own effect, so pressing Route doesn't cut the radio off mid-sentence.
-  useEffect(() => {
-    if (phase !== "rest" || !routed) return;
-    const t = setTimeout(() => setPhase("stopped"), REST_ARRIVE_MS);
-    return () => clearTimeout(t);
-  }, [phase, routed]);
-
+  }, [phase, ready]);
   return {
     phase,
     level,
-    busy: phase === "checkin" || phase === "listening" || phase === "rest" || phase === "stopped",
-    resting: phase === "rest" || phase === "stopped",
-    routed,
-    route: () => {
-      setRouted(true);
-      cue("success", { theme: "mech", emphasis: "subtle" });
-    },
+    busy: phase === "checkin" || phase === "listening" || phase === "nothing" || speaking,
+    resting: phase === "rerouting" || phase === "stopped",
+    parked: phase === "stopped",
     backOnTheRoad: () => {
       calm.current = true;
-      setRouted(false);
+      setPhase("night");
+    },
+    exitReroute: () => {
+      if (phase !== "rerouting") return;
+      // Like after a rest: the quiet night radio doesn't check in again on its own straight away.
+      calm.current = true;
       setPhase("night");
     },
     interrupt: () => {
@@ -136,4 +168,22 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
       setPhase("night");
     },
   };
+}
+
+/**
+ * Play a Night mode recording out loud. `done` resolves when it ends, or straight away if it can't
+ * play or hasn't started within START_TIMEOUT_MS (blocked, or a background tab), so the night
+ * never hangs on a line.
+ */
+function speak(src: string): { done: Promise<void>; stop: () => void } {
+  const v = playVoice(src, true);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const done = Promise.race([
+    v.done.catch(() => {}),
+    new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, START_TIMEOUT_MS);
+      void v.started.then(() => clearTimeout(timer));
+    }),
+  ]).finally(() => clearTimeout(timer));
+  return { done, stop: () => v.stop() };
 }

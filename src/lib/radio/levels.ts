@@ -19,6 +19,13 @@ export const VOICE_GAIN: Record<string, number> = {
   "/voice/unlock-question.mp3": 4.4, // -35.9, peak -21.3
   "/voice/unlock-question-1.mp3": 3.9, // -34.8, peak -21.3
   "/voice/unlock-question-2.mp3": 5.3, // -37.6, peak -22.2
+  // Night mode (Flow 6). Set from the formula with the same ~0.7 trim as the lines above; not yet
+  // measured in the browser.
+  "/voice/night-mode-on.mp3": 3.8, // -34.7, peak -20.4
+  "/voice/night-214-driving.mp3": 5.6, // -38.0, peak -23.0
+  "/voice/night-tell-me.mp3": 4.8, // -36.8, peak -23.4
+  "/voice/night-nothing-heard.mp3": 6.5, // -39.3, peak -23.8
+  "/voice/night-rerouting.mp3": 4.3, // -35.7, peak -20.7
   // The drivers (their own recordings, lib/radio/demoVoices).
   "/voices/nightowl-burrito.m4a": 1.05, // -17.1, peak -0.8 (trimmed: ends before the "woo")
   "/voices/mothlight-recital.m4a": 3.85, // -28.4, peak -10.1
