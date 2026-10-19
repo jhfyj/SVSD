@@ -7,22 +7,22 @@ import { PixelIcon } from "./LcdIcon";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
 
 const ITEMS: { kind: PermissionKind; label: string; why: string; delay: number }[] = [
-  { kind: "microphone", label: "MICROPHONE", why: "Talk on the radio and say a word to reply.", delay: 0 },
-  { kind: "notifications", label: "NOTIFICATIONS", why: "Know when a message or question comes in.", delay: 400 },
-  { kind: "location", label: "LOCATION", why: "Draw your trail and find stories along the way.", delay: 800 },
+  { kind: "microphone", label: "MICROPHONE", why: "Talk and reply.", delay: 0 },
+  { kind: "notifications", label: "NOTIFICATIONS", why: "When a message comes in.", delay: 400 },
+  { kind: "location", label: "LOCATION", why: "Find stories nearby.", delay: 800 },
 ];
 
 /** What to do when the browser won't ask again. */
 const HINT: Partial<Record<PermissionState, Record<PermissionKind, string>>> = {
   denied: {
-    microphone: "Blocked. Turn on Microphone for this browser in your phone's Settings, then come back.",
-    notifications: "Blocked. Turn on Notifications for this site in your browser's settings.",
-    location: "Blocked. Turn on Location for this browser in your phone's Settings, then come back.",
+    microphone: "Blocked. Allow it in your phone's Settings.",
+    notifications: "Blocked. Allow it in your browser's settings.",
+    location: "Blocked. Allow it in your phone's Settings.",
   },
   unsupported: {
-    microphone: "This browser can't use the microphone. Try Safari or Chrome.",
-    notifications: "On iPhone, add SVSD to your Home Screen first (Share â€º Add to Home Screen), then turn notifications on.",
-    location: "This browser can't share your location.",
+    microphone: "Not available here. Try Safari or Chrome.",
+    notifications: "On iPhone, add SVSD to your Home Screen first.",
+    location: "Not available in this browser.",
   },
 };
 
@@ -70,7 +70,7 @@ export type AccessRowProps = {
   onToggle?: (on: boolean) => void;
 };
 
-/** One permission: LCD icon, what it's for, and an OFF / ON switch. */
+/** One permission: LCD icon, what it's for in a few words, and a switch. */
 export function AccessRow({ kind, state, on = false, onToggle }: AccessRowProps) {
   const item = ITEMS.find((i) => i.kind === kind)!;
   const hint = HINT[state]?.[kind];
@@ -94,7 +94,9 @@ export function AccessRow({ kind, state, on = false, onToggle }: AccessRowProps)
             on={on}
             onChange={(next) => onToggle?.(next)}
             label={item.label.toLowerCase()}
-            className="shrink-0 gap-1.5"
+            // No OFF / ON words here: the switch position says it, and the row stays short.
+            labels={false}
+            className="shrink-0"
           />
         )}
       </div>
@@ -149,14 +151,13 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         <h1 className="text-xl">{firstTime ? "BEFORE YOU GO" : "SETTINGS"}</h1>
       </header>
       <p className="mx-auto mt-3 w-[260px] text-center text-xs leading-relaxed text-foreground/70">
-        Turn on your microphone, notifications and location so the radio can work on the road.
+        So the radio works on the road.
       </p>
       <ul className="mx-11 mt-[29px] flex flex-col gap-[17px]">
         {ITEMS.map(({ kind }) => (
           <AccessRow key={kind} kind={kind} state={states[kind]} on={isOn(kind)} onToggle={(next) => toggle(kind, next)} />
         ))}
       </ul>
-      <p className="mx-11 mt-4 text-xs text-foreground/70">You can change these anytime in your phone&apos;s Settings.</p>
       <div className="mt-auto flex flex-col items-center gap-2 pb-14 pt-8">
         {firstTime && !allOn && <span className="text-xs text-foreground/70">You can skip and turn them on later.</span>}
         <button
