@@ -130,7 +130,7 @@ export function StartJourney({ journeys }: { journeys?: PastJourney[] }) {
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
       <section aria-label="New journey" className="uppercase">
-        <label htmlFor="destination" className="mx-11 mt-2 block text-xl">
+        <label htmlFor="destination" className="mx-11 mt-6 block text-center text-xl">
           <ScrambleText>Where to?</ScrambleText>
         </label>
         <div className="relative mx-11 mt-3">
@@ -187,14 +187,11 @@ export function StartJourney({ journeys }: { journeys?: PastJourney[] }) {
           route={currentRoute?.points ?? null}
           stories={stories}
           questions={questions}
-          className="mt-4"
+          className="mt-1"
         />
 
-        {/* What's on the way. It holds its space before a route, so Start journey never jumps. */}
-        <p
-          role="status"
-          className={cn("mx-11 mt-2 flex min-h-[30px] flex-col transition-opacity duration-150 ease-out", !destination && "opacity-0")}
-        >
+        {/* What's on the way, once there's a place; it holds two lines from then, so Start journey moves once. */}
+        <p role="status" className={cn("mx-11 flex flex-col", destination && "mt-2 min-h-[30px]")}>
           {currentRoute ? (
             <>
               <span className="text-sm tabular-nums">
