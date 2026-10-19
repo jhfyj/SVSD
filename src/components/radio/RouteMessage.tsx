@@ -252,6 +252,14 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
       </Lcd>
     );
   }
+  if (phase === "asking") {
+    return (
+      <Lcd>
+        <span className="block text-[20px] font-medium leading-[1.2]">REPLY?</span>
+        <span className="mt-1 block text-[11px] normal-case">Tap respond to answer {message.from}</span>
+      </Lcd>
+    );
+  }
   if (phase === "noMic") {
     return (
       <Lcd>
@@ -355,7 +363,7 @@ export function MessageKeys({
         className={squareKey}
         onClick={skip}
         disabled={done}
-        aria-label={phase === "tuning" || phase === "playing" ? "Skip message" : "Close"}
+        aria-label={phase === "tuning" || phase === "playing" ? "Skip message" : phase === "asking" ? "Don't reply" : "Close"}
         data-cuelume-tap="close"
       >
         <SkipForward size={22} weight="fill" className="opacity-60" aria-hidden />

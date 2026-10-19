@@ -139,20 +139,17 @@ export function DialKit() {
         },
         {
           label: "Overview 1 · Stories",
-          href: blank("Overview 1 · Stories"),
-          todo: "new",
+          href: "/overview?step=1",
           note: "“Listen and plant stories and questions along your road.”",
         },
         {
           label: "Overview 2 · Company",
-          href: blank("Overview 2 · Company"),
-          todo: "new",
+          href: "/overview?step=2",
           note: "“Flip on Company to talk to a real stranger with the same mood and distance as you.”",
         },
         {
           label: "Overview 3 · Anonymous",
-          href: blank("Overview 3 · Anonymous"),
-          todo: "new",
+          href: "/overview?step=3",
           note: "“Pick a handle and avatar to stay anonymous.”",
         },
         {
@@ -211,7 +208,7 @@ export function DialKit() {
           href: "/radio?message=message",
           radio: true,
           todo: "change",
-          note: "Built: RESPOND for the first 5 s of their voice, then your reply records. Script has an AI voice asking “Do you want to reply to this message?”",
+          note: "Built: RESPOND for the first 5 s of their voice. If you didn't, the radio asks in its recorded voice (public/voice/reply-prompt.mp3): “Would you like to reply to this message? Reply with yes or no.” RESPOND is yes; skip or a few quiet seconds is no.",
         },
       ],
     },
@@ -238,7 +235,7 @@ export function DialKit() {
           label: "Meet @Mothlight",
           href: "/radio?me=NightOwl&peer=Mothlight&miles=84",
           radio: true,
-          note: "Flip on and pick an intent: the radio says “@NightOwl, meet @Mothlight. You've got 84 miles of road together. To start, where are you both headed tonight?”, a page on the LCD per line.",
+          note: "Flip on and pick an intent: the radio says “@NightOwl, meet @Mothlight. You've got 84 miles of road together. To start, where are you both headed tonight?” in the recorded voice (public/voice), the LCD turning its page on “To start”. Other pairs get the browser's speech.",
         },
         {
           label: "@Mothlight speaking",

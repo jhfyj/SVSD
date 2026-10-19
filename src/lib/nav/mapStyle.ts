@@ -25,10 +25,9 @@ type Palette = {
   highway: string;
   label: string;
   halo: string;
-  /** The route: a dark casing under a bright line, and the part already driven. */
+  /** The route ahead: a dark casing under a bright line (nothing is drawn behind you). */
   casing: string;
   route: string;
-  driven: string;
 };
 
 const NIGHT: Palette = {
@@ -44,7 +43,6 @@ const NIGHT: Palette = {
   halo: "#121212",
   casing: "#000000",
   route: "#ffffff",
-  driven: "#6b6b6b",
 };
 
 const DAY: Palette = {
@@ -60,7 +58,6 @@ const DAY: Palette = {
   halo: "#e9e8e4",
   casing: "#1d1c1a",
   route: "#1d1c1a",
-  driven: "#9a9894",
 };
 
 /** Road widths in px by zoom, so roads thicken as you close in. */
@@ -143,14 +140,6 @@ export function mapStyle(theme: "dark" | "light"): StyleSpecification {
         filter: ["==", ["get", "part"], "ahead"],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: { "line-color": p.casing, "line-opacity": 0.8, "line-width": 11 },
-      },
-      {
-        id: "route-driven",
-        type: "line",
-        source: "route",
-        filter: ["==", ["get", "part"], "driven"],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": p.driven, "line-width": 6 },
       },
       {
         id: "route-ahead",

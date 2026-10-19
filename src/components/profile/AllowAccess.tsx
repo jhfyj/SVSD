@@ -1,6 +1,8 @@
 "use client";
 
 import { ArrowLeft } from "@phosphor-icons/react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { ToggleSwitch } from "../radio/ToggleSwitch";
 import { PixelIcon } from "./LcdIcon";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
 
@@ -19,19 +21,57 @@ const HINT: Partial<Record<PermissionState, Record<PermissionKind, string>>> = {
   },
   unsupported: {
     microphone: "This browser can't use the microphone. Try Safari or Chrome.",
-    notifications: "On iPhone, add SVSD to your Home Screen first (Share › Add to Home Screen), then turn notifications on.",
+    notifications: "On iPhone, add SVSD to your Home Screen first (Share â€º Add to Home Screen), then turn notifications on.",
     location: "This browser can't share your location.",
   },
 };
 
+/** Which switches the person flipped on, per device. Starts empty, so every switch starts OFF. */
+const SWITCHES_KEY = "svsd-access-switches";
+
+const switchListeners = new Set<() => void>();
+
+function subscribeSwitches(listener: () => void) {
+  switchListeners.add(listener);
+  return () => void switchListeners.delete(listener);
+}
+
+function readSwitches() {
+  try {
+    return localStorage.getItem(SWITCHES_KEY) ?? "{}";
+  } catch {
+    return "{}";
+  }
+}
+
+function useSwitches() {
+  const raw = useSyncExternalStore(subscribeSwitches, readSwitches, () => "{}");
+  const on = useMemo<Partial<Record<PermissionKind, boolean>>>(() => {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }, [raw]);
+  const set = useCallback((kind: PermissionKind, value: boolean) => {
+    try {
+      localStorage.setItem(SWITCHES_KEY, JSON.stringify({ ...JSON.parse(readSwitches()), [kind]: value }));
+    } catch {}
+    switchListeners.forEach((l) => l());
+  }, []);
+  return [on, set] as const;
+}
+
 export type AccessRowProps = {
   kind: PermissionKind;
   state: PermissionState;
-  onAllow?: () => void;
+  /** The row's switch. Off until the person flips it, even if the browser already allows it. */
+  on?: boolean;
+  onToggle?: (on: boolean) => void;
 };
 
-/** One permission: LCD icon, what it's for, and ALLOW or its current state. */
-export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
+/** One permission: LCD icon, what it's for, and an OFF / ON switch. */
+export function AccessRow({ kind, state, on = false, onToggle }: AccessRowProps) {
   const item = ITEMS.find((i) => i.kind === kind)!;
   const hint = HINT[state]?.[kind];
   return (
@@ -44,35 +84,19 @@ export function AccessRow({ kind, state, onAllow }: AccessRowProps) {
           <span className="text-base leading-5">{item.label}</span>
           <span className="text-xs text-foreground/70">{item.why}</span>
         </div>
-        {state === "prompt" && (
-          <button
-            type="button"
-            onClick={onAllow}
-            aria-label={`Allow ${item.label.toLowerCase()}`}
-            className="min-h-11 shrink-0 border border-foreground px-3 text-xs transition-colors duration-150 ease-out hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
-          >
-            ALLOW
-          </button>
-        )}
-        {state === "granted" && (
-          <span className="flex shrink-0 items-center gap-1.5 text-xs">
-            <span aria-hidden className="size-2 rounded-full bg-led shadow-[0_0_6px_var(--led)]" />
-            ON
-          </span>
-        )}
-        {state === "denied" && (
-          <span className="flex shrink-0 items-center gap-1.5 text-xs">
-            <span aria-hidden className="size-2 rounded-full bg-power shadow-[0_0_6px_var(--power)]" />
-            OFF
-          </span>
-        )}
-        {state === "unsupported" && (
+        {state === "unsupported" ? (
           <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground/70">
             <span aria-hidden className="size-2 rounded-full border border-current" />
             N/A
           </span>
+        ) : (
+          <ToggleSwitch
+            on={on}
+            onChange={(next) => onToggle?.(next)}
+            label={item.label.toLowerCase()}
+            className="shrink-0 gap-1.5"
+          />
         )}
-        {state === "checking" && <span className="shrink-0 text-xs text-foreground/70">…</span>}
       </div>
       {hint && <p className="text-xs text-foreground/70">{hint}</p>}
     </li>
@@ -90,7 +114,25 @@ export type AllowAccessViewProps = {
 
 /** Allow access: shown once after sign-up, and from Settings on the profile. */
 export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = true }: AllowAccessViewProps) {
-  const allOn = Object.values(states).every((s) => s === "granted" || s === "unsupported");
+  const [saved, save] = useSwitches();
+  // Sign-up always opens with every switch OFF (even for a second test account on this device);
+  // Settings shows what was flipped. Either way, flips are saved for Settings.
+  const [fresh, setFresh] = useState<Partial<Record<PermissionKind, boolean>>>({});
+  const switches = firstTime ? fresh : saved;
+  const setSwitch = (kind: PermissionKind, value: boolean) => {
+    if (firstTime) setFresh((s) => ({ ...s, [kind]: value }));
+    save(kind, value);
+  };
+  // A switch can't show ON if the browser blocked it (the hint under the row says how to fix it).
+  const isOn = (kind: PermissionKind) => !!switches[kind] && states[kind] !== "denied" && states[kind] !== "unsupported";
+
+  const toggle = (kind: PermissionKind, next: boolean) => {
+    setSwitch(kind, next);
+    // Flipping ON asks the browser; if it already said yes, the switch just turns on.
+    if (next && states[kind] !== "granted") onAllow?.(kind);
+  };
+
+  const allOn = ITEMS.every(({ kind }) => isOn(kind) || states[kind] === "unsupported");
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <header className="relative mt-[59px] flex h-[26px] items-center justify-center">
@@ -111,7 +153,7 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
       </p>
       <ul className="mx-11 mt-[29px] flex flex-col gap-[17px]">
         {ITEMS.map(({ kind }) => (
-          <AccessRow key={kind} kind={kind} state={states[kind]} onAllow={() => onAllow?.(kind)} />
+          <AccessRow key={kind} kind={kind} state={states[kind]} on={isOn(kind)} onToggle={(next) => toggle(kind, next)} />
         ))}
       </ul>
       <p className="mx-11 mt-4 text-xs text-foreground/70">You can change these anytime in your phone&apos;s Settings.</p>

@@ -5,7 +5,6 @@ import { useState } from "react";
 import { deleteAccount, signOut, useSession } from "@/lib/auth/session";
 import { forgetCharacter, saveCharacter, useCharacter } from "@/lib/profile/avatar";
 import { forgetOnboarded, markOnboarded, useOnboarded } from "@/lib/profile/onboarding";
-import { sampleProfile } from "@/lib/profile/sample";
 import { TopBar } from "../journey/TopBar";
 import { AllowAccess } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
@@ -24,8 +23,6 @@ export function ProfileScreen({ openSettings = false }: { openSettings?: boolean
   const onboarded = useOnboarded(session?.phone);
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(openSettings);
-  // Right after sign-up the account has no journeys yet; later visits show the placeholder history.
-  const [justJoined, setJustJoined] = useState(false);
 
   if (session === undefined || (session && (character === undefined || onboarded === undefined))) {
     return (
@@ -53,19 +50,12 @@ export function ProfileScreen({ openSettings = false }: { openSettings?: boolean
   if (!onboarded) {
     return (
       <AllowAccess
-        onDone={() => {
-          setJustJoined(true);
-          markOnboarded(session.phone);
-        }}
+        onDone={() => markOnboarded(session.phone)}
       />
     );
   }
   if (settings) return <AllowAccess firstTime={false} onDone={() => setSettings(false)} onBack={() => setSettings(false)} />;
 
-  const sample = sampleProfile();
-  const { totalCalls, month, activeDays, history } = justJoined
-    ? { ...sample, totalCalls: 0, activeDays: [], history: [] }
-    : sample;
   return (
     <ProfileView
       handle={`@traveller${session.phone.slice(-4)}`}
@@ -73,10 +63,6 @@ export function ProfileScreen({ openSettings = false }: { openSettings?: boolean
       onEditCharacter={() => setEditing(true)}
       onSettings={() => setSettings(true)}
       joinedAt={new Date(session.joinedAt)}
-      totalCalls={totalCalls}
-      month={month}
-      activeDays={activeDays}
-      history={history}
       onSignOut={() => {
         signOut();
         router.push("/");

@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { REPLY_MAX_MS, RESPOND_WINDOW_MS, type RouteMessage } from "@/lib/radio/messages";
 import { playVoice, recordReply, tuneIn, type Level, type Recording, type Voice } from "@/lib/radio/voice";
+import { REPLY_PROMPT, REPLY_PROMPT_GRACE_MS, START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
 import { cue } from "@/lib/sound";
 
 /**
  * Where a message on the road is up to:
- * tuning (static, then the station locks), playing (their voice), recording (your reply),
+ * tuning (static, then the station locks), playing (their voice), asking (the radio's recorded
+ * voice: "Would you like to reply to this message?", when you haven't already said yes), recording (your reply),
  * sent (a moment to say it went), noMic (you chose to respond but the mic is blocked), or idle.
  */
-export type MessagePhase = "idle" | "tuning" | "playing" | "recording" | "sent" | "noMic";
+export type MessagePhase = "idle" | "tuning" | "playing" | "asking" | "recording" | "sent" | "noMic";
 
 /** The 5 seconds to choose to respond: not started (still tuning in), open, or gone. */
 export type RespondWindow = "waiting" | "open" | "closed";
@@ -79,9 +81,15 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
   const skip = useCallback(() => setPhase("idle"), []);
 
   // You can opt in only while the window's open (or before it starts), but you can always back out.
+  // When the radio asks "Reply?", RESPOND is yes: your reply starts recording right away.
   const toggleRespond = useCallback(() => {
+    if (phase === "asking") {
+      setRespond(true);
+      setPhase("recording");
+      return;
+    }
     setRespond((r) => (r ? false : respondWindow !== "closed"));
-  }, [respondWindow]);
+  }, [respondWindow, phase]);
 
   // Tuning in: static and a whistle, then their voice.
   useEffect(() => {
@@ -100,7 +108,8 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     if (phase !== "playing" || !message) return;
     let live = true;
     let closing: ReturnType<typeof setTimeout> | undefined;
-    const v = playVoice(message.src, speakerRef.current);
+    // Only ElevenLabs takes are heard; the `say` placeholders play silently under the glow.
+    const v = playVoice(message.src, speakerRef.current, { silent: !message.recorded });
     voice.current = v;
     level.current = v.level;
     void v.started.then(() => {
@@ -109,7 +118,8 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
       closing = setTimeout(() => setWindow("closed"), RESPOND_WINDOW_MS);
     });
     v.done.then(
-      () => live && setPhase(respondRef.current ? "recording" : "idle"),
+      // Already said yes: straight to your reply. Otherwise the radio asks.
+      () => live && setPhase(respondRef.current ? "recording" : "asking"),
       () => live && setPhase("idle"),
     );
     return () => {
@@ -120,6 +130,36 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
       level.current = null;
     };
   }, [phase, message]);
+
+  // The radio asks, in its recorded voice: "Would you like to reply to this message? Reply with
+  // yes or no." RESPOND is yes (your reply records as soon as you press it); the skip key or
+  // a few quiet seconds after the question is no.
+  useEffect(() => {
+    if (phase !== "asking") return;
+    let live = true;
+    let grace: ReturnType<typeof setTimeout> | undefined;
+    const v = playVoice(REPLY_PROMPT, true);
+    voice.current = v;
+    level.current = v.level;
+    const wait = () => {
+      clearTimeout(held);
+      if (!live || grace) return;
+      level.current = null;
+      grace = setTimeout(() => setPhase("idle"), REPLY_PROMPT_GRACE_MS);
+    };
+    // If the browser holds the prompt back, don't wait on it: the "Reply?" on the LCD still asks.
+    const held = setTimeout(wait, START_TIMEOUT_MS);
+    void v.started.then(() => clearTimeout(held));
+    v.done.then(wait, wait);
+    return () => {
+      live = false;
+      clearTimeout(held);
+      clearTimeout(grace);
+      v.stop();
+      voice.current = null;
+      level.current = null;
+    };
+  }, [phase]);
 
   // Your reply: a beep, then the mic is live for up to 60 seconds; it sends itself at the end.
   useEffect(() => {

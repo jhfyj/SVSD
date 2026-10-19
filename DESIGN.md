@@ -129,7 +129,7 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 
 ### 3.5 The map
 
-- **With a Google key:** `NavMap` is a Google vector map tilted into a 3D follow view; the route is white (gray once driven) on a dark casing (`--route`, `--route-driven`, `--route-casing`, read by `useToken` because Google's polylines take color strings), the next turn shows at the top. Tiles go black and white through `--map-lcd-tint`: a slight LCD-green cast at night, plain grayscale by day, so it reads as the same kind of screen as the LCD. Markers are HTML on top and keep their colors.
+- **With a Google key:** `NavMap` is a Google vector map tilted into a 3D follow view; the route ahead is white on a dark casing and nothing is drawn behind you (`--route`, `--route-casing`, read by `useToken` because Google's polylines take color strings), the next turn shows at the top. Tiles go black and white through `--map-lcd-tint`: a slight LCD-green cast at night, plain grayscale by day, so it reads as the same kind of screen as the LCD. Markers are HTML on top and keep their colors.
 - **Without a key:** the dithered placeholder map ([§7](#7-texture)) and OpenStreetMap search and routes.
 - **Washes:** when a story or question arrives, the map takes a `mix-blend-color` wash of that kind's color, rising from the bottom.
 
@@ -144,7 +144,7 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 | `Led.tsx` | `#55ff60`, `#3a3a3a`, `#aeaeae`, `#ffb020` gradients | `led`, `marker-border`, `led-ring`, `led-amber`, `led-red` |
 | `RockerSwitch.tsx` | `#0a0a0a`, `#050505`, `#cfcfcf` | `rocker-housing` (`#111111`), `rocker-well` (`#050505`), `rocker-glyph` (`#bababa`). Not `label`: by day it would be dark on the black paddle. |
 | `PowerButton.tsx` | `#ff3535` in filters | `var(--power)` |
-| `NavMap.tsx` | inline hex | `--route`, `--route-driven`, `--route-casing` |
+| `NavMap.tsx` | inline hex | `--route`, `--route-casing` |
 
 ### 3.7 Contrast fixes for day
 
@@ -544,7 +544,7 @@ Two families, never mixed in one spot:
 
 **Figma map** (file `aDzc2bXm7lrwe8ewApmlxe`, section `123:130`): Getting set up `123:533`, `125:807`, `123:131`–`123:207` · Splash `123:728` · Sync calling `123:287` connecting, `123:246` connected, `123:319` off · Receive `123:352` message, `123:441` question · Respond `123:471`, `123:502`, `123:727` · Profile `123:647` sign in, `123:541` profile. Day theme reference: Connecting `154:1263`.
 
-**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived) → `/trip` (recap). `/history`: every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile. The tab bar joins `/`, `/history` and `/profile`.
+**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
 
 ---
 

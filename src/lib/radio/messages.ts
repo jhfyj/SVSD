@@ -18,6 +18,11 @@ export type RouteMessage = {
   character: CharacterId;
   /** Their recording. */
   src: string;
+  /**
+   * An ElevenLabs take for the demo, so it's heard. Without it the recording is a macOS `say`
+   * placeholder: it still plays (the glow moves with it, the timing holds) but silently.
+   */
+  recorded?: boolean;
   /** Where it was left, as a share of the way along your route (0 is the start, 1 the destination). */
   at: number;
 };

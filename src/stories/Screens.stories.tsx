@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { RadioScreen } from "@/components/radio";
 import { CodeStep, CustomizeProfile, PhoneStep, ProfileView } from "@/components/profile";
 import { AddressList, Button, DotTrail, StatusBar, TextInput } from "@/components/ui";
+import { History } from "@/components/journey";
+import { sampleHistory } from "@/lib/journey/history";
 import { sampleProfile } from "@/lib/profile/sample";
 
 /** Compositions of the Figma screens (iPhone 16, 393 × 852) built from the components. */
@@ -51,11 +53,22 @@ export const RadioConnected: StoryObj = {
   render: () => <RadioScreen defaultOn />,
 };
 
-/** Figma node 123:541. */
+/** Figma node 123:541, with total calls, activities and history moved to the History tab. */
 export const Profile: StoryObj = {
+  render: () => <div className="flex w-[393px] [&>div]:min-h-[852px]"><ProfileView handle="@traveller7890" joinedAt={new Date(2026, 4, 2)} /></div>,
+};
+
+/** The History tab: stats, the activities calendar, then every journey. */
+export const HistoryScreen: StoryObj = {
+  name: "History",
   render: () => {
     const now = new Date(2026, 9, 18, 9, 30);
-    return <div className="flex w-[393px] [&>div]:min-h-[852px]"><ProfileView handle="@traveller7890" joinedAt={new Date(2026, 4, 2)} now={now} {...sampleProfile(now)} /></div>;
+    const sample = sampleProfile(now);
+    return (
+      <div className="flex w-[393px] [&>div]:min-h-[852px]">
+        <History journeys={sampleHistory(now.getTime())} totalCalls={sample.totalCalls} sessions={sample.history} month={sample.month} activeDays={sample.activeDays} activeDates={sample.activeDates} />
+      </div>
+    );
   },
 };
 

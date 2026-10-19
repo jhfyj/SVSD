@@ -65,7 +65,7 @@ const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => 
   ...over,
 });
 
-/** Every LCD a message can show: who it's from (Figma), with a reply chosen, recording, sent, and no mic. */
+/** Every LCD a message can show: who it's from (Figma), with a reply chosen, the radio asking "Reply?", recording, sent, and no mic. */
 export const Lcd: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4 bg-[#262626] p-6">
@@ -73,6 +73,7 @@ export const Lcd: Story = {
         controls({}),
         controls({ message: SAMPLE_MESSAGES[1] }),
         controls({ respond: true }),
+        controls({ phase: "asking", respondWindow: "closed" }),
         controls({ phase: "recording" }),
         controls({ phase: "sent" }),
         controls({ phase: "noMic" }),

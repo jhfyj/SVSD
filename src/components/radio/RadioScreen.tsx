@@ -26,6 +26,7 @@ import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
 import { announce } from "@/lib/radio/voice";
+import { sayIntro } from "@/lib/radio/scriptVoice";
 import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
 import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/messages";
@@ -304,6 +305,36 @@ export function RadioScreen({
   useEffect(() => {
     if (arrived && dropRecording) toggleDrop();
   }, [arrived, dropRecording, toggleDrop]);
+  // Reaching the destination switches the radio on by itself to thank you (ending any call or
+  // message), and the drop key greys out. Starting the drive over puts it back to off.
+  const wasArrived = useRef(arrived);
+  useEffect(() => {
+    if (arrived === wasArrived.current) return;
+    // On the next tick, like the timeout countdown's first tick.
+    const t = setTimeout(() => {
+      wasArrived.current = arrived;
+      if (!arrived) {
+        setState((s) => (s === "thanks" ? "off" : s));
+        return;
+      }
+      setState("thanks");
+      setGreeting(false);
+      setHangingUp(false);
+      setOnBreak(false);
+      setSettingsOpen(false);
+      setMusicOn(false);
+      setTimeoutUntil(null);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [arrived]);
+  // The thank-you is said out loud too, in the radio's own voice, over whatever message was playing.
+  const { skip: skipMessage } = message;
+  useEffect(() => {
+    if (state !== "thanks") return;
+    skipMessage();
+    const line = announce("Thank you so much for riding with us");
+    return line.stop;
+  }, [state, skipMessage]);
   // Your drops on the map: a pin per drop with its kind's icon (question, story, tip).
   const dropPins = useMemo(
     () => drop.drops.map((d: Drop) => ({ id: d.id, kind: d.kind, label: `${DROP_LABEL[d.kind]} you dropped` })),
@@ -357,24 +388,21 @@ export function RadioScreen({
   }, [state, intentSet]);
 
   // The radio introduces you both out loud, a page on the LCD per line, then their audio starts.
+  // Pairs in the demo script use the recorded voice (lib/radio/scriptVoice); others, the browser's speech.
   useEffect(() => {
     if (!greeting) return;
     let live = true;
-    let line: ReturnType<typeof announce> | null = null;
-    void (async () => {
-      const lines = introLines(me, caller.handle, sharedMiles);
-      for (let i = 0; i < lines.length; i++) {
-        if (i > 0) setIntroPage(1);
-        line = announce(lines[i]);
-        await line.done;
-        if (!live) return;
-      }
+    const line = sayIntro(me, caller.handle, sharedMiles, introLines(me, caller.handle, sharedMiles), (i) => {
+      if (i > 0) setIntroPage(1);
+    });
+    void line.done.then(() => {
+      if (!live) return;
       setGreeting(false);
       onConnected?.(caller.handle);
-    })();
+    });
     return () => {
       live = false;
-      line?.stop();
+      line.stop();
     };
   }, [greeting, caller.handle, onConnected, me, sharedMiles]);
 
@@ -428,17 +456,20 @@ export function RadioScreen({
           onCollect={onCollect}
           className="absolute inset-0"
           fallback={<PlaceholderMap travellers={travellers} drops={drop.drops} />}
+          // A message playing: their voice comes down from the top; your reply (or a drop) rises from the
+          // bottom in your colour. It sits under the turn banner so it never hides the directions.
+          overlay={
+            dropRecording ? (
+              <MessageGlow mode="reply" color={youColor} level={drop.level} />
+            ) : (
+              <MessageGlow
+                mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
+                color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
+                level={message.level}
+              />
+            )
+          }
         />
-        {/* A message playing: their voice comes down from the top; your reply (or a drop) rises from the bottom in your colour. */}
-        {dropRecording ? (
-          <MessageGlow mode="reply" color={youColor} level={drop.level} />
-        ) : (
-          <MessageGlow
-            mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
-            color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
-            level={message.level}
-          />
-        )}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
       </section>
@@ -506,7 +537,7 @@ export function RadioScreen({
         </LcdScreen>
 
         {arrived && (
-          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+          <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
             <HardwareButton
               className="flex-1"
               onClick={onEndTrip}
@@ -514,6 +545,10 @@ export function RadioScreen({
             >
               <FlagCheckered size={24} className="opacity-80" aria-hidden />
               <span className="text-base font-bold opacity-80">END TRIP</span>
+            </HardwareButton>
+            {/* No road left to leave a drop on: the key stays where it was, greyed out. */}
+            <HardwareButton className={CALL_KEY} disabled aria-label="Leave a drop (you've arrived)">
+              <MapPinPlus size={24} className="opacity-60" aria-hidden />
             </HardwareButton>
           </div>
         )}

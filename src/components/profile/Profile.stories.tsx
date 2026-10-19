@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
 import { CHARACTERS, type CharacterId } from "@/lib/profile/characters";
 import type { PermissionKind, PermissionState } from "@/lib/permissions";
-import { sampleProfile } from "@/lib/profile/sample";
 import { CharacterSprite } from "./CharacterSprite";
 import { AllowAccessView } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
@@ -19,7 +18,6 @@ const meta: Meta = {
 export default meta;
 
 const NOW = new Date(2026, 9, 18, 9, 30);
-const sample = sampleProfile(NOW);
 
 /** The whole flow with the mocked SMS: any 6 digits sign you in, 000000 shows the error. */
 /** Signing up picks a character (Customize profile) before the profile; tap the avatar to change it. */
@@ -46,8 +44,6 @@ export const SignInFlow: StoryObj = {
         character={character}
         onEditCharacter={() => setEditing(true)}
         joinedAt={NOW}
-        now={NOW}
-        {...sample}
         onSignOut={() => {
           setSignedIn(false);
           setCharacter(null);
@@ -146,17 +142,17 @@ export const CodeWrong: StoryObj = {
 };
 
 export const Profile: StoryObj = {
-  render: () => <ProfileView handle="@traveller7890" character="bun" onEditCharacter={() => {}} joinedAt={new Date(2026, 4, 2)} now={NOW} {...sample} />,
+  render: () => <ProfileView handle="@traveller7890" character="bun" onEditCharacter={() => {}} joinedAt={new Date(2026, 4, 2)} />,
 };
 
 export const ProfileNew: StoryObj = {
   name: "Profile, new account",
   render: () => (
-    <ProfileView handle="@traveller7890" joinedAt={NOW} now={NOW} totalCalls={0} month={NOW} activeDays={[]} history={[]} />
+    <ProfileView handle="@traveller7890" joinedAt={NOW} />
   ),
 };
 
-/** After Customize profile, once per account. Tap ALLOW to see each row turn on. */
+/** After Customize profile, once per account. Every switch starts OFF; flip one to turn it on. */
 export const AllowAccessFirstTime: StoryObj = {
   name: "Allow access",
   render: function Render() {

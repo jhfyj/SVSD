@@ -10,20 +10,34 @@ export type DropMarkerProps = {
   spinRef?: Ref<HTMLDivElement>;
   /** Grows with `--pull` and hops with `--lift` as the drop is pulled in. */
   scaleRef?: Ref<HTMLDivElement>;
+  /** Spin on its own (CSS), for a drop nobody's camera loop is turning: the ones you leave. */
+  spin?: boolean;
+  /** Play the landing as it appears: the block falls in, squashes, settles (the Drop key's drops). */
+  land?: boolean;
+  /** Read out for a drop that stands alone, e.g. "Story you dropped". */
+  label?: string;
 };
 
 /**
  * A drop waiting on the map, made to be spotted from down the road: the block floats a few
  * pixels up (one pixel at a time), over a square shadow and a square ring that keeps pulsing
- * out across the road, both laid flat on the tilted map.
+ * out across the road, both laid flat on the tilted map. The same block marks a pickup waiting
+ * ahead and a drop you left behind, so leaving and collecting look like one thing.
  */
-export function DropMarker({ kind, spinRef, scaleRef }: DropMarkerProps) {
+export function DropMarker({ kind, spinRef, scaleRef, spin = false, land = false, label }: DropMarkerProps) {
   return (
-    <div className="relative flex flex-col items-center" style={{ "--drop": DROP_COLOR[kind] } as CSSProperties}>
+    <div
+      role={label ? "img" : undefined}
+      aria-label={label}
+      className="relative flex flex-col items-center"
+      style={{ "--drop": DROP_COLOR[kind] } as CSSProperties}
+    >
       <div ref={scaleRef} className="relative z-10 [transform:translateY(var(--lift,0px))_scale(var(--pull,1))] [transform-origin:50%_100%]">
-        <div className="pixel-float [filter:drop-shadow(0_2px_0_rgb(0_0_0/0.5))]" style={{ "--pixel": "3px" } as CSSProperties}>
-          {/* A book is a little thicker, so its page edges show as it turns. */}
-          <VoxelIcon kind={kind} px={3} depth={kind === "story" ? 4 : 3} spinRef={spinRef} />
+        <div className={land ? "drop-land" : undefined}>
+          <div className="pixel-float [filter:drop-shadow(0_2px_0_rgb(0_0_0/0.5))]" style={{ "--pixel": "3px" } as CSSProperties}>
+            {/* A book is a little thicker, so its page edges show as it turns. */}
+            <VoxelIcon kind={kind} px={3} depth={kind === "story" ? 4 : 3} spin={spin} spinRef={spinRef} />
+          </div>
         </div>
       </div>
       <div aria-hidden className="relative -mt-3 h-7 w-14 [perspective:220px]">

@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { DROP_LABEL, type DropKind } from "@/lib/radio/drops";
-import { DROP_ICON, DropPin } from "../ui/DropPin";
+import { DropMarker } from "../drops/DropMarker";
+import { DROP_ICON } from "../ui/DropPin";
 import type { DropControls } from "./useDrop";
 
 /** "00:07", "01:32": a recorder's counter, minutes and seconds, counting up. */
@@ -104,7 +105,7 @@ function Lcd({ children }: { children: ReactNode }) {
 export function LeftBehind({ kind, from }: { kind: DropKind; from: { x: number; y: number } }) {
   return (
     <span className="drop-left-behind absolute -translate-x-1/2 -translate-y-1/2" style={{ left: from.x, top: from.y }}>
-      <DropPin kind={kind} label={`${DROP_LABEL[kind]} you dropped`} land />
+      <DropMarker kind={kind} label={`${DROP_LABEL[kind]} you dropped`} spin land />
     </span>
   );
 }

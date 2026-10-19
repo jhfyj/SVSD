@@ -19,13 +19,15 @@ export type RecentJourneysProps = {
   journeys?: PastJourney[];
   /** How many to show. */
   limit?: number;
+  /** The list's heading. */
+  title?: string;
   className?: string;
 };
 
 const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 /** Under Start your journey: the last few drives, each with View (its recap) and Start again (same route). */
-export function RecentJourneys({ journeys: given, limit = 3, className }: RecentJourneysProps) {
+export function RecentJourneys({ journeys: given, limit = 3, title = "Recent journeys", className }: RecentJourneysProps) {
   // Read after hydration (undefined on the server) so the list never mismatches.
   const raw = useSyncExternalStore(subscribeHistory, historyRaw, () => undefined);
   const journeys = useMemo(() => {
@@ -40,7 +42,7 @@ export function RecentJourneys({ journeys: given, limit = 3, className }: Recent
   return (
     <section aria-labelledby="recent-journeys" className={cn("w-full px-11 uppercase", className)}>
       <h2 id="recent-journeys" className="text-sm text-foreground/70">
-        Recent journeys
+        {title}
       </h2>
       <ul className="mt-3 divide-y divide-border border-y border-border">
         {journeys.slice(0, limit).map((past) => (

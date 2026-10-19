@@ -13,8 +13,8 @@ import { mapStyle } from "@/lib/nav/mapStyle";
 import { headingAt, locate, measure, offset, pointAt, slice, type Path } from "@/lib/nav/path";
 import type { DropKind } from "@/lib/radio/drops";
 import { buildUp } from "@/lib/sound";
+import { announce as announceArrival } from "@/lib/trip/arrival";
 import { DropMarker, DropSparkle } from "../drops/DropMarker";
-import { DropPin } from "../ui/DropPin";
 import { MapMarker, type MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
 import { formatDistance, ManeuverIcon } from "./Maneuver";
@@ -23,7 +23,7 @@ import { useLivePosition } from "./useLivePosition";
 /*
   The radio's map: OpenStreetMap drawn by MapLibre in our own style (see lib/nav/mapStyle), tilted
   into a 3D view with buildings, following you along the route like a navigation app. The camera
-  sits behind you facing the road ahead, the route is drawn bright (grey once driven), and the
+  sits behind you facing the road ahead, the route ahead is drawn bright (nothing behind you), and the
   next turn shows up top. Markers are HTML on top, so they keep their colours.
   Add ?sim to the URL (or ?sim=5 for 5x) to drive the route without moving.
 */
@@ -83,6 +83,8 @@ export type NavMapProps = {
   drops?: NavDrop[];
   /** Shown instead of the map if the browser can't draw it (no WebGL). */
   fallback: ReactNode;
+  /** Drawn over the streets but under the turn banner, ETA and buttons (the message glow), so it never hides directions. */
+  overlay?: ReactNode;
   /** A scripted drive (the story-unlock demo): its own route and speed, no location needed, pickups along it. */
   demo?: DemoDrive;
   /** A pickup popped as you reached it; `at` is where, in the page's px (your marker's centre). */
@@ -146,7 +148,7 @@ const lngLat = (p: LatLng): [number, number] => [p.lng, p.lat];
 
 type Progress = { along: number; at: LatLng; now: number };
 
-export function NavMap({ travellers, messages = [], onReach, drops = [], fallback, demo, onCollect, className }: NavMapProps) {
+export function NavMap({ travellers, messages = [], onReach, drops = [], fallback, overlay, demo, onCollect, className }: NavMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [lib, setLib] = useState<MapLibre | null>(null);
@@ -298,6 +300,13 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
     }
   }, [live, path, simulate, journey]);
 
+  // How far along the route line was last drawn from. A new route or a restyle (day/night) empties
+  // the line, so it's drawn again on the next frame.
+  const drawnAt = useRef(-Infinity);
+  useEffect(() => {
+    drawnAt.current = -Infinity;
+  }, [path, styleVersion]);
+
   // The camera: every frame, ease toward where you are and look down the road.
   useEffect(() => {
     if (!map) return;
@@ -306,6 +315,7 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
     // The clock starts at the first frame's own timestamp.
     let last: number | null = null;
     let shown: LatLng | null = null;
+    let shownAlong: number | null = null;
     let heading = nav.current.heading;
     const tick = (now: number) => {
       const dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000);
@@ -319,6 +329,7 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
       if (n.target) {
         // Live fixes come about once a second; glide between them.
         shown = shown && !simulate ? lerp(shown, n.target, 1 - Math.exp(-dt / 0.4)) : n.target;
+        shownAlong = shownAlong !== null && !simulate ? shownAlong + (n.along - shownAlong) * (1 - Math.exp(-dt / 0.4)) : n.along;
         heading = turn(heading, n.heading, 1 - Math.exp(-dt / 0.35));
         you.current?.setLngLat(lngLat(shown));
         // Pickups: each turns where it waits. Once you're close it comes to you along one eased
@@ -356,6 +367,23 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
             ...(follow.current.zoom && { zoom: CAMERA.zoom }),
           });
           follow.current.zoom = false;
+        }
+      }
+      // The route: only the way ahead, starting right under your marker. Redrawn as you move (not on
+      // the half-second update), so no stub of line is ever left trailing behind you.
+      if (path) {
+        const from = shownAlong ?? n.along;
+        const source = map.getSource<GeoJSONSource>("route");
+        if (source && Math.abs(from - drawnAt.current) > 0.5) {
+          drawnAt.current = from;
+          const ahead = slice(path, from, path.length);
+          source.setData({
+            type: "FeatureCollection",
+            features:
+              ahead.length > 1
+                ? [{ type: "Feature", properties: { part: "ahead" }, geometry: { type: "LineString", coordinates: ahead.map(lngLat) } }]
+                : [],
+          });
         }
       }
       frame = requestAnimationFrame(tick);
@@ -406,25 +434,18 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
   const remaining = path ? Math.max(0, path.length - along) : null;
   const arrived = remaining !== null && progress !== null && remaining < ARRIVED;
   const next = steps.find((s) => s.along > along + 15);
-
-  // The route: bright ahead of you, grey behind.
+  // Pulling up at the destination tells the radio you've arrived (it switches on to thank you).
   useEffect(() => {
-    const source = map?.getSource<GeoJSONSource>("route");
-    if (!source || !path) return;
-    const line = (part: string, points: LatLng[]) => ({
-      type: "Feature" as const,
-      properties: { part },
-      geometry: { type: "LineString" as const, coordinates: points.map(lngLat) },
-    });
-    source.setData({
-      type: "FeatureCollection",
-      features: [line("driven", slice(path, 0, along)), line("ahead", slice(path, along, path.length))].filter(
-        (f) => f.geometry.coordinates.length > 1,
-      ),
-    });
-  }, [map, path, along, styleVersion]);
+    if (arrived) announceArrival(true);
+  }, [arrived]);
 
-  if (failed) return fallback;
+  if (failed)
+    return (
+      <>
+        {fallback}
+        {overlay}
+      </>
+    );
 
   return (
     // cn doesn't merge, so "relative" is only the default: a passed "absolute" would lose to it.
@@ -445,13 +466,13 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
                   <MapMarker color={m.color} label={m.label} className="block size-[14px]" />
                 </Pin>
               ))}
-          {/* Your drops: a pin with what it became (question, story, tip). It lands where you are,
-              stays pinned to the road, and falls behind you as you drive on. */}
+          {/* Your drops: the same spinning 3D block as a pickup (question, story, tip), floating over
+              the road where you left it. It lands where you are and falls behind you as you drive on. */}
           {drops
             .filter((d) => d.id in dropSpots)
             .map((d) => (
-              <Pin key={d.id} lib={lib} map={map} at={dropSpots[d.id]} z={6}>
-                <DropPin kind={d.kind} label={d.label} land />
+              <Pin key={d.id} lib={lib} map={map} at={dropSpots[d.id]} z={6} anchor="bottom">
+                <DropMarker kind={d.kind} label={d.label} spin land />
               </Pin>
             ))}
           {/* Pickups (the story-unlock demo): a spinning block off the road that comes to you as you pass */}
@@ -478,6 +499,8 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
           )}
         </>
       )}
+
+      {overlay}
 
       {/* Next turn, like a navigation app's banner, in the radio's greys */}
       {path && progress && (

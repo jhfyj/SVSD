@@ -48,14 +48,19 @@ export type Voice = {
   stop: () => void;
 };
 
-/** Play someone's recording. If the browser blocks it until a tap, it starts on the next tap. */
-export function playVoice(src: string, speaker: boolean): Voice {
+/**
+ * Play someone's recording. If the browser blocks it until a tap, it starts on the next tap.
+ * `silent` plays it with no sound: the glow and timing still follow the voice, but nothing is
+ * heard (for placeholder voices that aren't the demo's ElevenLabs takes).
+ */
+export function playVoice(src: string, speaker: boolean, { silent = false }: { silent?: boolean } = {}): Voice {
   const c = audio();
   const el = new Audio(src);
   const source = c.createMediaElementSource(el);
   const analyser = analyserOf(c);
   const gain = c.createGain();
-  gain.gain.value = volume(speaker);
+  const loudness = (on: boolean) => (silent ? 0 : volume(on));
+  gain.gain.value = loudness(speaker);
   source.connect(analyser);
   source.connect(gain).connect(c.destination);
 
@@ -74,7 +79,7 @@ export function playVoice(src: string, speaker: boolean): Voice {
     level: meter(analyser, 4),
     started,
     done,
-    setSpeaker: (on) => (gain.gain.value = volume(on)),
+    setSpeaker: (on) => (gain.gain.value = loudness(on)),
     stop: () => {
       stopped = true;
       document.removeEventListener("pointerdown", retry);
@@ -85,64 +90,15 @@ export function playVoice(src: string, speaker: boolean): Voice {
   };
 }
 
-/** How long the static-and-tune sound runs before their voice. */
+/** How long the radio takes to find the station before their voice. */
 export const TUNE_MS = 1100;
 
-/**
- * The radio finding the station: a burst of static whose band sweeps up while a whistle glides
- * down onto the frequency, then a short blip as it locks. Resolves when it's done.
- */
+/** The radio finding the station: a silent pause (the static shows on screen only). Resolves when it's done. */
 export function tuneIn(): Promise<void> {
-  const c = audio();
-  const t = c.currentTime + 0.02;
-  const out = c.createGain();
-  out.gain.value = isSoundOn() ? 0.16 : 0;
-  out.connect(c.destination);
-
-  const noise = c.createBufferSource();
-  noise.buffer = c.createBuffer(1, Math.ceil(c.sampleRate * 0.9), c.sampleRate);
-  const data = noise.buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  const band = c.createBiquadFilter();
-  band.type = "bandpass";
-  band.Q.value = 0.9;
-  band.frequency.setValueAtTime(500, t);
-  band.frequency.exponentialRampToValueAtTime(3200, t + 0.7);
-  const hiss = c.createGain();
-  hiss.gain.setValueAtTime(0, t);
-  hiss.gain.linearRampToValueAtTime(0.9, t + 0.05);
-  hiss.gain.setValueAtTime(0.9, t + 0.5);
-  hiss.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
-  noise.connect(band).connect(hiss).connect(out);
-  noise.start(t);
-
-  const whistle = c.createOscillator();
-  whistle.frequency.setValueAtTime(1800, t);
-  whistle.frequency.exponentialRampToValueAtTime(660, t + 0.7);
-  const wg = c.createGain();
-  wg.gain.setValueAtTime(0, t);
-  wg.gain.linearRampToValueAtTime(0.22, t + 0.2);
-  wg.gain.setValueAtTime(0.22, t + 0.6);
-  wg.gain.linearRampToValueAtTime(0, t + 0.78);
-  whistle.connect(wg).connect(out);
-  whistle.start(t);
-  whistle.stop(t + 0.8);
-
-  const blip = c.createOscillator();
-  blip.type = "square";
-  blip.frequency.value = 880;
-  const bg = c.createGain();
-  bg.gain.value = 0.12;
-  blip.connect(bg).connect(out);
-  blip.start(t + 0.84);
-  blip.stop(t + 0.92);
-
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      out.disconnect();
-      resolve();
-    }, TUNE_MS),
-  );
+  // Silent for the demo (Jen): the static and whistle read as a random sound effect, so only the
+  // flicker on screen is kept. The pause stays, so the station still "locks" before the voice.
+  audio();
+  return new Promise((resolve) => setTimeout(resolve, TUNE_MS));
 }
 
 export type Recording = {
@@ -190,44 +146,21 @@ export async function recordReply(): Promise<Recording> {
   };
 }
 
-/** "@Nightowl88" read aloud as "Nightowl 88", "@NightOwl" as "Night Owl". */
-const spoken = (text: string) =>
-  text.replace(/@(\w+)/g, (_, h: string) => h.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/(\D)(\d)/g, "$1 $2"));
-
 /**
- * The radio's own voice (announcements like who you're meeting), with the browser's speech.
- * Resolves when it's done; with the sound off, or no speech in the browser, after about as long as
- * it would take to say, so whatever's on screen still gets read. Cancel with the returned stop.
+ * A line the radio would say that has no recording. It stays silent (Jen: the only voice in the
+ * demo is the ElevenLabs one, never the browser's robot speech) and resolves after about as long
+ * as it would take to say, so whatever's on screen still gets read. Recorded lines go through
+ * lib/radio/scriptVoice instead. Cancel with the returned stop.
  */
 export function announce(text: string): { done: Promise<void>; stop: () => void } {
   const estimate = 1200 + text.length * 65;
-  let timer: ReturnType<typeof setTimeout> | undefined;
   let finish = () => {};
-  const done = new Promise<void>((resolve) => {
-    finish = () => {
-      clearTimeout(timer);
-      resolve();
-    };
-  });
-  const synth = typeof speechSynthesis === "undefined" ? null : speechSynthesis;
-  if (!synth || !isSoundOn()) {
-    timer = setTimeout(finish, estimate);
-    return { done, stop: finish };
-  }
-  const line = new SpeechSynthesisUtterance(spoken(text));
-  line.lang = "en-US";
-  line.rate = 1;
-  const voices = synth.getVoices().filter((v) => v.lang.startsWith("en"));
-  line.voice = voices.find((v) => /Samantha|Google US English/.test(v.name)) ?? voices[0] ?? null;
-  line.addEventListener("end", finish);
-  line.addEventListener("error", finish);
-  // Some browsers drop the end event; never hold the radio up waiting for it.
-  timer = setTimeout(finish, estimate + 4000);
-  synth.speak(line);
+  const done = new Promise<void>((resolve) => (finish = resolve));
+  const timer = setTimeout(() => finish(), estimate);
   return {
     done,
     stop: () => {
-      synth.cancel();
+      clearTimeout(timer);
       finish();
     },
   };
