@@ -75,7 +75,7 @@ export function Radio() {
     <RadioIntro key={params.get("load") ?? "radio"} skip={!!night || (!!demo && !params.has("load"))}>
       <RadioScreen
         // A new state (or a new demo run) from the dial kit starts the radio over in it.
-        key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo || night ? params.get("t") : ""}-${night}`}
+        key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo || night ? params.get("t") : ""}-${night}-${params.has("arrived")}`}
         demo={demo}
         night={night}
         time={night ? NIGHT_CLOCK[night] : undefined}

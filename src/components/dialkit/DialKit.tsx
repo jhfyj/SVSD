@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
@@ -44,7 +44,19 @@ type Step = {
   repeat?: boolean;
   /** When the step is showing, for steps that don't have a fixed href to compare. */
   active?: boolean;
+  /** Play a flow: seconds to hold on this step before the next one (default PLAY_HOLD). */
+  hold?: number;
+  /** Play a flow: false leaves it out (a duplicate of an earlier step, a reset or a switch). */
+  play?: false;
 };
+
+/** Play a flow: how long a step holds when it doesn't say. */
+const PLAY_HOLD = 5;
+
+/** The steps Play a flow walks through: everything you can open, minus the ones marked play: false. */
+const playable = (flow: Flow) => flow.steps.filter((s) => (s.href || s.go) && s.play !== false);
+
+type Player = { flow: number; step: number; paused: boolean; at: number };
 
 type Flow = { /** Order in the video; empty for groups outside the script. */ n: string; title: string; time?: string; note?: string; steps: Step[] };
 
@@ -139,9 +151,10 @@ export function DialKit() {
   // Already on the radio: change the URL in the browser (Next keeps useSearchParams in step) so it
   // starts over at once, without a round trip for the same page.
   const openRadio = (href: string) => (path === "/radio" ? window.history.pushState(null, "", href) : router.push(href));
+  // ?arrived opens the radio mid-drive (already started), so it can reach the destination.
   const arrive = () => {
     arrival.arrive();
-    if (path !== "/radio") router.push("/radio");
+    openRadio("/radio?arrived=1");
   };
 
   const flows: Flow[] = [
@@ -150,9 +163,10 @@ export function DialKit() {
       title: "Intro to Caravan",
       time: "0:50",
       steps: [
-        { label: "Sign in with number", href: "/profile", go: signOut },
+        { label: "Sign in with number", href: "/profile", go: signOut, hold: 4 },
         {
           label: "Roadside avatar",
+          hold: 4,
           href: "/profile",
           go: newAccount,
           todo: "change",
@@ -160,26 +174,30 @@ export function DialKit() {
         },
         {
           label: "Overview 1 · Stories",
+          hold: 4,
           href: "/overview?step=1",
           note: "“Listen and plant stories and questions along your road.”",
         },
         {
           label: "Overview 2 · Company",
+          hold: 4,
           href: "/overview?step=2",
           note: "“Flip on Company to talk to a real stranger with the same mood and distance as you.”",
         },
         {
           label: "Overview 3 · Anonymous",
+          hold: 4,
           href: "/overview?step=3",
           note: "“Pick a handle and avatar to stay anonymous.”",
         },
         {
           label: "Splash · connecting to radio",
+          hold: 5,
           href: "/journey/starting",
           todo: "change",
           note: "Today the splash opens the radio; here it comes before Start your journey.",
         },
-        { label: "Start your journey", href: "/" },
+        { label: "Start your journey", href: "/", hold: 5 },
       ],
     },
     {
@@ -187,9 +205,10 @@ export function DialKit() {
       title: "Stories on the road",
       time: "1:05",
       steps: [
-        { label: "Destination", href: "/journey" },
+        { label: "Destination", href: "/journey", hold: 6 },
         {
           label: "Radio loads in",
+          hold: 6,
           // Restarts at once when already on the radio (see openRadio).
           go: () => openRadio(loadIn()),
           radio: true,
@@ -198,6 +217,7 @@ export function DialKit() {
         },
         {
           label: "Tracking the road",
+          hold: 8,
           href: "/radio?sim",
           radio: true,
           todo: "change",
@@ -205,6 +225,7 @@ export function DialKit() {
         },
         {
           label: "Message unlocks · 3D story",
+          hold: 32,
           go: () => openRadio(storyDrive()),
           radio: true,
           active: path === "/radio" && params.get("demo") === "story",
@@ -212,6 +233,7 @@ export function DialKit() {
         },
         {
           label: "Message unlocks · Angelina's",
+          hold: 18,
           href: "/radio?message=message",
           radio: true,
           todo: "change",
@@ -219,12 +241,16 @@ export function DialKit() {
         },
         {
           label: "@NightOwl's voice message",
+          // Played inside Message unlocks · 3D story.
+          play: false,
           go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
           radio: true,
           note: "The story unlock demo above includes @NightOwl's breakfast burrito message and reply prompt.",
         },
         {
           label: "Reply?",
+          // Played inside Message unlocks · 3D story.
+          play: false,
           go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
           radio: true,
           todo: "change",
@@ -239,31 +265,36 @@ export function DialKit() {
       steps: [
         {
           label: "Company · one stranger",
+          hold: 6,
           href: "/radio?demo=company",
           radio: true,
           note: "Starts on a moving navigation map. Turn the radio on and choose Off my chest to meet Mothlight; their conversation plays from NightOwl’s perspective.",
         },
         {
           label: "Mood: pick an intent",
+          hold: 5,
           href: "/radio?demo=company&call=pick",
           radio: true,
           note: "Choose Off my chest to connect with Mothlight.",
         },
-        { label: "Connecting", href: "/radio?demo=company&call=connecting", radio: true },
+        { label: "Connecting", href: "/radio?demo=company&call=connecting", radio: true, hold: 4 },
         {
           label: "Meet @Mothlight",
+          hold: 10,
           href: "/radio?demo=company&call=connected",
           radio: true,
           note: "The recorded radio voice introduces @NightOwl and @Mothlight; the LCD turns to “To start” as it asks where they’re headed. Mothlight’s rabbit appears on the green LCD.",
         },
         {
           label: "@Mothlight speaking",
+          hold: 10,
           href: "/radio?demo=company&call=connected",
           radio: true,
           note: "Mothlight speaks first; their rabbit avatar and the dithered map glow animate in the clipped strip at the map’s top.",
         },
         {
           label: "NightOwl answers back",
+          hold: 12,
           href: "/radio?demo=company&call=connected",
           radio: true,
           note: "The speaker treatment switches to NightOwl, then back to Mothlight, without covering the route.",
@@ -277,18 +308,21 @@ export function DialKit() {
       steps: [
         {
           label: "Question unlocks",
+          hold: 12,
           href: "/radio?demo=question",
           radio: true,
           note: "Start already driving. A 3D question mark pulls into the radio with the story-unlock animation; the AI announces the unlock and shows NightOwl’s question.",
         },
         {
           label: "Answering",
+          hold: 10,
           href: "/radio?demo=question",
           radio: true,
           note: "Press Reply to play @urmom6767’s answer as a visual voice animation for about eight seconds. No spoken answer audio.",
         },
         {
           label: "Planting your answer",
+          hold: 10,
           href: "/radio?messages=off&sim",
           radio: true,
           note: "Built as Drop (Jen): planting your own thing, radio off, nothing coming in, the map driving the route. Tap the pin key, talk, tap send. It's sorted into a message or a question and pinned on the map where you are. No pin key on a call.",
@@ -300,26 +334,29 @@ export function DialKit() {
       title: "Your drive becomes a story",
       time: "3:20",
       steps: [
-        { label: "Arrive now", go: arrive },
+        { label: "Arrive now", go: arrive, hold: 7 },
         {
           label: "Trip recap",
+          hold: 8,
           href: "/trip",
           todo: "change",
           note: "Route draws in. Copy: 31 STORIES FROM 9 STATES · 84 MILES WITH @NightOwl.",
         },
         {
           label: "Notifications",
+          hold: 4,
           href: blank("Notifications"),
           todo: "new",
           note: "Who listened to your message and who answered your question: “@urmom6767 answered your question · 900 miles away.”",
         },
         {
           label: "Their answer plays",
+          hold: 4,
           href: blank("Their answer plays"),
           todo: "new",
           note: "The full-circle moment: Priya's answer plays back.",
         },
-        { label: "Start drive over", go: () => arrival.reset() },
+        { label: "Start drive over", go: () => arrival.reset(), play: false },
       ],
     },
     {
@@ -329,6 +366,7 @@ export function DialKit() {
       steps: [
         {
           label: "Night falls",
+          hold: 13,
           // Starts by day: the sunset pins the night theme (and turns the radio amber if Night amber is on).
           go: () => {
             pickTheme("light");
@@ -340,6 +378,7 @@ export function DialKit() {
         },
         {
           label: "Check-in",
+          hold: 12,
           go: () => {
             pickTheme("dark");
             openRadio(nightDrive("checkin"));
@@ -350,6 +389,7 @@ export function DialKit() {
         },
         {
           label: "Rest area",
+          hold: 15,
           go: () => {
             pickTheme("dark");
             openRadio(nightDrive("rest"));
@@ -358,7 +398,7 @@ export function DialKit() {
           active: path === "/radio" && params.get("night") === "rest",
           note: "REST AREA 9 MI takes over the map; stories paused until you're back. Route to rest area folds the sign to a strip; 7 s later you're parked: Back on the road brings stories back.",
         },
-        { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => { pickTheme("dark"); pickAmber(true); }, note: "Turns the Night amber switch on: any radio state at night goes amber. Switch it off under Night amber." },
+        { label: "Amber cockpit", play: false, href: "/radio?sim", radio: true, go: () => { pickTheme("dark"); pickAmber(true); }, note: "Turns the Night amber switch on: any radio state at night goes amber. Switch it off under Night amber." },
       ],
     },
     {
@@ -400,6 +440,84 @@ export function DialKit() {
     await step.go?.();
     if (step.href) router.push(step.href);
   };
+
+  // Play a flow: one key per numbered flow at the bottom of the kit. It opens each step in order
+  // and holds it (step.hold seconds), so a whole flow plays from one press. Back / Next step by
+  // hand, Pause holds where you are, Stop ends it. Steps that share the previous step's address
+  // (the call keeps going) don't reopen it; the player just holds there.
+  const numbered = flows.map((f, i) => ({ f, i })).filter(({ f }) => f.n);
+  const [player, setPlayer] = useState<Player | null>(null);
+  const playing = player ? playable(flows[player.flow]) : [];
+  const current = player ? playing[player.step] : undefined;
+  const holdMs = (current?.hold ?? PLAY_HOLD) * 1000;
+  const playStep = (flow: number, step: number, paused = false) => {
+    const steps = playable(flows[flow]);
+    const s = steps[step];
+    if (!s) return setPlayer(null);
+    const prev = steps[step - 1];
+    if (!(prev && !s.go && s.href && s.href === prev.href)) void run(s);
+    setPlayer({ flow, step, paused, at: Date.now() });
+  };
+  // The latest playStep, for the timer below (it's a new function every render).
+  const nextStep = useRef<() => void>(() => {});
+  useEffect(() => {
+    nextStep.current = () => player && playStep(player.flow, player.step + 1);
+  });
+  useEffect(() => {
+    if (!player || player.paused) return;
+    const t = setTimeout(() => nextStep.current(), holdMs);
+    return () => clearTimeout(t);
+  }, [player, holdMs]);
+
+  const playBar = (
+    <div className="sticky bottom-0 -mx-3 -mb-3 mt-4 border-t border-border bg-surface p-3">
+      <h2 className="mb-1 text-xs uppercase text-foreground/70">Play a flow</h2>
+      <div className="grid grid-cols-6 gap-1">
+        {numbered.map(({ f, i }) => (
+          <Chip
+            key={f.n}
+            active={player?.flow === i}
+            onClick={() => (player?.flow === i ? setPlayer(null) : playStep(i, 0))}
+            className="text-center"
+            title={`${f.n} · ${f.title}`}
+          >
+            {f.n}
+          </Chip>
+        ))}
+      </div>
+      {player && current && (
+        <div className="mt-2">
+          <p className="text-xs uppercase text-foreground/70">
+            {flows[player.flow].n} · {flows[player.flow].title}
+          </p>
+          <p className="mt-0.5 flex items-baseline justify-between gap-2 text-xs uppercase">
+            <span className="truncate">{current.label}</span>
+            <span className="shrink-0 tabular-nums text-foreground/70">
+              {player.step + 1}/{playing.length}
+            </span>
+          </p>
+          {/* How long until the next step; it stops while paused. */}
+          <div className="mt-1 h-0.5 bg-border">
+            <PlayProgress key={player.at} ms={holdMs} paused={player.paused} />
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-1">
+            <Chip onClick={() => playStep(player.flow, player.step - 1)} disabled={player.step === 0} className="text-center">
+              Back
+            </Chip>
+            <Chip onClick={() => setPlayer({ ...player, paused: !player.paused, at: Date.now() })} active={player.paused} className="text-center">
+              {player.paused ? "Play" : "Pause"}
+            </Chip>
+            <Chip onClick={() => playStep(player.flow, player.step + 1)} className="text-center">
+              {player.step + 1 === playing.length ? "Done" : "Next"}
+            </Chip>
+            <Chip onClick={() => setPlayer(null)} className="text-center">
+              Stop
+            </Chip>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   if (!open) {
     return (
@@ -461,13 +579,15 @@ export function DialKit() {
                 key={step.label}
                 step={step}
                 showTodos={showTodos}
-                active={step.active ?? (!!step.href && !step.go && here === step.href)}
+                active={current ? step === current : (step.active ?? (!!step.href && !step.go && here === step.href))}
                 onClick={() => run(step)}
               />
             ))}
           </Group>
         );
       })}
+
+      {playBar}
     </aside>
   );
 }
@@ -518,25 +638,43 @@ function Chip({
   active,
   onClick,
   className,
+  title,
+  disabled,
   children,
 }: {
   active?: boolean;
   onClick: () => void;
   className?: string;
+  title?: string;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
+      disabled={disabled}
       aria-pressed={active}
       className={cn(
         "rounded-token border px-2 py-1 text-left text-xs uppercase transition-colors duration-150 ease-out",
         active ? "border-foreground bg-foreground text-background" : "border-border text-foreground hover:bg-surface-raised",
+        "disabled:pointer-events-none disabled:opacity-40",
         className,
       )}
     >
       {children}
     </button>
   );
+}
+
+/** The thin bar under the step being played: fills over the step's hold, holds still while paused. */
+function PlayProgress({ ms, paused }: { ms: number; paused: boolean }) {
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (paused || !bar.current) return;
+    const a = bar.current.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: ms, easing: "linear", fill: "forwards" });
+    return () => a.cancel();
+  }, [ms, paused]);
+  return <div ref={bar} className="h-full origin-left scale-x-0 bg-foreground" />;
 }
