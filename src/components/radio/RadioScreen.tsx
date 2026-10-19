@@ -134,7 +134,7 @@ export type RadioScreenProps = {
   night?: NightStart;
   /** Called under the relight flicker at sunset: switch the app to the night theme here. */
   onNightfall?: () => void;
-  /** Your own character, for the LCD when Night mode tells you to rest. */
+  /** Your own character: keeping you company on the idle LCD, and dozing when Night mode tells you to rest. */
   meCharacter?: CharacterId;
   /** The scripted NightOwl and Mothlight exchange, while keeping the navigation map visible. */
   companyDemo?: boolean;
@@ -947,7 +947,7 @@ export function RadioScreen({
           ) : messageOn ? (
             <MessageLcd controls={message} />
           ) : (
-            <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+            <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} companion={meCharacter} />
           )}
           {/* The pickup count steps aside while you record (YOUR REPLY / YOUR DROP): their heading
               sits in the same top-left corner. It comes back once you've sent. */}

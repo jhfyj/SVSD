@@ -296,6 +296,12 @@ body {
     transform-origin: center;
     animation: sprite-bob 760ms steps(1, end) infinite;
   }
+  /* Your character resting on the idle LCD: the same one-pixel bob at half the pace. */
+  .lcd-companion {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sprite-bob 1520ms steps(1, end) infinite;
+  }
 }
 
 /* Pixel icons on the sign-in and Allow access screens float up and down, one icon pixel

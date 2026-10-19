@@ -1,4 +1,4 @@
-import type { CharacterId } from "@/lib/profile/characters";
+import { getCharacter, type CharacterId } from "@/lib/profile/characters";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "../profile/CharacterSprite";
 
@@ -36,11 +36,16 @@ export type RadioLcdProps = {
   away?: boolean;
   /** During a hang-up timeout: time left, like "4:59". */
   countdown?: string;
+  /**
+   * Your own character (the one you picked in Customize profile). While the radio's off and nothing
+   * else needs the screen, it sits on the LCD keeping you company. Unset: the LCD is blank.
+   */
+  companion?: CharacterId;
 };
 
-/** What the small LCD shows for each radio state. Blank while the radio is off. */
-export function RadioLcd({ state, peerCharacter, peer, greeting, intro, hint, speaking, away, countdown }: RadioLcdProps) {
-  if (state === "off") return null;
+/** What the small LCD shows for each radio state. Off: your character keeping you company (or blank). */
+export function RadioLcd({ state, peerCharacter, peer, greeting, intro, hint, speaking, away, countdown, companion }: RadioLcdProps) {
+  if (state === "off") return companion ? <Companion character={companion} /> : null;
   if (state === "pick") {
     return (
       <LcdText>
@@ -124,6 +129,19 @@ export function RadioLcd({ state, peerCharacter, peer, greeting, intro, hint, sp
         <SoundWaves on={!!speaking} />
       </div>
       <figcaption className="font-mono text-[11px] leading-none">{peer}</figcaption>
+    </figure>
+  );
+}
+
+/**
+ * Your character on the idle LCD, like a pet on a Tamagotchi: no words, just there with you. It
+ * flashes in whenever the screen comes back to it and bobs one sprite pixel at half the usual pace,
+ * so it reads as resting, not talking. It steps aside the moment anything else needs the screen.
+ */
+function Companion({ character }: { character: CharacterId }) {
+  return (
+    <figure title={`${getCharacter(character).name}, keeping you company`} className="lcd-flash text-lcd-ink">
+      <CharacterSprite character={character} pixel={4} playing={false} className="lcd-companion" />
     </figure>
   );
 }

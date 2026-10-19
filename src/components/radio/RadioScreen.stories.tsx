@@ -22,8 +22,21 @@ type Story = StoryObj<typeof meta>;
 /** Figma "Connected" (node 123:246). Click the switch, buttons and power key to see their states. */
 export const Connected: Story = { args: { defaultOn: true } };
 
-/** How the screen opens: radio off, Start story showing. */
+/** How the screen opens: radio off, Start story showing. Your character (Freddie by default) sits on the LCD. */
 export const RadioOff: Story = {};
+
+/**
+ * Nothing on the radio: your own character keeps you company on the LCD, bobbing a pixel at a
+ * resting pace. It's the one you picked in Customize profile (pick another with the control). It
+ * steps aside for anything else (a message, a drop, the radio switching on) and flashes back after.
+ */
+export const IdleCompanion: Story = {
+  name: "Idle: your character keeps you company",
+  args: { meCharacter: "fox", messages: [] },
+  argTypes: {
+    meCharacter: { control: "select", options: ["raccoon", "deer", "squirrel", "fox", "rabbit", "turtle", "cat", "frog"] },
+  },
+};
 
 /** Figma "Connecting" (node 154:1263): CONNECTING with dots stepping in, LED blinking. Holds here. */
 export const Connecting: Story = { args: { defaultState: "connecting", connectMs: 600_000 } };
