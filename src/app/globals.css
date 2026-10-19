@@ -1182,28 +1182,25 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
 }
 
 /*
-  Tuning in (flow 1's loading screen, TuningIn.tsx). Each part starts at its own --at. The digital
-  parts step: the LCD opens from its middle line in 4 frames, road dots light one per frame, and the
-  caravan (a roadside character, then a pickup, and so on) comes in from off the left edge on 8px
-  steps, each one hopping a pixel out of step with the one in front. Only light eases: the screen
-  fades out on ease-out. Reduced motion: everything is simply there.
+  Flow 1's loading screen (TuningIn.tsx). Each part starts at its own --at. The road's dots light one
+  per frame, then the caravan (a roadside character, then a pickup, and so on) travels the whole road
+  left to right on 8px steps, each one hopping a pixel out of step with the one in front. The road
+  is a size container clipped at the side margins, so the caravan enters at one margin and leaves at
+  the other (translateX(-100%) to 100cqw). Only the exit fades, on ease-out. Reduced motion: the
+  caravan stands still in the middle of the road.
 */
-@keyframes tune-lcd-open {
-  from { clip-path: inset(50% 0 50% 0); }
-  to { clip-path: inset(0); }
-}
+.tune-road { container-type: inline-size; }
 @keyframes tune-march {
-  from { transform: translateX(calc(-50% - 320px)); }
-  to { transform: translateX(-50%); }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100cqw); }
 }
 @keyframes tune-out {
   to { opacity: 0; }
 }
-.tune-march { transform: translateX(-50%); }
+.tune-march { left: 50%; transform: translateX(-50%); }
 @media (prefers-reduced-motion: no-preference) {
-  .tune-lcd { animation: tune-lcd-open 240ms steps(4, jump-none) var(--at) both; }
   .tune-dot { animation: trail-in var(--motion-enter) steps(2) var(--at) both; }
-  .tune-march { animation: tune-march 1400ms steps(40, jump-none) var(--at) both; }
+  .tune-march { left: 0; animation: tune-march 3400ms steps(70, jump-none) var(--at) both; }
   .tune-march svg { animation: pixel-float 0.5s steps(1) infinite; --pixel: 2px; }
   .tune-march svg:nth-child(even) { animation-delay: -250ms; }
   .tune-out { animation: tune-out var(--motion-enter) var(--motion-ease-out) forwards; }
