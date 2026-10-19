@@ -117,6 +117,7 @@ export function buildTrail(
 }
 
 /** Placeholder pacing taken from the Figma screens (50 min → 24 stories, 6 questions) until there is real content. */
-export function contentFor(minutes: number) {
-  return { stories: Math.max(1, Math.round(minutes * 0.48)), questions: Math.max(0, Math.round(minutes * 0.12)) };
+export function contentFor(minutes: number, destination = "") {
+  if (/\bel paso\b/i.test(destination)) return { stories: 68, questions: 24, notes: 12 };
+  return { stories: Math.max(1, Math.round(minutes * 0.48)), questions: Math.max(0, Math.round(minutes * 0.12)), notes: 0 };
 }

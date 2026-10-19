@@ -276,6 +276,9 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
         {message.from}
       </span>
       {respond && <span className="mt-2 block text-[11px]">Reply after they finish</span>}
+      {phase === "playing" && message.transcript && (
+        <span className="mt-2 block max-h-16 overflow-hidden text-[10px] normal-case leading-[1.35]">{message.transcript}</span>
+      )}
     </Lcd>
   );
 }

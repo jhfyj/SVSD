@@ -14,6 +14,17 @@ const listeners = new Set<() => void>();
 let cachedRaw: string | null = null;
 let cached: Record<string, CharacterId> = {};
 
+const LEGACY_CHARACTERS: Record<string, CharacterId> = {
+  freddie: "raccoon",
+  mochi: "cat",
+  pip: "squirrel",
+  bun: "rabbit",
+  kiki: "fox",
+  tako: "turtle",
+  boo: "frog",
+  sprout: "deer",
+};
+
 function readAll(): Record<string, CharacterId> {
   let raw: string | null = null;
   try {
@@ -22,7 +33,10 @@ function readAll(): Record<string, CharacterId> {
   if (raw !== cachedRaw) {
     cachedRaw = raw;
     try {
-      cached = raw ? JSON.parse(raw) : {};
+      const stored: Record<string, string> = raw ? JSON.parse(raw) : {};
+      cached = Object.fromEntries(
+        Object.entries(stored).map(([phone, id]) => [phone, LEGACY_CHARACTERS[id] ?? id as CharacterId]),
+      );
     } catch {
       cached = {};
     }

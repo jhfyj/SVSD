@@ -66,7 +66,7 @@ export const Customize: StoryObj = {
 
 export const CustomizePicked: StoryObj = {
   name: "Customize profile, Tako picked",
-  render: () => <CustomizeProfile initial="tako" onSave={() => {}} onBack={() => {}} />,
+  render: () => <CustomizeProfile initial="turtle" onSave={() => {}} onBack={() => {}} />,
 };
 
 /** All eight characters with both animation frames side by side. */
@@ -142,7 +142,7 @@ export const CodeWrong: StoryObj = {
 };
 
 export const Profile: StoryObj = {
-  render: () => <ProfileView handle="@traveller7890" character="bun" onEditCharacter={() => {}} joinedAt={new Date(2026, 4, 2)} />,
+  render: () => <ProfileView handle="@traveller7890" character="rabbit" onEditCharacter={() => {}} joinedAt={new Date(2026, 4, 2)} />,
 };
 
 export const ProfileNew: StoryObj = {

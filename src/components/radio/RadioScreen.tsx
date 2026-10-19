@@ -26,8 +26,8 @@ import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
-import { playVoice } from "@/lib/radio/voice";
-import { sayIntro, THANK_YOU } from "@/lib/radio/scriptVoice";
+import { playVoice, type Level } from "@/lib/radio/voice";
+import { QUESTION_UNLOCK, REPLY_PROMPT, sayIntro, THANK_YOU } from "@/lib/radio/scriptVoice";
 import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
 import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/messages";
@@ -37,16 +37,17 @@ import { RockerSwitch } from "./RockerSwitch";
 import { Nightfall, NightLcd, RestSign } from "./NightDrive";
 import { useNightDrive } from "./useNightDrive";
 import type { NightStart } from "@/lib/radio/nightDrive";
+import { CharacterSprite } from "../profile/CharacterSprite";
 
 /** Mic and Settings during a call (and Drop/Settings beside a message): square keys, as tall as the row (70px). */
 const CALL_KEY = "w-[70px] shrink-0";
 
 /** Mocked strangers for the calls after the first, until there's a backend matching people. */
 const NEXT_CALLERS: { handle: string; character: CharacterId }[] = [
-  { handle: "@Nightowl88", character: "boo" },
-  { handle: "@Hufflepuff23", character: "pip" },
-  { handle: "@Roadrunner5", character: "tako" },
-  { handle: "@Mile84", character: "sprout" },
+  { handle: "@Nightowl88", character: "frog" },
+  { handle: "@Hufflepuff23", character: "squirrel" },
+  { handle: "@Roadrunner5", character: "turtle" },
+  { handle: "@Mile84", character: "deer" },
 ];
 
 /** Where the map sits inside the device body (the inner screen). */
@@ -135,11 +136,27 @@ export type RadioScreenProps = {
   onNightfall?: () => void;
   /** Your own character, for the LCD when Night mode tells you to rest. */
   meCharacter?: CharacterId;
+  /** The scripted NightOwl and Mothlight exchange, while keeping the navigation map visible. */
+  companyDemo?: boolean;
+  /** The scripted question pickup and visual-only answer demo. */
+  questionDemo?: boolean;
+  /** The continuous Start Journey story flow: pickup, 14-second story animation, spoken reply prompt. */
+  storyDemo?: boolean;
   className?: string;
 };
 
 /** Night mode phases that put something on the LCD (the sunset itself keeps the usual LCD). */
 const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "rest", "stopped"];
+
+const COMPANY_TURNS = [
+  { speaker: "Mothlight", character: "rabbit" as const, text: "Home to catch my daughter’s recital. I’ve missed the last two. Just got off a twelve-hour shift.", durationMs: 7000 },
+  { speaker: "NightOwl", character: "squirrel" as const, text: "Ah shucks, you’ll make this one.", durationMs: 3500 },
+  { speaker: "Mothlight", character: "rabbit" as const, text: "I hope so. How about you?", durationMs: 3500 },
+  { speaker: "NightOwl", character: "squirrel" as const, text: "Just home. I’m a truck driver, so I can feel your pain with the long drives.", durationMs: 7000 },
+];
+const ROAD_QUESTION = "What got you through today?";
+const ROAD_ANSWER = "I’m driving up to SF to see my hometown friends, so honestly, thinking of all the fun we’ll have!";
+const ROAD_ANSWER_MS = Math.ceil((ROAD_ANSWER.trim().split(/\s+/).length / 2.4) * 1000);
 
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
@@ -147,7 +164,11 @@ const MESSAGE_GAP_MS = 2500;
 /** Where collected pickups land: the counter's icon in the LCD's top-left corner, in the radio's own px. */
 const LCD_TALLY = { x: 156 + 38, y: 585 + 18 + 18 };
 
-type Flight = { id: string; kind: DropKind; from: { x: number; y: number } };
+type Flight = { id: string; kind: DropKind; from: { x: number; y: number }; pickup: Pickup };
+type QuestionStage = "driving" | "unlocking" | "reply-ready" | "answering" | "answered";
+type StoryStage = "driving" | "story" | "prompt" | "reply-ready";
+
+const BURRITO_TRANSCRIPT = "Whoever’s hearing this, there’s a gas station there that sells the best breakfast burrito in California. I’m serious. I’ve been driving for twenty-six years and I plan my whole week around this burrito.";
 
 /** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
 const casing =
@@ -161,7 +182,7 @@ export function RadioScreen({
   me = "@you",
   sharedMiles = 84,
   peer = "@sunny_side",
-  peerCharacter = "mochi",
+  peerCharacter = "cat",
   speaking: speakingPinned,
   defaultOn = false,
   defaultState = defaultOn ? "connected" : "off",
@@ -178,14 +199,19 @@ export function RadioScreen({
   demo,
   night,
   onNightfall,
-  meCharacter = "freddie",
+  meCharacter = "raccoon",
+  companyDemo = false,
+  questionDemo = false,
+  storyDemo = false,
   className,
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
   const radioOn = state !== "off";
   // When the call comes through, the radio introduces you both (two lines, one LCD page each).
-  const [greeting, setGreeting] = useState(false);
+  const [greeting, setGreeting] = useState(companyDemo && defaultState === "connected");
   const [introPage, setIntroPage] = useState<0 | 1>(0);
+  const [conversationIndex, setConversationIndex] = useState(-1);
+  const callVoiceLevel = useRef<Level | null>(null);
   // Who you're talking to. The first call is `peer`; each End call finds someone new (mocked).
   const [calls, setCalls] = useState(0);
   // Anyone you've reported never comes up again.
@@ -267,17 +293,24 @@ export function RadioScreen({
   const [flights, setFlights] = useState<Flight[]>([]);
   const [collected, setCollected] = useState<Partial<Record<DropKind, number>>>({});
   const [tallyFlash, setTallyFlash] = useState(0);
+  const [questionStage, setQuestionStage] = useState<QuestionStage>("driving");
+  const [storyStage, setStoryStage] = useState<StoryStage>("driving");
   const onCollect = (pickup: Pickup, at: { x: number; y: number }) => {
     const box = root.current?.getBoundingClientRect();
     if (!box) return;
     // The radio can be drawn scaled (a narrow window), so map the page's px back to its own.
     const k = box.width / 393;
-    setFlights((f) => [...f, { id: pickup.id, kind: pickup.kind, from: { x: (at.x - box.left) / k, y: (at.y - box.top) / k } }]);
+    setFlights((f) => [...f, { id: pickup.id, kind: pickup.kind, pickup, from: { x: (at.x - box.left) / k, y: (at.y - box.top) / k } }]);
   };
   const landed = (flight: Flight) => {
     setFlights((f) => f.filter((x) => x.id !== flight.id));
     setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
     setTallyFlash((n) => n + 1);
+    if (flight.pickup.id === "nightowl-burrito") {
+      if (storyDemo) setStoryStage("story");
+      else message.play({ id: "nightowl-burrito", kind: "message", from: "@Hufflepuff23", character: "squirrel", src: "/messages/nightowl-burrito.mp3", transcript: BURRITO_TRANSCRIPT, at: 0.5 });
+    }
+    if (flight.pickup.id === "nightowl-road-question") setQuestionStage("unlocking");
   };
   // At the destination the button row becomes a single End journey.
   // Not before Start journey: the drive's clock hasn't begun.
@@ -417,10 +450,10 @@ export function RadioScreen({
 
   // Picking with a remembered intent: keep it after 3 seconds, so turning on stays one motion while driving.
   useEffect(() => {
-    if (state !== "pick" || !intentSet) return;
+    if (state !== "pick" || !intentSet || companyDemo) return;
     const t = setTimeout(() => setState("connecting"), 3000);
     return () => clearTimeout(t);
-  }, [state, intentSet]);
+  }, [state, intentSet, companyDemo]);
 
   // The radio introduces you both out loud, a page on the LCD per line, then their audio starts.
   // Pairs in the demo script use the recorded voice (lib/radio/scriptVoice); others, the browser's speech.
@@ -432,14 +465,116 @@ export function RadioScreen({
     });
     void line.done.then(() => {
       if (!live) return;
+    const startedAt = performance.now();
+    callVoiceLevel.current = () => {
+      const t = (performance.now() - startedAt) / 115;
+      return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
+    };
       setGreeting(false);
       onConnected?.(caller.handle);
     });
     return () => {
       live = false;
       line.stop();
+      callVoiceLevel.current = null;
     };
   }, [greeting, caller.handle, onConnected, me, sharedMiles]);
+
+  // In this demo, stay with the navigation map and alternate the two drivers' turns automatically.
+  useEffect(() => {
+    if (!companyDemo || state !== "connected" || greeting || conversationIndex !== -1) return;
+    const start = setTimeout(() => setConversationIndex(0), 0);
+    return () => clearTimeout(start);
+  }, [companyDemo, state, greeting, conversationIndex]);
+
+  const companyTurn = conversationIndex >= 0 ? COMPANY_TURNS[conversationIndex] : undefined;
+  const companySpeaking = Boolean(companyTurn);
+  useEffect(() => {
+    if (!companyDemo || !companyTurn) return;
+    const startedAt = performance.now();
+    // Hold each speaker animation long enough for the planned voiceover; the recording is added later.
+    callVoiceLevel.current = () => {
+      const t = (performance.now() - startedAt) / 115;
+      return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
+    };
+    const advance = setTimeout(
+      () => setConversationIndex((current) => (current === conversationIndex ? current + 1 : current)),
+      companyTurn.durationMs,
+    );
+    return () => {
+      clearTimeout(advance);
+      callVoiceLevel.current = null;
+    };
+  }, [companyDemo, companyTurn, conversationIndex]);
+
+  useEffect(() => {
+    if (!questionDemo || questionStage !== "unlocking") return;
+    let live = true;
+    const startedAt = performance.now();
+    callVoiceLevel.current = () => {
+      const t = (performance.now() - startedAt) / 115;
+      return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
+    };
+    // Jen's recorded unlock line: "You just unlocked a question from NightOwl. Would you like to respond?"
+    const voice = playVoice(QUESTION_UNLOCK, true);
+    const next = () => live && setQuestionStage("reply-ready");
+    // If the browser holds the recording back, don't wait on it: Reply still comes up.
+    const held = setTimeout(next, 2500);
+    void voice.started.then(() => clearTimeout(held));
+    voice.done.then(next, next);
+    return () => {
+      live = false;
+      clearTimeout(held);
+      voice.stop();
+      callVoiceLevel.current = null;
+    };
+  }, [questionDemo, questionStage]);
+
+  useEffect(() => {
+    if (!questionDemo || questionStage !== "answering") return;
+    const startedAt = performance.now();
+    callVoiceLevel.current = () => {
+      const t = (performance.now() - startedAt) / 115;
+      return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
+    };
+    const done = setTimeout(() => setQuestionStage("answered"), ROAD_ANSWER_MS);
+    return () => {
+      clearTimeout(done);
+      callVoiceLevel.current = null;
+    };
+  }, [questionDemo, questionStage]);
+
+  // The continuous story flow holds the roadside voice animation for the full voiceover, then
+  // speaks the reply question automatically. The story itself is intentionally visual-only.
+  useEffect(() => {
+    if (!storyDemo || storyStage !== "story") return;
+    const startedAt = performance.now();
+    callVoiceLevel.current = () => {
+      const t = (performance.now() - startedAt) / 115;
+      return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
+    };
+    const prompt = setTimeout(() => setStoryStage("prompt"), 14_000);
+    return () => {
+      clearTimeout(prompt);
+      callVoiceLevel.current = null;
+    };
+  }, [storyDemo, storyStage]);
+
+  useEffect(() => {
+    if (!storyDemo || storyStage !== "prompt") return;
+    let live = true;
+    const voice = playVoice(REPLY_PROMPT, true);
+    callVoiceLevel.current = voice.level;
+    void voice.done.then(
+      () => live && setStoryStage("reply-ready"),
+      () => live && setStoryStage("reply-ready"),
+    );
+    return () => {
+      live = false;
+      voice.stop();
+      callVoiceLevel.current = null;
+    };
+  }, [storyDemo, storyStage]);
 
   // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
   const [talking, setTalking] = useState(false);
@@ -459,7 +594,7 @@ export function RadioScreen({
       setTalking(false);
     };
   }, [inCall, speakingPinned]);
-  const speaking = inCall && (speakingPinned ?? talking);
+  const speaking = inCall && (companyDemo ? companyTurn?.speaker === "Mothlight" : speakingPinned ?? talking);
 
   return (
     <div
@@ -497,18 +632,53 @@ export function RadioScreen({
           // A message playing: their voice comes down from the top; your reply (or a drop) rises from the
           // bottom in your colour. It sits under the turn banner so it never hides the directions.
           overlay={
-            dropRecording ? (
-              <MessageGlow mode="reply" color={youColor} level={drop.level} />
-            ) : nightDrive.phase === "listening" && !radioOn ? (
-              // Answering the night check-in: your voice rises from the bottom, like a reply.
-              <MessageGlow mode="reply" color={youColor} level={nightDrive.level} />
-            ) : (
-              <MessageGlow
-                mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
-                color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
-                level={message.level}
-              />
-            )
+            <>
+              {companyDemo && (greeting || companySpeaking) && (
+                <MessageGlow
+                  mode={companyTurn?.speaker === "NightOwl" ? "reply" : "voice"}
+                  color={companyTurn?.speaker === "NightOwl" ? "lime" : "magenta"}
+                  level={callVoiceLevel}
+                  className={companyTurn?.speaker === "NightOwl" ? "inset-x-0 bottom-0 h-[132px]" : "inset-x-0 top-0 h-[132px]"}
+                />
+              )}
+              {questionDemo && (questionStage === "unlocking" || questionStage === "answering") && (
+                <>
+                  <MessageGlow mode="voice" color="sky" level={callVoiceLevel} className="inset-x-0 top-0 h-[132px]" />
+                  <CallSpeakerOverlay
+                    speaker={questionStage === "unlocking" ? "AI" : "@urmom6767"}
+                    character={questionStage === "unlocking" ? null : "squirrel"}
+                    line={questionStage === "unlocking" ? "You just unlocked a question from @NightOwl." : ROAD_ANSWER}
+                    speaking
+                    color="sky"
+                  />
+                </>
+              )}
+              {storyDemo && (storyStage === "story" || storyStage === "prompt") && (
+                <>
+                  <MessageGlow mode="voice" color={storyStage === "prompt" ? "sky" : "magenta"} level={callVoiceLevel} className="inset-x-0 top-0 h-[245px]" />
+                  <CallSpeakerOverlay
+                    speaker={storyStage === "prompt" ? "AI" : "@Hufflepuff23"}
+                    character={storyStage === "prompt" ? null : "squirrel"}
+                    line={storyStage === "prompt" ? "Would you like to reply to this message?" : BURRITO_TRANSCRIPT}
+                    speaking
+                    color={storyStage === "prompt" ? "sky" : "magenta"}
+                    className="top-[92px]"
+                  />
+                </>
+              )}
+              {dropRecording ? (
+                <MessageGlow mode="reply" color={youColor} level={drop.level} />
+              ) : nightDrive.phase === "listening" && !radioOn ? (
+                // Answering the night check-in: your voice rises from the bottom, like a reply.
+                <MessageGlow mode="reply" color={youColor} level={nightDrive.level} />
+              ) : (
+                <MessageGlow
+                  mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
+                  color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
+                  level={message.level}
+                />
+              )}
+            </>
           }
         />
         {/* Night mode's rest area takes over the map: the road can wait. Once the route's set it
@@ -575,7 +745,19 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          {drop.active && state !== "pick" ? <DropLcd controls={drop} /> : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} routed={nightDrive.routed} /> : messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
+          {storyDemo && storyStage !== "driving" ? (
+            <StoryDemoLcd stage={storyStage} />
+          ) : questionDemo && questionStage !== "driving" ? (
+            <QuestionDemoLcd stage={questionStage} />
+          ) : drop.active && state !== "pick" ? (
+            <DropLcd controls={drop} />
+          ) : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? (
+            <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} routed={nightDrive.routed} />
+          ) : messageOn ? (
+            <MessageLcd controls={message} />
+          ) : (
+            <RadioLcd state={state} peerCharacter={companyTurn?.character ?? caller.character} peer={companyTurn ? `@${companyTurn.speaker}` : caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={(companyDemo ? companySpeaking : speaking) && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+          )}
           <CollectedTally counts={collected} flash={tallyFlash} />
         </LcdScreen>
 
@@ -620,11 +802,22 @@ export function RadioScreen({
             A remembered pick sits pressed in and lit, and is kept after 3 seconds. */}
         {state === "pick" && !arrived && (
           <div className="absolute left-[26px] top-[166px] flex w-[351px]">
-            <IntentKeys current={intentSet ? intent : undefined} onPick={pickIntent} />
+            <IntentKeys current={!companyDemo && intentSet ? intent : undefined} onPick={pickIntent} />
           </div>
         )}
         <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", (arrived || state === "pick" || (nightDrive.resting && !radioOn)) && "hidden")}>
-          {radioOn ? (
+          {questionDemo && questionStage !== "driving" ? (
+            <HardwareButton
+              className="flex-1"
+              disabled={questionStage !== "reply-ready"}
+              onClick={() => setQuestionStage("answering")}
+              aria-label={questionStage === "reply-ready" ? "Reply to question" : "Question reply"}
+            >
+              <span className="text-base font-bold opacity-80">
+                {questionStage === "reply-ready" ? "REPLY" : questionStage === "unlocking" ? "QUESTION UNLOCKED" : questionStage === "answering" ? "PLAYING REPLY" : "ANSWER PLAYED"}
+              </span>
+            </HardwareButton>
+          ) : radioOn ? (
             <>
               <HardwareButton
                 tone="end"
@@ -679,7 +872,7 @@ export function RadioScreen({
           )}
           {/* Drop is for planting your own thing while you drive alone: not on a call (you're
               talking to someone) and not while a message plays (that has its own Respond). */}
-          {!radioOn && (
+          {!radioOn && !questionDemo && (
           <HardwareButton
             className={CALL_KEY}
             // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
@@ -723,6 +916,80 @@ export function RadioScreen({
         <CollectFlight key={f.id} kind={f.kind} from={f.from} to={LCD_TALLY} onLanded={() => landed(f)} />
       ))}
     </div>
+  );
+}
+
+function CallSpeakerOverlay({
+  speaker,
+  character,
+  line,
+  speaking,
+  color = "magenta",
+  className,
+}: {
+  speaker: string;
+  character: CharacterId | null;
+  line: string;
+  speaking: boolean;
+  color?: MarkerColor;
+  className?: string;
+}) {
+  const palettes: Record<MarkerColor, { text: string; ring: string; innerRing: string }> = {
+    lime: { text: "text-marker-lime", ring: "border-marker-lime/80", innerRing: "border-marker-lime/70" },
+    sky: { text: "text-marker-sky", ring: "border-marker-sky/80", innerRing: "border-marker-sky/70" },
+    magenta: { text: "text-marker-magenta", ring: "border-marker-magenta/80", innerRing: "border-marker-magenta/70" },
+    orange: { text: "text-marker-orange", ring: "border-marker-orange/80", innerRing: "border-marker-orange/70" },
+  };
+  const palette = palettes[color];
+  return (
+    <div className={cn("absolute inset-x-2 top-2 z-20 flex min-h-[88px] items-center gap-3 rounded-md border border-white/15 bg-[#10110fcc] px-3 py-2 text-white shadow-lg backdrop-blur-[2px]", className)}>
+      <div className="call-voice-rings relative grid size-[60px] shrink-0 place-items-center">
+        <span className={`call-ring call-ring-one absolute size-14 rounded-full border-2 ${palette.ring}`} />
+        <span className={`call-ring call-ring-two absolute size-11 rounded-full border ${palette.innerRing}`} />
+        <div className={`relative z-10 grid size-9 place-items-center rounded-full bg-[#27212a] ${palette.text}`}>
+          {character ? <CharacterSprite character={character} pixel={2} playing={speaking} /> : <span className="font-mono text-[10px] font-bold">AI</span>}
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`font-mono text-[10px] font-bold tracking-[0.12em] ${palette.text}`}>{speaker} {speaking ? "· SPEAKING" : "· INTRO"}</p>
+        <p className="mt-1 line-clamp-3 font-mono text-[11px] leading-[1.25] text-white/90">{line}</p>
+      </div>
+    </div>
+  );
+}
+
+function StoryDemoLcd({ stage }: { stage: StoryStage }) {
+  const prompt = stage === "prompt" || stage === "reply-ready";
+  return (
+    <p role="status" className="px-3 text-center font-mono uppercase leading-tight text-lcd-ink">
+      <span className="block text-[10px]">MESSAGE FROM @HUFFLEPUFF23</span>
+      <span className="mt-1 block text-[11px] normal-case">{prompt ? "Would you like to reply to this message?" : "Whoever’s hearing this…"}</span>
+    </p>
+  );
+}
+
+function QuestionDemoLcd({ stage }: { stage: QuestionStage }) {
+  const heading =
+    stage === "unlocking"
+      ? "A question from @NightOwl"
+      : stage === "reply-ready"
+      ? "A question from @NightOwl, left right here:"
+      : stage === "answering"
+      ? "Answer from @urmom6767"
+      : "Answer received";
+  const detail =
+    stage === "unlocking"
+      ? "You just unlocked a question"
+      : stage === "reply-ready"
+      ? ROAD_QUESTION
+      : stage === "answering"
+      ? ROAD_ANSWER
+      : "What got you through today?";
+  return (
+    <p role="status" className="px-3 text-center font-mono uppercase leading-tight text-lcd-ink">
+      <span className="block text-[10px]">{heading}</span>
+      <span className="mt-1 block text-[12px] normal-case">{detail}</span>
+    </p>
   );
 }
 

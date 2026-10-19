@@ -63,7 +63,10 @@ function subscribe(listener: () => void) {
 /** The radio with a fresh ?load=, so its load-in plays again. */
 const loadIn = () => `/radio?load=${Date.now()}`;
 /** The scripted story drive, from the start each time. */
-const storyDrive = () => `/radio?demo=story&t=${Date.now()}`;
+const storyDrive = () => {
+  const run = Date.now();
+  return `/radio?demo=story&load=${run}&t=${run}`;
+};
 
 /** Night mode from one of its moments, from the start each time, driving the demo route. */
 const nightDrive = (start: "fall" | "checkin" | "rest") => `/radio?night=${start}&sim&t=${Date.now()}`;
@@ -205,7 +208,7 @@ export function DialKit() {
           go: () => openRadio(storyDrive()),
           radio: true,
           active: path === "/radio" && params.get("demo") === "story",
-          note: "Prototype: about 5 s down the I-10, a story waits off the road; the car pulls it in, it pops and flies into the LCD. Plays again on every click.",
+          note: "The radio load-in plays first, then the car waits three seconds and drives for about three seconds. A story pulls in, the pixel trail lingers, then @NightOwl's story plays with a spoken reply prompt.",
         },
         {
           label: "Message unlocks · Angelina's",
@@ -216,16 +219,16 @@ export function DialKit() {
         },
         {
           label: "@NightOwl's voice message",
-          href: blank("@NightOwl's voice message"),
-          todo: "new",
-          note: "“Whoever's hearing this, there's a gas station there that sells the best breakfast burrito in California…”",
+          go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
+          radio: true,
+          note: "The story unlock demo above includes @NightOwl's breakfast burrito message and reply prompt.",
         },
         {
           label: "Reply?",
-          href: "/radio?message=message",
+          go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
           radio: true,
           todo: "change",
-          note: "Built: RESPOND for the first 5 s of their voice. If you didn't, the radio asks in its recorded voice (public/voice/reply-prompt.mp3): “Would you like to reply to this message? Reply with yes or no.” RESPOND is yes; skip or a few quiet seconds is no.",
+          note: "After the message, the recorded radio voice asks whether you want to reply. RESPOND is yes; skip or a few quiet seconds is no.",
         },
       ],
     },
@@ -235,38 +238,35 @@ export function DialKit() {
       time: "1:45",
       steps: [
         {
-          label: "Company off",
-          href: "/radio?call=off",
+          label: "Company · one stranger",
+          href: "/radio?demo=company",
           radio: true,
-          todo: "change",
-          note: "Engraved RADIO; the script calls it Company. Skip the load-in here: it belongs to 2 · Radio loads in.",
+          note: "Starts on a moving navigation map. Turn the radio on and choose Off my chest to meet Mothlight; their conversation plays from NightOwl’s perspective.",
         },
         {
           label: "Mood: pick an intent",
-          href: "/radio?call=pick",
+          href: "/radio?demo=company&call=pick",
           radio: true,
-          note: "Built: flip the switch on and the four keys ask what you're up for (Meet someone, Chit-chat, Share a story, Off my chest). The script's Something real is this pick.",
+          note: "Choose Off my chest to connect with Mothlight.",
         },
-        { label: "Connecting", href: "/radio?call=connecting", radio: true },
+        { label: "Connecting", href: "/radio?demo=company&call=connecting", radio: true },
         {
           label: "Meet @Mothlight",
-          href: "/radio?me=NightOwl&peer=Mothlight&miles=84",
+          href: "/radio?demo=company&call=connected",
           radio: true,
-          note: "Flip on and pick an intent: the radio says “@NightOwl, meet @Mothlight. You've got 84 miles of road together. To start, where are you both headed tonight?” in the recorded voice (public/voice), the LCD turning its page on “To start”. Other pairs get the browser's speech.",
+          note: "The recorded radio voice introduces @NightOwl and @Mothlight; the LCD turns to “To start” as it asks where they’re headed. Mothlight’s rabbit appears on the green LCD.",
         },
         {
           label: "@Mothlight speaking",
-          href: "/radio?call=connected&speaking=them",
+          href: "/radio?demo=company&call=connected",
           radio: true,
-          todo: "change",
-          note: "Their character hops with sound waves, but it alternates on its own. Pin it on cue (?speaking=them isn't wired yet).",
+          note: "Mothlight speaks first; their rabbit avatar and the dithered map glow animate in the clipped strip at the map’s top.",
         },
         {
-          label: "Ray answers back",
-          href: "/radio?call=connected&speaking=you",
+          label: "NightOwl answers back",
+          href: "/radio?demo=company&call=connected",
           radio: true,
-          todo: "new",
-          note: "A second animation for you talking, so the two sides read differently.",
+          note: "The speaker treatment switches to NightOwl, then back to Mothlight, without covering the route.",
         },
       ],
     },
@@ -277,16 +277,15 @@ export function DialKit() {
       steps: [
         {
           label: "Question unlocks",
-          href: "/radio?message=question",
+          href: "/radio?demo=question",
           radio: true,
-          todo: "change",
-          note: "Built: opens with your recorded unlock line (public/voice/unlock-question.mp3: “You just unlocked a question from NightOwl. Would you like to respond?”), then plays a sample question (@urmom2424, favorite song). Script: “A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
+          note: "Start already driving. A 3D question mark pulls into the radio with the story-unlock animation; the AI announces the unlock and shows NightOwl’s question.",
         },
         {
           label: "Answering",
-          href: blank("Answering"),
-          todo: "new",
-          note: "Answering animation: the reply recorder on the LCD. Figma 123:502, 123:727.",
+          href: "/radio?demo=question",
+          radio: true,
+          note: "Press Reply to play @urmom6767’s answer as a visual voice animation for about eight seconds. No spoken answer audio.",
         },
         {
           label: "Planting your answer",

@@ -44,8 +44,6 @@ export function TripSummary({ trip: given, doneHref = "/", allQuestionsHref = "/
 
   const trip = given ?? (saved && { ...saved, from: saved.from || from || "" });
 
-  const answered = trip?.questions.filter((q) => q.answered).length ?? 0;
-
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
       <TopBar />
@@ -62,11 +60,9 @@ export function TripSummary({ trip: given, doneHref = "/", allQuestionsHref = "/
 
           <div className="mt-8 space-y-2 text-sm normal-case">
             <p className={appear} style={at(0)}>
-              You passed <span className="text-marker-lime">{plural(trip.stories, "story", "stories")}</span> and answered{" "}
-              <span className="text-marker-magenta">
-                {plural(answered, "question")}
-              </span>
-              .
+              Your road had <span className="text-marker-lime">{plural(trip.stories, "story", "stories")}</span>,{" "}
+              <span className="text-marker-magenta">{plural(trip.questions.length, "question")}</span>, and{" "}
+              <span className="text-marker-sky">{plural(trip.notes, "note")}</span>.
             </p>
             {trip.calls.length ? (
               trip.calls.map((call, i) => (

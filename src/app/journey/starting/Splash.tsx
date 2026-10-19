@@ -8,6 +8,9 @@ import { StartingRadio } from "@/components/journey";
 export function Splash() {
   const router = useRouter();
   useEffect(() => router.prefetch("/radio"), [router]);
-  const open = useCallback(() => router.replace("/radio"), [router]);
+  const open = useCallback(() => {
+    const run = Date.now();
+    router.replace(`/radio?demo=story&load=${run}&t=${run}`);
+  }, [router]);
   return <StartingRadio onDone={open} />;
 }

@@ -31,7 +31,7 @@ const monthYear = (d: Date) => d.toLocaleDateString("en-US", { month: "long", ye
  */
 export function ProfileView({
   handle,
-  character = "freddie",
+  character = "raccoon",
   onEditCharacter,
   joinedAt,
   onSettings,

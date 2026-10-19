@@ -88,11 +88,13 @@ export function JourneySetup() {
 
   // Trip length is the drive's length; every trip is a drive.
   const minutes = currentRoute ? Math.max(1, Math.round(currentRoute.duration / 60)) : 0;
-  const { stories, questions } = contentFor(minutes);
+  const counts = contentFor(minutes, destination ? `${destination.name}, ${destination.detail}` : "");
+  const { stories, questions, notes } = counts;
   const ready = currentRoute !== null;
   // The summary shows from the start; stories and questions count up from 0 once a route is picked.
   const shownStories = useCountUp(currentRoute ? stories : 0);
   const shownQuestions = useCountUp(currentRoute ? questions : 0);
+  const shownNotes = useCountUp(currentRoute ? notes : 0);
 
   const pick = (place: Place) => {
     setDestination(place);
@@ -198,6 +200,12 @@ export function JourneySetup() {
             <dt className="sr-only">Questions</dt>
             <dd className="text-marker-magenta">{plural(shownQuestions, "question")}</dd>
           </div>
+          {notes > 0 && (
+            <div className="text-right">
+              <dt className="sr-only">Notes</dt>
+              <dd className="text-marker-sky">{plural(shownNotes, "note")}</dd>
+            </div>
+          )}
         </dl>
       </section>
 
@@ -217,6 +225,9 @@ export function JourneySetup() {
                 minutes,
                 miles: Math.max(1, Math.round(currentRoute.distance / 1609.34)),
                 startedAt: Date.now(),
+                storyCount: stories,
+                questionCount: questions,
+                noteCount: notes,
               };
               saveTrip(trip);
               // For Recent journeys on the start screen.
