@@ -863,6 +863,12 @@ body {
 .night-sign-row {
   animation: night-sign-on 1ms step-end calc(var(--row) * 100ms) both;
 }
+/* Folding to a strip once the route's set: it switches on from the bottom in 4 hard steps. */
+@keyframes night-sign-fold {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+}
 @media (prefers-reduced-motion: no-preference) {
   .night-sign-row {
     animation:
@@ -873,6 +879,9 @@ body {
     animation:
       night-sign-on 1ms step-end calc(var(--row) * 100ms) both,
       night-sign-scroll-back 6s steps(102, end) infinite;
+  }
+  .night-sign-fold {
+    animation: night-sign-fold 240ms steps(4, end) both;
   }
   .night-sign-letter {
     animation: night-sign-wave 1.2s steps(1) infinite;

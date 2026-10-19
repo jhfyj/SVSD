@@ -186,25 +186,41 @@ const HERO_ROW = 2;
  * 4px steps, every letter bobbing in a wave. Rows switch on one after another (100ms apart, in
  * hard frames) and alternate direction. Only the middle row is full strength; the others echo it
  * at 40% so the sign says STOP without lighting up the car.
- * Reduced motion: the rows are still.
+ * Folded (once the route's set): the sign shrinks to its one bright row in a strip along the
+ * bottom of the map, so the road and the way to the rest area show again. The strip switches on
+ * from the bottom in 4 hard steps.
+ * Reduced motion: the rows are still and the strip just appears.
  */
-export function RestSign() {
+export function RestSign({ folded = false }: { folded?: boolean }) {
+  const label = `Rest area in ${REST_AREA.miles} miles`;
+  if (folded) {
+    return (
+      <div role="img" aria-label={label} className="night-sign-fold absolute inset-x-0 bottom-0 z-10 flex h-[72px] items-center overflow-hidden border-t border-foreground/40 bg-nightfall text-foreground">
+        <SignRow row={0} />
+      </div>
+    );
+  }
   return (
-    <div role="img" aria-label={`Rest area in ${REST_AREA.miles} miles`} className="absolute inset-0 z-10 grid grid-rows-5 items-center overflow-hidden bg-nightfall py-3 text-foreground">
+    <div role="img" aria-label={label} className="absolute inset-0 z-10 grid grid-rows-5 items-center overflow-hidden bg-nightfall py-3 text-foreground">
       {Array.from({ length: ROWS }, (_, row) => (
-        <div
-          key={row}
-          aria-hidden
-          className={cn("night-sign-row flex w-max whitespace-pre text-[40px] font-bold leading-none", row % 2 === 1 && "night-sign-row-back", row !== HERO_ROW && "opacity-40")}
-          style={{ "--row": row } as CSSProperties}
-        >
-          {/* Two copies, so sliding one copy's width loops without a seam. */}
-          {[...SIGN.repeat(2)].map((c, i) => (
-            <span key={i} className="night-sign-letter inline-block" style={{ "--i": (i % SIGN.length) + row * 3 } as CSSProperties}>
-              {c}
-            </span>
-          ))}
-        </div>
+        <SignRow key={row} row={row} echo={row !== HERO_ROW} />
+      ))}
+    </div>
+  );
+}
+
+/** One row of the sign: two copies of the words, so sliding one copy's width loops without a seam. */
+function SignRow({ row, echo = false }: { row: number; echo?: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className={cn("night-sign-row flex w-max whitespace-pre text-[40px] font-bold leading-none", row % 2 === 1 && "night-sign-row-back", echo && "opacity-40")}
+      style={{ "--row": row } as CSSProperties}
+    >
+      {[...SIGN.repeat(2)].map((c, i) => (
+        <span key={i} className="night-sign-letter inline-block" style={{ "--i": (i % SIGN.length) + row * 3 } as CSSProperties}>
+          {c}
+        </span>
       ))}
     </div>
   );

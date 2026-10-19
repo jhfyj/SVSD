@@ -453,8 +453,9 @@ export function RadioScreen({
           fallback={<PlaceholderMap travellers={travellers} drops={drop.drops} />}
         />
         {/* A message playing: their voice comes down from the top; your reply (or a drop) rises from the bottom in your colour. */}
-        {/* Night mode's rest area takes over the map: the road can wait. */}
-        {nightDrive.resting && <RestSign />}
+        {/* Night mode's rest area takes over the map: the road can wait. Once the route's set it
+            folds to a strip, so you can see the way there. */}
+        {nightDrive.resting && <RestSign folded={nightDrive.routed} />}
         {dropRecording ? (
           <MessageGlow mode="reply" color={youColor} level={drop.level} />
         ) : nightDrive.phase === "listening" && !radioOn ? (
