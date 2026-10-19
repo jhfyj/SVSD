@@ -89,8 +89,48 @@ const roads = (p: Palette): LayerSpecification[] => {
   ];
 };
 
+/**
+ * Day to night (and back), the map never reloads: its colours slide from one palette to the other
+ * over this long, in place. Matches DUSK_MS (lib/radio/nightDrive), so at sunset the map darkens
+ * as the sun sinks, and the LCD tint's CSS transition (.nav-map in globals.css).
+ */
+export const MAP_FADE_MS = 2400;
+
+export const palette = (theme: "dark" | "light"): Palette => (theme === "light" ? DAY : NIGHT);
+
+/** Every colour the palette paints: [layer, paint property, palette key]. Keep in step with mapStyle. */
+export const PAINTED: [string, string, keyof Palette][] = [
+  ["land", "background-color", "land"],
+  ["park", "fill-color", "park"],
+  ["water", "fill-color", "water"],
+  ["road-minor", "line-color", "minor"],
+  ["road-street", "line-color", "street"],
+  ["road-major", "line-color", "major"],
+  ["road-highway", "line-color", "highway"],
+  ["buildings", "fill-extrusion-color", "building"],
+  ["route-casing", "line-color", "casing"],
+  ["route-ahead", "line-color", "route"],
+  ["street-names", "text-color", "label"],
+  ["street-names", "text-halo-color", "halo"],
+];
+
+const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const hex = (c: number[]) => "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+
+/** A palette `k` of the way from `a` to `b` (0 = a, 1 = b). */
+export function mixPalette(a: Palette, b: Palette, k: number): Palette {
+  const out = { ...a };
+  for (const key of Object.keys(a) as (keyof Palette)[]) {
+    const [x, y] = [rgb(a[key]), rgb(b[key])];
+    out[key] = hex(x.map((v, i) => v + (y[i] - v) * k));
+  }
+  return out;
+}
+
+export type { Palette };
+
 export function mapStyle(theme: "dark" | "light"): StyleSpecification {
-  const p = theme === "light" ? DAY : NIGHT;
+  const p = palette(theme);
   return {
     version: 8,
     // Absolute, since the map's workers fetch it. Client only, like the map.

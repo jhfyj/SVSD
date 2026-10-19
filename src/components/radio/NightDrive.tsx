@@ -38,13 +38,29 @@ const SUN_PIXEL = 5;
  *   reduced: not shown
  */
 export function Nightfall({ phase, map }: { phase: NightPhase; map: Rect }) {
-  if (phase !== "dusk" && phase !== "relight") return null;
+  const falling = phase === "dusk" || phase === "relight";
+  // The map never goes away: from the first frame of sunset it slides its own colours from day to
+  // night (NavMap, over DUSK_MS), so it's already the night map by the time the rest switches.
+  useEffect(() => {
+    if (!falling) return;
+    const root = document.documentElement;
+    root.dataset.mapTheme = "dark";
+    return () => {
+      delete root.dataset.mapTheme;
+    };
+  }, [falling]);
+  if (!falling) return null;
+  // The dimming and the flicker are the casing's, never the map's: both are cut around the screen.
+  const { left, top, width, height } = map;
+  const [r, b] = [left + width, top + height];
+  const aroundMap = {
+    clipPath: `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${left}px ${top}px, ${r}px ${top}px, ${r}px ${b}px, ${left}px ${b}px, ${left}px ${top}px)`,
+  };
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       {phase === "dusk" && (
         <>
-          <div className="night-dusk-map absolute bg-sun mix-blend-multiply" style={map} />
-          <div className="night-dusk-casing absolute inset-0 bg-nightfall mix-blend-multiply" />
+          <div className="night-dusk-casing absolute inset-0 bg-nightfall mix-blend-multiply" style={aroundMap} />
           <div className="absolute overflow-hidden" style={map}>
             <WeatherSprite
               weather={{ sky: "clear", night: false }}
@@ -54,7 +70,7 @@ export function Nightfall({ phase, map }: { phase: NightPhase; map: Rect }) {
           </div>
         </>
       )}
-      {phase === "relight" && <div className="night-relight absolute inset-0 bg-nightfall" />}
+      {phase === "relight" && <div className="night-relight absolute inset-0 bg-nightfall" style={aroundMap} />}
     </div>
   );
 }
@@ -115,7 +131,7 @@ export function NightLcd({
     return (
       <Lcd>
         <span className="block">REROUTING</span>
-        <span className="mt-1 block text-[11px] normal-case">Rest area in {REST_AREA.miles} mi · stories paused</span>
+        <span className="mt-1 block text-[11px] normal-case">Rest area in {REST_AREA.miles} mi</span>
       </Lcd>
     );
   }
@@ -125,7 +141,7 @@ export function NightLcd({
         <Dozing character={character} />
         {/* Kept off the LCD's edges: a long line wraps onto two balanced lines instead. */}
         <figcaption className="max-w-[170px] text-balance text-center font-mono text-[11px] leading-tight">
-          {`Take ${REST_AREA.breakMinutes} min · stories wait`}
+          {`Take ${REST_AREA.breakMinutes} min`}
         </figcaption>
       </figure>
     );

@@ -262,6 +262,8 @@ body::-webkit-scrollbar {
   --map-filter: none;
   /* The radio's map: black and white, then a slight cast toward the LCD green (#97bd93). Day drops the green. */
   --map-lcd-tint: grayscale(1) contrast(1.15) sepia(0.45) hue-rotate(58deg) saturate(1.25);
+  /* The night tint again, under a name day doesn't override: the map takes it at sunset (data-map-theme). */
+  --map-lcd-tint-night: grayscale(1) contrast(1.15) sepia(0.45) hue-rotate(58deg) saturate(1.25);
   /* Land dots on the Destination earth map. */
   --land-dot: rgb(255 255 255 / 0.25);
   /* Splash spiral and the blueprint grid in the radio load-in (grid ink is rgb channels). */
@@ -583,6 +585,17 @@ textarea,
 .nav-map canvas,
 .nav-map img {
   filter: var(--map-lcd-tint);
+  /* Day to night the tint slides with the map's colours (MAP_FADE_MS in lib/nav/mapStyle). */
+  transition: filter 2400ms var(--motion-ease-out);
+}
+/* Sunset: the map goes to the night tint with the sun, before the app's theme switches. */[data-map-theme="dark"] .nav-map canvas,[data-map-theme="dark"] .nav-map img {
+  filter: var(--map-lcd-tint-night);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-map canvas,
+  .nav-map img {
+    transition: none;
+  }
 }
 
 /* The overview uses the real navigation canvas against the same green LCD as the radio display. */
@@ -692,12 +705,6 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
 /* You on the amber map: a pale amber square, the brightest thing on the road. */
 :root[data-amber="on"]:not([data-theme="light"]) .radio-night .radio-map {
   --marker-lime: #ffe2a6;
-}
-
-/* Amber off: the sunset still sinks the sun, but the light just dims to night instead of washing
-   the map amber, so the radio relights in its usual colours. */
-:root:not([data-amber="on"]) .night-dusk-map {
-  background-color: var(--nightfall);
 }
 
 /* The route trail lights up one dot at a time. */
@@ -1123,10 +1130,6 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
 }
 .night-sun {
   animation: night-sun 2400ms steps(112, end) both;
-}
-.night-dusk-map {
-  opacity: 0.85;
-  animation: night-dusk 2400ms var(--motion-ease-out) both;
 }
 .night-dusk-casing {
   opacity: 0.6;
