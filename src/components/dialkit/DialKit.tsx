@@ -295,13 +295,13 @@ export function DialKit() {
           label: "Question unlocks",
           href: "/radio?demo=question",
           radio: true,
-          note: "Start already driving. A 3D question mark pulls into the radio with the story-unlock animation; the AI announces the unlock and shows NightOwl’s question.",
+          note: "Start already driving. A 3D question mark pulls into the radio; the radio says You just unlocked a question from NightOwl. Would you like to respond? The question stays hidden until you say yes.",
         },
         {
           label: "Answering",
           href: "/radio?demo=question",
           radio: true,
-          note: "Press Reply to play @urmom6767’s answer as a visual voice animation for about eight seconds. No spoken answer audio.",
+          note: "The mic opens by itself (your green from the bottom). Say yes (or tap Respond): the question shows on the LCD while NightOwl’s pink comes down from the top (silent until there's a recording). Then the beep, YOUR REPLY, your green from the bottom; SEND or 10 s of quiet sends it, then back to the usual screen.",
         },
         {
           label: "Planting your answer",

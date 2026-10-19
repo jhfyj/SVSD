@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { parseCoordinates, routeBetween, searchPlaces, type Place, type Route } from "@/lib/journey/geo";
 import { formatDuration } from "@/lib/journey/duration";
@@ -9,15 +10,17 @@ import { recordJourney } from "@/lib/journey/history";
 import { contentFor } from "@/lib/journey/trail";
 import { AddressList } from "../ui/AddressList";
 import { cn } from "../ui/cn";
-import { TabBar } from "../ui/TabBar";
 import { JourneyMap } from "./JourneyMap";
-import { TopBar } from "./TopBar";
 import { useCountUp } from "./useCountUp";
 import { placeName, saveTrip } from "@/lib/trip/trip";
 import { useCurrentLocation } from "./useCurrentLocation";
 import { plural } from "@/lib/plural";
 
-/** Destination (iPhone 16 - 50 to 58): pick where you're going; the drive sets the trip's length. */
+/**
+ * Destination (iPhone 16 - 50 to 58): pick where you're going; the drive sets the trip's length.
+ * You get here from Start your journey, so it's a step of its own: no top bar and no tab bar,
+ * just a back arrow (like Customize profile's) to the start screen.
+ */
 export function JourneySetup() {
   const { location, retry } = useCurrentLocation();
   const here = location.status === "ok" ? location.position : null;
@@ -110,7 +113,16 @@ export function JourneySetup() {
 
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
-      <TopBar />
+      <header className="relative flex h-14 items-center">
+        <Link
+          href="/"
+          aria-label="Back"
+          data-cuelume-tap="close"
+          className="absolute left-[13px] flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-foreground"
+        >
+          <ArrowLeft size={16} aria-hidden />
+        </Link>
+      </header>
       <section aria-label="Destination" className="flex flex-1 flex-col">
         {/* The prompt fades once you start typing; it stays as the field's label for screen readers. */}
         <label
@@ -245,7 +257,6 @@ export function JourneySetup() {
           <span aria-hidden className="size-2.5 rounded-full bg-current" />
         </Link>
       </div>
-      <TabBar current="journey" />
     </div>
   );
 }
