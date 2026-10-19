@@ -89,6 +89,8 @@ export type NavMapProps = {
   demo?: DemoDrive;
   /** A pickup popped as you reached it; `at` is where, in the page's px (your marker's centre). */
   onCollect?: (pickup: Pickup, at: { x: number; y: number }) => void;
+  /** Hold the drive at your start (before Start journey): the demo drive doesn't move. */
+  paused?: boolean;
   className?: string;
 };
 
@@ -148,7 +150,11 @@ const lngLat = (p: LatLng): [number, number] => [p.lng, p.lat];
 
 type Progress = { along: number; at: LatLng; now: number };
 
-export function NavMap({ travellers, messages = [], onReach, drops = [], fallback, overlay, demo, onCollect, className }: NavMapProps) {
+export function NavMap({ travellers, messages = [], onReach, drops = [], fallback, overlay, demo, onCollect, paused = false, className }: NavMapProps) {
+  const hold = useRef(paused);
+  useEffect(() => {
+    hold.current = paused;
+  }, [paused]);
   const container = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [lib, setLib] = useState<MapLibre | null>(null);
@@ -322,7 +328,8 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
       last = now;
       const n = nav.current;
       if (simulate && path) {
-        n.along = Math.min(path.length, n.along + speed * dt);
+        // Held at the start (before Start journey): you're shown there, but the drive doesn't move.
+        if (!hold.current) n.along = Math.min(path.length, n.along + speed * dt);
         n.target = pointAt(path, n.along);
         n.heading = headingAt(path, n.along) ?? n.heading;
       }

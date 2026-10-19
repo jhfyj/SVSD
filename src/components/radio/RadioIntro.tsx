@@ -18,15 +18,15 @@ type Part = { label: string; box: [x: number, y: number, w: number, h: number] }
 
 /** Where each part of the 393×852 radio screen sits, in frame order. */
 const PARTS: Part[] = [
-  { label: "Clock", box: [17, 26, 116, 20] },
-  { label: "Power", box: [346, 14, 44, 44] },
+  { label: "Weather", box: [17, 24, 32, 30] },
+  { label: "Clock", box: [296, 26, 80, 20] },
   { label: "Map · 365×509", box: [14, 64, 365, 509] },
   { label: "Radio", box: [30, 605, 55, 20] },
   { label: "Switch", box: [26, 629, 46, 98] },
   { label: "LCD · 221×130", box: [156, 603, 221, 130] },
-  { label: "Music", box: [26, 751, 112, 70] },
-  { label: "Drop", box: [146, 751, 111, 70] },
-  { label: "Settings", box: [266, 751, 111, 70] },
+  { label: "Start journey", box: [26, 751, 195, 70] },
+  { label: "Drop", box: [229, 751, 70, 70] },
+  { label: "Settings", box: [307, 751, 70, 70] },
 ];
 
 /** ms: frames draw in from FRAME_START, FRAME_GAP apart (each takes FRAME_MS). */

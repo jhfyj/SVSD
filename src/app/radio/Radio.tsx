@@ -34,6 +34,8 @@ const handle = (text: string | null) => (text ? (text.startsWith("@") ? text : `
  * `?night=fall|checkin|rest` plays Night mode (Flow 6) from sunset, the check-in or the rest area
  * (no load-in, nothing else on the road); a new `?t=` starts it over. Sunset ends by pinning the
  * night theme, as the dial kit's theme switch would.
+ * Plain `/radio` or `/radio?sim` (a new journey, the dial kit's load-in, Tracking the road) opens on
+ * Start journey; the others above open mid-drive, already started.
  */
 export function Radio() {
   const router = useRouter();
@@ -57,6 +59,7 @@ export function Radio() {
   const nightParam = params.get("night") as NightStart | null;
   const night = nightParam && NIGHT_STARTS.includes(nightParam) ? nightParam : undefined;
   const meCharacter = useCharacter(session?.phone) ?? DEFAULT_CHARACTER;
+  const midDrive = ["call", "message", "messages", "timeout", "arrived", "demo", "night"].some((k) => params.has(k));
   return (
     <RadioIntro key={params.get("load") ?? "radio"} skip={!!demo || !!night}>
       <RadioScreen
@@ -77,7 +80,9 @@ export function Radio() {
         me={me}
         peer={peer}
         sharedMiles={miles}
-        onPower={() => router.push("/")}
+        // A new journey opens on Start journey (plain ?sim too: press it and the demo drive sets off).
+        // Every other dial kit moment (a call state, a message, the demo, Night mode) is mid-drive.
+        started={midDrive}
         onEndTrip={() => router.push("/trip")}
       />
     </RadioIntro>

@@ -1,15 +1,16 @@
 "use client";
 
-import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, MusicNotes, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon } from "@phosphor-icons/react";
 import { WeatherIcon } from "../journey/WeatherIcon";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { startMusic, stopMusic } from "@/lib/music";
 import { DROP_LABEL, type Drop } from "@/lib/radio/drops";
 import { DropLcd, LeftBehind } from "./Drop";
 import { useDrop } from "./useDrop";
 import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
+import { announce as announceArrival } from "@/lib/trip/arrival";
+import { loadTrip, saveTrip } from "@/lib/trip/trip";
 import { cue } from "@/lib/sound";
 import type { DemoDrive, Pickup } from "@/lib/demo/storyDrive";
 import { CollectedTally, CollectFlight } from "../drops/CollectFlight";
@@ -25,12 +26,11 @@ import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
-import { announce } from "@/lib/radio/voice";
-import { sayIntro } from "@/lib/radio/scriptVoice";
+import { playVoice } from "@/lib/radio/voice";
+import { sayIntro, THANK_YOU } from "@/lib/radio/scriptVoice";
 import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
 import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/messages";
-import { PowerButton } from "./PowerButton";
 import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
 import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
@@ -86,7 +86,10 @@ export type RadioScreenProps = {
   peerCharacter?: CharacterId;
   /** Pin whether they're talking (Storybook). Otherwise it's mocked: they talk, pause, talk. */
   speaking?: boolean;
-  /** Where the radio starts. Off shows Music, Drop and Settings; on a call it's End call, Mic and Settings (no Drop). */
+  /**
+   * Where the radio starts. Off shows Start journey (End journey once it's under way), Drop and
+   * Settings; on a call it's End call, Mic and Settings (no Drop).
+   */
   defaultState?: CallState;
   /** Shorthand for starting connected. */
   defaultOn?: boolean;
@@ -94,13 +97,18 @@ export type RadioScreenProps = {
   onConnected?: (peer: string) => void;
   travellers?: Traveller[];
   onEndCall?: () => void;
-  /** After the power-off slide finishes: the app goes back to Start your journey. */
-  onPower?: () => void;
+  /**
+   * Whether the journey is already under way. A new journey opens with Start journey: the map
+   * waits at your start and nothing on the road plays until you press it. Defaults to started
+   * whenever `arrived` is pinned (Storybook).
+   */
+  started?: boolean;
   /**
    * true: at the destination now (the Finished journey stories). false: never arrive, so the
    * call buttons always show (every other story). Unset: you arrive once the drive's time is up.
    */
   arrived?: boolean;
+  /** End journey, mid-drive or at the destination: on to the trip recap. */
   onEndTrip?: () => void;
   /**
    * How many hang-ups, how fast, set off the timeout and how long it lasts. `null` turns it off:
@@ -160,7 +168,7 @@ export function RadioScreen({
   onConnected,
   travellers = DEFAULT_TRAVELLERS,
   onEndCall,
-  onPower,
+  started: defaultStarted,
   arrived: forceArrived,
   onEndTrip,
   hangUpRule = HANG_UP_RULE,
@@ -232,12 +240,23 @@ export function RadioScreen({
   // Tap to record, tap again to drop it here; it's sorted into a message or a question and left on the map.
   const drop = useDrop();
   const dropRecording = drop.phase === "recording";
-  const [musicOn, setMusicOn] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Power off: the whole radio slides down out of view, then you're back at Start your journey.
+  // Start journey: until you press it the map waits at your start and nothing on the road plays.
+  // Pressing it starts the drive's clock (arrival counts from here, not from setting the trip up).
+  const [started, setStarted] = useState(defaultStarted ?? forceArrived !== undefined);
+  const startJourney = () => {
+    setStarted(true);
+    const trip = loadTrip();
+    if (trip) {
+      saveTrip({ ...trip, startedAt: Date.now() });
+      announceArrival(false);
+    }
+  };
+  // End journey: the whole radio slides down out of view, then on to the trip recap.
+  // There's no pause: a journey is either under way or over.
   const [leaving, setLeaving] = useState(false);
-  const leave = () => onPower?.();
-  const powerOff = () => {
+  const leave = () => onEndTrip?.();
+  const endJourney = () => {
     if (leaving) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return leave();
     setLeaving(true);
@@ -260,8 +279,9 @@ export function RadioScreen({
     setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
     setTallyFlash((n) => n + 1);
   };
-  // At the destination the button row becomes a single End trip.
-  const arrived = useArrived(forceArrived);
+  // At the destination the button row becomes a single End journey.
+  // Not before Start journey: the drive's clock hasn't begun.
+  const arrived = useArrived(forceArrived) && started;
   // Night mode: the radio checks in with you, and tells you to stop when your answers slow down.
   const nightDrive = useNightDrive({ start: night, onNightfall });
   const nightTalking = nightDrive.busy && !radioOn;
@@ -283,7 +303,8 @@ export function RadioScreen({
     [messages, passed],
   );
   // Stories wait while Night mode talks to you, and stay paused at the rest area until you're back.
-  const listening = state === "off" && !arrived && !leaving && !nightDrive.busy;
+  // Nothing on the road plays before Start journey.
+  const listening = started && state === "off" && !arrived && !leaving && !nightDrive.busy;
   const reach = useCallback(
     (id: string) => {
       const m = messages.find((x) => x.id === id);
@@ -314,13 +335,6 @@ export function RadioScreen({
     return () => clearTimeout(t);
   }, [queue, messageOn, listening, dropBusy, play, message.message]);
 
-  // Music only plays while the radio is off and quiet; a message, the radio, or leaving the screen stops it.
-  const playing = musicOn && !radioOn && !messageOn && !nightTalking;
-  useEffect(() => {
-    if (!playing) return;
-    startMusic();
-    return stopMusic;
-  }, [playing]);
 
   // Arriving mid-drop drops it right there (the key row turns into End trip).
   const { toggle: toggleDrop } = drop;
@@ -344,17 +358,16 @@ export function RadioScreen({
       setHangingUp(false);
       setOnBreak(false);
       setSettingsOpen(false);
-      setMusicOn(false);
       setTimeoutUntil(null);
     }, 0);
     return () => clearTimeout(t);
   }, [arrived]);
-  // The thank-you is said out loud too, in the radio's own voice, over whatever message was playing.
+  // The thank-you is said out loud too, in the radio's recorded voice, over whatever message was playing.
   const { skip: skipMessage } = message;
   useEffect(() => {
     if (state !== "thanks") return;
     skipMessage();
-    const line = announce("Thank you so much for riding with us");
+    const line = playVoice(THANK_YOU, true);
     return line.stop;
   }, [state, skipMessage]);
   // Your drops on the map: a pin per drop with its kind's icon (question, story, tip).
@@ -471,6 +484,8 @@ export function RadioScreen({
         style={SCREEN}
       >
         <NavMap
+          // The map waits at your start until Start journey.
+          paused={!started}
           travellers={travellers}
           messages={ahead}
           onReach={reach}
@@ -504,12 +519,10 @@ export function RadioScreen({
       </section>
 
       {/* Top bar */}
-      <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between pl-[17px] pr-[3px]">
-        <div className="flex items-center gap-1.5">
-          <WeatherIcon />
-          <span className="font-display text-[20px] leading-none">{time}</span>
-        </div>
-        <PowerButton onClick={powerOff} />
+      {/* Weather on the left, the clock on the right. No power key: End journey is how you leave. */}
+      <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between px-[17px]">
+        <WeatherIcon />
+        <span className="font-display text-[20px] leading-none">{time}</span>
       </header>
 
       {/* Console */}
@@ -547,7 +560,6 @@ export function RadioScreen({
             if (on) {
               // Company on mid check-in: the radio stops asking, you've got someone to talk to.
               nightDrive.interrupt();
-              setMusicOn(false);
               // Going live ends whatever message was playing, and drops any waiting.
               message.skip();
               setQueue([]);
@@ -576,7 +588,7 @@ export function RadioScreen({
               data-cuelume-emphasis="strong"
             >
               <FlagCheckered size={24} className="opacity-80" aria-hidden />
-              <span className="text-base font-bold opacity-80">END TRIP</span>
+              <span className="text-base font-bold opacity-80">END JOURNEY</span>
             </HardwareButton>
           </div>
         )}
@@ -650,21 +662,25 @@ export function RadioScreen({
             <MessageKeys controls={message} color={MESSAGE_COLOR[message.message.kind]} squareKey={CALL_KEY} />
           ) : (
             <>
-              <HardwareButton
-                className="flex-1"
-                pressed={musicOn}
-                onClick={() => setMusicOn(!musicOn)}
-                aria-label={musicOn ? "Stop music" : "Play music"}
-              >
-                <MusicNotes size={24} className="opacity-60" aria-hidden />
-              </HardwareButton>
+              {/* Where Music used to be: Start journey, then End journey (straight to the recap; no pause). */}
+              {started ? (
+                <HardwareButton tone="end" className="flex-1" onClick={endJourney} data-cuelume-emphasis="strong">
+                  <FlagCheckered size={24} className="opacity-80" aria-hidden />
+                  <span className="text-base font-bold opacity-80">END JOURNEY</span>
+                </HardwareButton>
+              ) : (
+                <HardwareButton className="flex-1" onClick={startJourney} data-cuelume-emphasis="strong">
+                  <NavigationArrow size={24} className="opacity-80" aria-hidden />
+                  <span className="text-base font-bold opacity-80">START JOURNEY</span>
+                </HardwareButton>
+              )}
             </>
           )}
           {/* Drop is for planting your own thing while you drive alone: not on a call (you're
               talking to someone) and not while a message plays (that has its own Respond). */}
           {!radioOn && (
           <HardwareButton
-            className={messageOn ? CALL_KEY : "flex-1"}
+            className={CALL_KEY}
             // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
             pressed={dropRecording}
             // Waits while Night mode is listening to you, too: one voice at a time.
@@ -682,7 +698,7 @@ export function RadioScreen({
           )}
           {/* Settings stays on the console during a call too, square like Mic. */}
           <HardwareButton
-            className={radioOn || messageOn ? CALL_KEY : "flex-1"}
+            className={CALL_KEY}
             pressed={settingsOpen}
             onClick={() => setSettingsOpen(!settingsOpen)}
             aria-label={settingsOpen ? "Close settings" : "Settings"}

@@ -13,7 +13,7 @@ const meta: Meta<typeof RadioScreen> = {
   title: "Radio/Hang-up timeout",
   component: RadioScreen,
   parameters: { layout: "centered" },
-  args: { onEndCall: fn(), onPower: fn() },
+  args: { onEndCall: fn() },
 };
 export default meta;
 

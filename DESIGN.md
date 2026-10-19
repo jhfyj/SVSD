@@ -280,13 +280,13 @@ The radio is an object with fixed geometry on a 393×852 artboard. Don't respace
 
 | Part | Box | Part | Box |
 |---|---|---|---|
-| Clock | 17, 26, 116×20 | LCD | 156, 603, 221×130 |
-| Power key | 346, 14, 44×44 | Music key (off) | 26, 751, 112×70 |
-| Map window | 14, 64, 365×509 | Drop key | 146, 751, 111×70 |
-| RADIO label | 30, 605, 55×20 | Settings key | 266, 751, 111×70 |
+| Weather | 17, 24, 32×30 | LCD | 156, 603, 221×130 |
+| Clock (right) | 296, 26, 80×20 | Start / End journey key (off) | 26, 751, 195×70 |
+| Map window | 14, 64, 365×509 | Drop key | 229, 751, 70×70 |
+| RADIO label | 30, 605, 55×20 | Settings key | 307, 751, 70×70 |
 | Rocker switch | 26, 629, 46×98 | Key gap | 8 |
 
-Off, the key row is Music · Drop · Settings. On a call it becomes End call (wide, icon only) · Mic · Settings: no Drop on a call, you're talking to someone. Settings opens a panel that grows up out of the console.
+The top bar is the pixel weather icon on the left and the clock on the right; there's no power key (End journey is how you leave). Off, the key row is **Start journey** (wide, `NavigationArrow` + label) · Drop · Settings (square). A new journey opens there: the map waits at your start and nothing on the road plays until you press it, and the drive's clock (arrival) starts then. Pressed, it becomes **End journey** (`FlagCheckered` + label): the radio slides down out of view and you land on the trip recap. There's no pause, a journey is under way or over. At the destination the whole row is one End journey key. On a call it becomes End call (wide, icon only) · Mic · Settings: no Drop on a call, you're talking to someone. Settings opens a panel that grows up out of the console.
 
 **Drop** (Phosphor `MapPinPlus`, 24) replaced Speaker. Tap to record (pressed in and lit, the icon turns to a send arrow, `PaperPlaneRight`, and YOUR DROP shows on the LCD with a 6px blinking square over a counter going up from `00:00`, no time limit), tap send to leave it on the road. The hint reads “Tap send or stop speaking for 10 sec”: go quiet for 10 s and it sends itself (the hint turns to “Sending in 5…” for the last 5 s; talking again cancels it). Nothing said at all and it's thrown away (“Nothing heard”). It's sorted into a question, a story or a tip and lands on the map where you dropped it as a 22px **drop pin** (`DropPin`): a content circle in the kind's colour with a 12px bold Phosphor icon in `drop-ink`. Question = `QuestionMark` on `question`, story = `EnvelopeSimple` on `story`, tip = `Note` on `tip`. Landing: it falls 28px onto the road, squashes and settles (560ms), and as it hits, a soft flash of its colour and two rings ripple out to about 6x the pin (the second trailing by 200ms, 1.1s each); reduced motion fades it in. The LCD shows the same icon beside “Question dropped”. Disabled while a route message plays (that has Respond). There's no speakerphone toggle now: audio plays at the phone level.
 
@@ -534,7 +534,7 @@ Two families, never mixed in one spot:
 | Weight | `regular`. `fill` only for media glyphs (Play, Pause, Stop, Record). No thin, light, bold or duotone. |
 | Sizes | 16 next to 10–13px text, 20 in the top bar and next to 16px text, 24 on console keys. |
 | Color | `currentColor`; on keys it follows the key's opacity, and `.key-lit` turns it green. |
-| Gap | 8 between icon and label, console keys too (LISTENING, SEND, END TRIP). |
+| Gap | 8 between icon and label, console keys too (LISTENING, SEND, START JOURNEY, END JOURNEY). |
 | A11y | Decorative icons `aria-hidden`; icon-only buttons need an `aria-label`. |
 
 | Carbon / current | Phosphor |
@@ -544,8 +544,7 @@ Two families, never mixed in one spot:
 | `VolumeUp`, `VolumeMute` | `SpeakerHigh`, `SpeakerSlash` |
 | `Settings` | `GearSix` |
 | `IncidentReporter` | `Flag` |
-| `Power` | `Power` |
-| `Music` | `MusicNotes` |
+| Start journey / End journey | `NavigationArrow` / `FlagCheckered` |
 | `PartlyCloudyNight` (radio top bar) | The pixel weather icon, same as the Screen top bar |
 | Already Phosphor | `PhoneDisconnect`, `SpeakerHigh`, `FlagCheckered`, `Crosshair` |
 

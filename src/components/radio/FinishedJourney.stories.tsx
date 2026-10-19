@@ -10,7 +10,7 @@ import { RadioScreen } from "./RadioScreen";
 const meta = {
   title: "Radio/Finished journey",
   component: RadioScreen,
-  args: { arrived: true, onEndTrip: fn(), onEndCall: fn(), onPower: fn(), onConnected: fn() },
+  args: { arrived: true, onEndTrip: fn(), onEndCall: fn(), onConnected: fn() },
 } satisfies Meta<typeof RadioScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;

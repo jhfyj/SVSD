@@ -14,7 +14,7 @@ const meta = {
   component: RadioScreen,
   // arrived: false keeps the call buttons on every story here; the destination screens live in
   // Radio/Finished journey, so a trip saved earlier can't flip these to End trip.
-  args: { onEndCall: fn(), onPower: fn(), onConnected: fn(), arrived: false },
+  args: { onEndCall: fn(), onConnected: fn(), arrived: false },
 } satisfies Meta<typeof RadioScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;
