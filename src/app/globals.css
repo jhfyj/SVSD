@@ -1167,3 +1167,16 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
     animation-delay: calc(var(--i) * -70ms);
   }
 }
+
+/* Reply sent (Flow 4): the LCD's check mark steps in, a little big, then settles, in hard frames like
+   the rest of the LCD. Reduced motion: it's just there. */
+@keyframes reply-sent-pop {
+  0% { transform: scale(0.6); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reply-sent-pop {
+    animation: reply-sent-pop 240ms steps(3, jump-none) both;
+  }
+}

@@ -192,3 +192,47 @@ export function warmAhh() {
     }
   }
 }
+
+/**
+ * Your reply has gone out: a short airy lift (noise swept up through a band, like it leaving the
+ * radio) under two bright notes that step up a fifth, A5 then E6, each ringing off quickly. It
+ * says "sent" without the "ahh" of something arriving.
+ */
+export function replySent() {
+  const ctx = audio();
+  if (!ctx) return;
+  const t = ctx.currentTime + 0.01;
+  const out = ctx.createGain();
+  out.gain.value = 0.9;
+  out.connect(ctx.destination);
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.4), ctx.sampleRate);
+  const data = noise.buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const band = ctx.createBiquadFilter();
+  band.type = "bandpass";
+  band.Q.value = 1.4;
+  band.frequency.setValueAtTime(700, t);
+  band.frequency.exponentialRampToValueAtTime(5200, t + 0.32);
+  const air = ctx.createGain();
+  air.gain.setValueAtTime(0.0001, t);
+  air.gain.exponentialRampToValueAtTime(0.05, t + 0.12);
+  air.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
+  noise.connect(band).connect(air).connect(out);
+  noise.start(t);
+
+  [880, 1318.5].forEach((hz, i) => {
+    const at = t + 0.16 + i * 0.11;
+    const osc = ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.value = hz;
+    const ring = ctx.createGain();
+    ring.gain.setValueAtTime(0.0001, at);
+    ring.gain.exponentialRampToValueAtTime(0.11, at + 0.01);
+    ring.gain.exponentialRampToValueAtTime(0.0001, at + 0.42);
+    osc.connect(ring).connect(out);
+    osc.start(at);
+    osc.stop(at + 0.45);
+  });
+}

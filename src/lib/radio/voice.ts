@@ -1,4 +1,5 @@
 import { isSoundOn } from "../sound";
+import { VOICE_GAIN } from "./levels";
 
 /*
   Voices on the radio: playing a message left on the road, the static-and-tune sound before it,
@@ -51,14 +52,14 @@ export type Voice = {
 /**
  * Play someone's recording. If the browser blocks it until a tap, it starts on the next tap.
  * `silent` plays it with no sound: the glow and timing still follow the voice, but nothing is
- * heard (for placeholder voices that aren't the demo's ElevenLabs takes). `gain` evens out
- * recordings made at different levels (lib/radio/demoVoices), before the glow reads it, so a quiet
- * take moves the glow as much as a loud one.
+ * heard (for placeholder voices that aren't the demo's ElevenLabs takes). Every voice is brought
+ * to one loudness (lib/radio/levels, or `gain`) before the glow reads it, so nothing jumps between
+ * voices and a quiet take moves the glow as much as a loud one.
  */
 export function playVoice(
   src: string,
   speaker: boolean,
-  { silent = false, gain: level = 1 }: { silent?: boolean; gain?: number } = {},
+  { silent = false, gain: level = VOICE_GAIN[src] ?? 1 }: { silent?: boolean; gain?: number } = {},
 ): Voice {
   const c = audio();
   const el = new Audio(src);
@@ -71,7 +72,15 @@ export function playVoice(
   gain.gain.value = loudness(speaker);
   source.connect(even);
   even.connect(analyser);
-  even.connect(gain).connect(c.destination);
+  // A peak limiter: voices are brought up to one loudness, and this keeps their loudest moments
+  // from clipping without touching ordinary speech.
+  const limit = c.createDynamicsCompressor();
+  limit.threshold.value = -3;
+  limit.knee.value = 0;
+  limit.ratio.value = 20;
+  limit.attack.value = 0.002;
+  limit.release.value = 0.1;
+  even.connect(gain).connect(limit).connect(c.destination);
 
   let stopped = false;
   const retry = () => {
@@ -96,6 +105,7 @@ export function playVoice(
       source.disconnect();
       even.disconnect();
       gain.disconnect();
+      limit.disconnect();
     },
   };
 }

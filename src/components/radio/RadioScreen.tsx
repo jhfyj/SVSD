@@ -10,7 +10,7 @@ import type { CharacterId } from "@/lib/profile/characters";
 import { useArrived } from "@/lib/trip/useArrived";
 import { announce as announceArrival } from "@/lib/trip/arrival";
 import { loadTrip, saveTrip } from "@/lib/trip/trip";
-import { cue } from "@/lib/sound";
+import { cue, replySent } from "@/lib/sound";
 import type { DemoDrive, Pickup } from "@/lib/demo/storyDrive";
 import { CollectedTally, CollectFlight } from "../drops/CollectFlight";
 import type { DropKind } from "../drops/glyphs";
@@ -25,8 +25,7 @@ import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
-import { playVoice, recordReply, type Level, type Recording } from "@/lib/radio/voice";
-import { canRecognise, listenYesNo } from "@/lib/radio/yesNo";
+import { playVoice, type Level } from "@/lib/radio/voice";
 import { QUESTION_PROMPT, QUESTION_UNLOCKED, REPLY_PROMPT, sayIntro, START_TIMEOUT_MS, THANK_YOU } from "@/lib/radio/scriptVoice";
 import {
   MOTHLIGHT_HOPE_SO,
@@ -36,7 +35,6 @@ import {
   NIGHTOWL_FEEL_YOUR_PAIN,
   NIGHTOWL_WHAT_GOT_YOU_THROUGH,
   URMOM_DRIVING_TO_SF,
-  type DemoVoice,
 } from "@/lib/radio/demoVoices";
 import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
@@ -170,24 +168,20 @@ const ROAD_QUESTION_MESSAGE: RouteMessage = {
   kind: "question",
   from: "@NightOwl",
   character: "squirrel",
-  src: NIGHTOWL_WHAT_GOT_YOU_THROUGH.src,
+  src: NIGHTOWL_WHAT_GOT_YOU_THROUGH,
   recorded: true,
   transcript: ROAD_QUESTION,
   at: 0,
 };
 /** How long "Reply sent" stays on the LCD after @urmom6767's answer. */
-const ANSWER_SENT_MS = 1800;
-/** Flow 4, after "Would you like to respond?": without speech recognition, any voice this loud for this long is a yes. */
-const ANSWER_VOICE_LEVEL = 0.25;
-const ANSWER_VOICE_MS = 300;
-/** The mic waits this long for your yes before the radio goes quiet again. */
-const ANSWER_WAIT_MS = 10_000;
+const ANSWER_SENT_MS = 2600;
+/** The green burst that carries your reply out, rising from the bottom and fading. */
+const SENT_BURST_MS = 1100;
+/** Flow 4, after "Would you like to respond?": the beat the radio waits for the yes before the answer plays. */
+const ANSWER_BEAT_MS = 1500;
 
-/** Flow 2, after "Reply with yes or no": any voice this loud for this long is taken as yes. */
-const STORY_YES_LEVEL = 0.25;
-const STORY_YES_MS = 300;
-/** How long the mic waits for that yes before the radio goes quiet again. */
-const STORY_LISTEN_MS = 10_000;
+/** Flow 2: how long "Would you like to reply to this message?" stays up before the drive carries on. */
+const STORY_PROMPT_HOLD_MS = 4000;
 
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
@@ -205,15 +199,15 @@ type QuestionStage = "driving" | "unlocking" | "playing" | "prompt" | "reply-rea
 type StoryStage = "driving" | "story" | "prompt" | "reply-ready";
 
 const BURRITO_TRANSCRIPT = "Whoever’s hearing this, there’s a gas station there that sells the best breakfast burrito in California. I’m serious. I’ve been driving for twenty-six years and I plan my whole week around this burrito.";
-const BURRITO_MESSAGE: RouteMessage = { id: "nightowl-burrito", kind: "message", from: "@NightOwl", character: "squirrel", src: NIGHTOWL_BURRITO.src, recorded: true, transcript: BURRITO_TRANSCRIPT, at: 0.5 };
+const BURRITO_MESSAGE: RouteMessage = { id: "nightowl-burrito", kind: "message", from: "@NightOwl", character: "squirrel", src: NIGHTOWL_BURRITO, recorded: true, transcript: BURRITO_TRANSCRIPT, at: 0.5 };
 
 /**
  * Plays one recorded step of a demo flow: its voice drives the glow through `level`, and `next`
  * runs when it ends, or if it hasn't started after START_TIMEOUT_MS (blocked audio never stalls
  * the flow). Returns the cleanup for the effect that started it.
  */
-function playStep(voice: DemoVoice | string, level: RefObject<Level | null>, next: () => void) {
-  const v = typeof voice === "string" ? playVoice(voice, true) : playVoice(voice.src, true, { gain: voice.gain });
+function playStep(src: string, level: RefObject<Level | null>, next: () => void) {
+  const v = playVoice(src, true);
   level.current = v.level;
   let over = false;
   const go = () => {
@@ -355,13 +349,7 @@ export function RadioScreen({
   const [collected, setCollected] = useState<Partial<Record<DropKind, number>>>({});
   const [tallyFlash, setTallyFlash] = useState(0);
   const [questionStage, setQuestionStage] = useState<QuestionStage>("driving");
-  // Flow 4: the mic that opens after "Would you like to respond?" and stays open through your answer.
-  const [questionMicLive, setQuestionMicLive] = useState(false);
-  const questionMic = useRef<Recording | null>(null);
   const [storyStage, setStoryStage] = useState<StoryStage>("driving");
-  // Flow 2: the mic that opens after "Reply with yes or no" (your voice glows up from the bottom).
-  const [storyMicLive, setStoryMicLive] = useState(false);
-  const storyMicLevel = useRef<Level | null>(null);
   const onCollect = (pickup: Pickup, at: { x: number; y: number }) => {
     const box = root.current?.getBoundingClientRect();
     if (!box) return;
@@ -569,33 +557,8 @@ export function RadioScreen({
 
   const companyTurn = conversationIndex >= 0 ? COMPANY_TURNS[conversationIndex] : undefined;
   const companySpeaking = Boolean(companyTurn);
-  // Flow 3: your side of the call is your real microphone. While the call is on and the mic key is
-  // lit, your voice rises from the bottom in green; mute it (or take a break) and the green goes.
-  // Mothlight's purple still comes down from the top on her scripted turns.
-  const companyMicOn = companyDemo && state === "connected" && !greeting && !micMuted && !onBreak;
-  const companyMicLevel = useRef<Level | null>(null);
-  const [companyMicLive, setCompanyMicLive] = useState(false);
-  useEffect(() => {
-    if (!companyMicOn) return;
-    let live = true;
-    let mic: Recording | null = null;
-    recordReply().then(
-      (rec) => {
-        if (!live) return rec.cancel();
-        mic = rec;
-        companyMicLevel.current = rec.level;
-        setCompanyMicLive(true);
-      },
-      // Mic blocked: no green, the rest of the call plays on.
-      () => {},
-    );
-    return () => {
-      live = false;
-      mic?.cancel();
-      companyMicLevel.current = null;
-      setCompanyMicLive(false);
-    };
-  }, [companyMicOn]);
+  // Flow 3 never opens the microphone (no permission prompt in the demo): both sides are the
+  // drivers' recordings. Mothlight's come down from the top, NightOwl's (you) rise from the bottom.
   // Each turn plays that driver's recording: Mothlight's comes down from the top, NightOwl's (you)
   // rises from the bottom. The next turn starts when the recording ends.
   useEffect(() => {
@@ -604,15 +567,7 @@ export function RadioScreen({
       setConversationIndex((current) => (current === conversationIndex ? current + 1 : current)),
     );
   }, [companyDemo, companyTurn, conversationIndex]);
-  // The bottom glow on the call: NightOwl's recorded turns while they play, your real mic otherwise.
   const nightOwlTurn = companyTurn?.speaker === "NightOwl";
-  const nightOwlTurnRef = useRef(false);
-  useEffect(() => {
-    nightOwlTurnRef.current = nightOwlTurn;
-  }, [nightOwlTurn]);
-  const companyYouLevel = useRef<Level | null>(() =>
-    (nightOwlTurnRef.current ? callVoiceLevel.current : companyMicLevel.current)?.() ?? 0,
-  );
 
   // "You just unlocked a question from NightOwl." → NightOwl: "What got you through today?" →
   // "Would you like to respond?", each one after the last, then the mic opens for your yes.
@@ -623,59 +578,14 @@ export function RadioScreen({
     if (questionStage === "prompt") return playStep(QUESTION_PROMPT, callVoiceLevel, () => setQuestionStage("reply-ready"));
   }, [questionDemo, questionStage]);
 
-  // Flow 4: once the radio has asked "Would you like to respond?", the mic opens by itself and your
-  // voice rises from the bottom so you know to answer. The question itself stays hidden until you
-  // say yes. Blocked mic: tap REPLY instead.
-  const questionMicOpen = questionDemo && questionStage === "reply-ready";
+  // Flow 4: after "Would you like to respond?" the radio waits a beat for the yes, then the answer
+  // plays (tap RESPOND to skip the wait). It never opens the microphone, so there's no permission
+  // prompt in the demo and nothing turns the voices down.
   useEffect(() => {
-    if (!questionMicOpen) return;
-    let live = true;
-    recordReply().then(
-      (rec) => {
-        if (!live) return rec.cancel();
-        questionMic.current = rec;
-        setQuestionMicLive(true);
-      },
-      () => {},
-    );
-    return () => {
-      live = false;
-      questionMic.current?.cancel();
-      questionMic.current = null;
-      setQuestionMicLive(false);
-    };
-  }, [questionMicOpen]);
-
-  // Listening for the yes: yes and the question plays; no (or nothing for 10 s) and the radio goes
-  // quiet. Where the browser can't recognise words, speaking up at all is a yes.
-  useEffect(() => {
-    if (!questionDemo || questionStage !== "reply-ready" || !questionMicLive) return;
-    const rec = questionMic.current;
-    if (!rec) return;
-    let live = true;
-    const yes = () => live && setQuestionStage("answering");
-    const no = () => live && setQuestionStage("driving");
-    const giveUp = setTimeout(no, ANSWER_WAIT_MS);
-    let poll: ReturnType<typeof setInterval> | undefined;
-    let stop = () => {};
-    if (canRecognise()) {
-      stop = listenYesNo((a) => (a === "yes" ? yes() : no()));
-    } else {
-      let loudSince: number | null = null;
-      poll = setInterval(() => {
-        const now = Date.now();
-        if (rec.level() < ANSWER_VOICE_LEVEL) loudSince = null;
-        else if (loudSince === null) loudSince = now;
-        else if (now - loudSince >= ANSWER_VOICE_MS) yes();
-      }, 50);
-    }
-    return () => {
-      live = false;
-      clearTimeout(giveUp);
-      clearInterval(poll);
-      stop();
-    };
-  }, [questionDemo, questionStage, questionMicLive]);
+    if (!questionDemo || questionStage !== "reply-ready") return;
+    const yes = setTimeout(() => setQuestionStage("answering"), ANSWER_BEAT_MS);
+    return () => clearTimeout(yes);
+  }, [questionDemo, questionStage]);
 
   // Your answer, as the script has it: @urmom6767's recording rises from the bottom in your colour
   // under YOUR REPLY, then it's sent (the beep and REPLY SENT, like any reply) and the question
@@ -683,20 +593,28 @@ export function RadioScreen({
   useEffect(() => {
     if (!questionDemo || questionStage !== "answering") return;
     cue("ready", { theme: "mech" });
-    return playStep(URMOM_DRIVING_TO_SF, callVoiceLevel, () => {
-      cue("success", { theme: "mech" });
-      setQuestionStage("sent");
-    });
+    return playStep(URMOM_DRIVING_TO_SF, callVoiceLevel, () => setQuestionStage("sent"));
   }, [questionDemo, questionStage]);
+  // Sent: the "sent" sound, a burst of your green rising from the bottom and fading as it goes out,
+  // and a check mark on the LCD. The question comes out of the LCD's count.
   useEffect(() => {
     if (!questionDemo || questionStage !== "sent") return;
+    replySent();
+    const sentAt = performance.now();
+    callVoiceLevel.current = () => {
+      const t = Math.min(1, (performance.now() - sentAt) / SENT_BURST_MS);
+      return t < 0.15 ? t / 0.15 : (1 - t) ** 2 / 0.72;
+    };
     const kind = tallied.current.get(ROAD_QUESTION_MESSAGE.id);
     if (kind) {
       tallied.current.delete(ROAD_QUESTION_MESSAGE.id);
       setCollected((c) => ({ ...c, [kind]: Math.max(0, (c[kind] ?? 1) - 1) }));
     }
     const back = setTimeout(() => setQuestionStage("driving"), ANSWER_SENT_MS);
-    return () => clearTimeout(back);
+    return () => {
+      clearTimeout(back);
+      callVoiceLevel.current = null;
+    };
   }, [questionDemo, questionStage]);
 
   // The story unlocks and NightOwl tells it, in his own recorded voice, with the glow following it.
@@ -722,60 +640,13 @@ export function RadioScreen({
     };
   }, [storyDemo, storyStage]);
 
-  // Flow 2: once the radio has asked, the mic opens by itself and your voice glows up from the
-  // bottom, so you know you can answer. Anything you say counts as yes: then it's the same as a
-  // message on the road (Angelina's flow): the beep, the YOUR REPLY screen, SEND or X, REPLY SENT.
-  // The keys don't change while it listens. Nothing said for 10 seconds and the radio goes quiet.
-  const replyToMessage = message.reply;
+  // Flow 2: once the radio has asked, its question stays on the LCD for a moment, then the drive
+  // carries on. It never opens the microphone (no permission prompt in the demo).
   useEffect(() => {
     if (!storyDemo || storyStage !== "reply-ready") return;
-    let live = true;
-    let mic: Recording | null = null;
-    let poll: ReturnType<typeof setInterval> | undefined;
-    const close = () => {
-      clearInterval(poll);
-      mic?.cancel();
-      mic = null;
-      storyMicLevel.current = null;
-      setStoryMicLive(false);
-    };
-    const giveUp = setTimeout(() => {
-      if (!live) return;
-      close();
-      setStoryStage("driving");
-    }, STORY_LISTEN_MS);
-    recordReply().then(
-      (rec) => {
-        if (!live) return rec.cancel();
-        mic = rec;
-        storyMicLevel.current = rec.level;
-        setStoryMicLive(true);
-        let loudSince: number | null = null;
-        poll = setInterval(() => {
-          const now = Date.now();
-          if (rec.level() < STORY_YES_LEVEL) loudSince = null;
-          else if (loudSince === null) loudSince = now;
-          else if (now - loudSince >= STORY_YES_MS) {
-            clearTimeout(giveUp);
-            close();
-            setStoryStage("driving");
-            replyToMessage(BURRITO_MESSAGE);
-          }
-        }, 50);
-      },
-      // Mic blocked: nothing to listen with, so the radio goes quiet.
-      () => {
-        if (!live) return;
-        clearTimeout(giveUp);
-        setStoryStage("driving");
-      },
-    );
-    return () => {
-      live = false;
-      clearTimeout(giveUp);
-      close();
-    };
-  }, [storyDemo, storyStage, replyToMessage]);
+    const on = setTimeout(() => setStoryStage("driving"), STORY_PROMPT_HOLD_MS);
+    return () => clearTimeout(on);
+  }, [storyDemo, storyStage]);
 
   // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
   const [talking, setTalking] = useState(false);
@@ -847,12 +718,7 @@ export function RadioScreen({
               {/* Your real mic, rising from the bottom over the whole map like every reply glow. On a
                   call it rests much lower while you're quiet, so the map stays clear between turns. */}
               {companyDemo && state === "connected" && (
-                <MessageGlow
-                  mode={nightOwlTurn || (companyMicLive && companyMicOn) ? "reply" : "off"}
-                  color={youColor}
-                  level={companyYouLevel}
-                  rest={0.07}
-                />
+                <MessageGlow mode={nightOwlTurn ? "reply" : "off"} color={youColor} level={callVoiceLevel} rest={0.07} />
               )}
               {/* A pickup (story or question) and the AI are only their colour glowing down from the top:
                   no banner, no words over the map. */}
@@ -865,22 +731,14 @@ export function RadioScreen({
                   className="inset-x-0 top-0 h-[132px]"
                 />
               )}
-              {/* Flow 4: the mic is open for your yes: your voice rises from the bottom. */}
-              {questionDemo && questionStage === "reply-ready" && questionMicLive && (
-                <MessageGlow mode="reply" color={youColor} level={{ current: () => questionMic.current?.level() ?? 0 }} />
-              )}
               {/* Flow 4: @urmom6767's answer rises from the bottom, as your reply. */}
-              {questionDemo && questionStage === "answering" && (
+              {questionDemo && (questionStage === "answering" || questionStage === "sent") && (
                 <MessageGlow mode="reply" color={youColor} level={callVoiceLevel} />
               )}
               {storyDemo && (storyStage === "story" || storyStage === "prompt") && (
                 <>
                   <MessageGlow mode="voice" color={storyStage === "prompt" ? "sky" : "magenta"} level={callVoiceLevel} className="inset-x-0 top-0 h-[245px]" />
                 </>
-              )}
-              {/* Flow 2: the mic is open for your yes. Your voice rises from the bottom in your colour. */}
-              {storyDemo && storyStage === "reply-ready" && storyMicLive && (
-                <MessageGlow mode="reply" color={youColor} level={storyMicLevel} />
               )}
               {dropRecording ? (
                 <MessageGlow mode="reply" color={youColor} level={drop.level} />
@@ -960,7 +818,7 @@ export function RadioScreen({
           {storyDemo && storyStage !== "driving" ? (
             <StoryDemoLcd stage={storyStage} />
           ) : questionDemo && questionStage !== "driving" ? (
-            <QuestionDemoLcd stage={questionStage} listening={questionMicLive} />
+            <QuestionDemoLcd stage={questionStage} />
           ) : drop.active && state !== "pick" ? (
             <DropLcd controls={drop} />
           ) : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? (
@@ -1030,9 +888,7 @@ export function RadioScreen({
             >
               <span className="text-base font-bold opacity-80">
                 {questionStage === "reply-ready"
-                  ? questionMicLive
-                    ? "LISTENING"
-                    : "RESPOND"
+                  ? "RESPOND"
                   : questionStage === "unlocking"
                   ? "QUESTION UNLOCKED"
                   : questionStage === "answering"
@@ -1158,12 +1014,31 @@ function StoryDemoLcd({ stage }: { stage: StoryStage }) {
   );
 }
 
+/** A check mark on the LCD's pixel grid (one ink, square pixels), for a reply that's gone out. */
+const CHECK = ["........#", ".......##", "#.....##.", "##...##..", ".##.##...", "..###....", "...#....."];
+function PixelCheck({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden width={27} height={21} viewBox="0 0 9 7" shapeRendering="crispEdges" className={className}>
+      {CHECK.flatMap((row, y) => [...row].map((c, x) => (c === "#" ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" /> : null)))}
+    </svg>
+  );
+}
+
 /** Flow 4's LCD. The question stays hidden until you've said yes, then shows while it plays. */
-function QuestionDemoLcd({ stage, listening }: { stage: QuestionStage; listening: boolean }) {
-  if (stage === "answering" || stage === "sent") {
+function QuestionDemoLcd({ stage }: { stage: QuestionStage }) {
+  if (stage === "sent") {
+    return (
+      <p role="status" className="flex flex-col items-center px-3 text-center font-mono uppercase leading-tight text-lcd-ink">
+        <PixelCheck className="reply-sent-pop" />
+        <span className="mt-1.5 block text-[14px]">Reply sent</span>
+        <span className="mt-1 block text-[11px] normal-case">to @NightOwl</span>
+      </p>
+    );
+  }
+  if (stage === "answering") {
     return (
       <p role="status" className="px-3 text-center font-mono uppercase leading-tight text-lcd-ink">
-        <span className="block text-[14px]">{stage === "sent" ? "Reply sent" : "Your reply"}</span>
+        <span className="block text-[14px]">Your reply</span>
         <span className="mt-1 block text-[11px] normal-case">to @NightOwl</span>
       </p>
     );
@@ -1182,7 +1057,7 @@ function QuestionDemoLcd({ stage, listening }: { stage: QuestionStage; listening
       <span className="mt-1 block text-[12px] normal-case">
         {stage === "unlocking" ? "You just unlocked a question" : "Would you like to respond?"}
       </span>
-      {stage === "reply-ready" && <span className="mt-1 block text-[10px]">{listening ? "Say yes" : "Tap respond"}</span>}
+      {stage === "reply-ready" && <span className="mt-1 block text-[10px]">Say yes</span>}
     </p>
   );
 }

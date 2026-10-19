@@ -496,6 +496,8 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 - Mark plain clicks with attributes: `data-cuelume-tap` / `-select` / `-toggle` / `-open` / `-close` / `-type`, plus `data-cuelume-theme="mech"` on hardware. Call `cue()` for outcomes and anything that isn't a click.
 - Buttons that go to the next screen use a mechanical tap, **not** the navigate whoosh.
 - One sound per event; volume 0.3–0.35 for repeated ticks. Never on hover or plain scrolling.
+- **Voices play at one loudness.** The radio's lines and the drivers' recordings all go through `playVoice`, which brings each file to about -22 dB of speech (its gain is in `lib/radio/levels.ts`, measured per file) with a peak limiter after it, so nothing jumps as voices take turns. Add every new voice file to that table.
+- **The demo flows never open the microphone** (story, Company, question): no permission prompt, and nothing for the browser to turn the voices down for while a mic is live. Where the script has someone answer, their recording plays; where the radio asks for a yes, it waits a beat (or a tap) instead of listening.
 
 ### 9.7 Reduced motion
 
