@@ -3,18 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { cue } from "@/lib/sound";
 import {
-  ANSWER_BEAT_MS,
-  ANSWER_MS,
   CHECK_IN,
   DAY_MS,
   DUSK_MS,
+  LISTEN_MS,
   NIGHT_HOLD_MS,
   NIGHT_ON_MS,
+  NOTHING_MS,
   RELIGHT_MS,
   REST_ARRIVE_MS,
   REST_LINE,
   STOPPED_LINE,
-  sleepyAnswer,
   type NightPhase,
   type NightStart,
 } from "@/lib/radio/nightDrive";
@@ -26,11 +25,10 @@ export type NightDriveControls = {
   level: React.RefObject<Level | null>;
   /** Talking to you or waiting on you: stories on the road hold off, and Drop and Music wait. */
   busy: boolean;
-  /** Told to stop, or stopped: stories are paused until you're back on the road. */
+  /** Rerouted to the rest area, or parked there: stories are paused until you're back on the road. */
   resting: boolean;
-  /** You asked for the route to the rest area. */
-  routed: boolean;
-  route: () => void;
+  /** Parked at the rest area: the drive holds still on the map. */
+  parked: boolean;
   /** Leaving the rest area: stories come back, and the radio doesn't check in again straight away. */
   backOnTheRoad: () => void;
   /** You went live (Company on) mid check-in: the radio stops asking and leaves you to your call. */
@@ -47,9 +45,8 @@ const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)"
  */
 export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNightfall?: () => void }): NightDriveControls {
   const [phase, setPhase] = useState<NightPhase>(() =>
-    start === "fall" ? "day" : start === "checkin" ? "checkin" : start === "rest" ? "rest" : "off",
+    start === "fall" ? "day" : start === "checkin" ? "checkin" : start === "rest" ? "rerouting" : "off",
   );
-  const [routed, setRouted] = useState(false);
   const level = useRef<Level | null>(null);
   // After a rest (or a check-in you cut short), the quiet night radio doesn't check in again on its own.
   const calm = useRef(false);
@@ -86,14 +83,18 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
       line = announce(`${CHECK_IN.title} ${CHECK_IN.ask}`);
       void line.done.then(() => live && setPhase("listening"));
     }
+    // No answer comes: it listens a while, says NOTHING HEARD, then reroutes you by itself.
     if (phase === "listening") {
-      level.current = sleepyAnswer();
-      after(ANSWER_MS + ANSWER_BEAT_MS, "rest");
+      level.current = null;
+      after(LISTEN_MS, "nothing");
     }
-    if (phase === "rest") {
+    if (phase === "nothing") after(NOTHING_MS, "rerouting");
+    if (phase === "rerouting") {
       level.current = null;
       cue("attention", { theme: "mech" });
       line = announce(REST_LINE);
+      // Driving the 9 miles there (mocked), then parked.
+      after(REST_ARRIVE_MS, "stopped");
     }
     if (phase === "stopped") {
       cue("ready", { theme: "mech", emphasis: "subtle" });
@@ -106,27 +107,14 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
     };
   }, [phase]);
 
-  // Route set: pulling in at the rest area (mocked; on the road it's the car parking there).
-  // Its own effect, so pressing Route doesn't cut the radio off mid-sentence.
-  useEffect(() => {
-    if (phase !== "rest" || !routed) return;
-    const t = setTimeout(() => setPhase("stopped"), REST_ARRIVE_MS);
-    return () => clearTimeout(t);
-  }, [phase, routed]);
-
   return {
     phase,
     level,
-    busy: phase === "checkin" || phase === "listening" || phase === "rest" || phase === "stopped",
-    resting: phase === "rest" || phase === "stopped",
-    routed,
-    route: () => {
-      setRouted(true);
-      cue("success", { theme: "mech", emphasis: "subtle" });
-    },
+    busy: phase === "checkin" || phase === "listening" || phase === "nothing" || phase === "rerouting" || phase === "stopped",
+    resting: phase === "rerouting" || phase === "stopped",
+    parked: phase === "stopped",
     backOnTheRoad: () => {
       calm.current = true;
-      setRouted(false);
       setPhase("night");
     },
     interrupt: () => {

@@ -43,7 +43,7 @@ import { MESSAGE_COLOR, SAMPLE_MESSAGES, type RouteMessage } from "@/lib/radio/m
 import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
 import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
-import { Nightfall, NightLcd, RestSign } from "./NightDrive";
+import { Nightfall, NightLcd } from "./NightDrive";
 import { useNightDrive } from "./useNightDrive";
 import type { NightStart } from "@/lib/radio/nightDrive";
 
@@ -153,7 +153,7 @@ export type RadioScreenProps = {
 };
 
 /** Night mode phases that put something on the LCD (the sunset itself keeps the usual LCD). */
-const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "rest", "stopped"];
+const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "nothing", "rerouting", "stopped"];
 
 /** Flow 3 (5 · Company): the four turns after the intro, in the drivers' own recorded voices. */
 const COMPANY_TURNS = [
@@ -702,7 +702,8 @@ export function RadioScreen({
       >
         <NavMap
           // The map waits at your start until Start journey.
-          paused={!started}
+          // Before Start journey, and parked at the rest area: the dot holds still until you're back on the road.
+          paused={!started || nightDrive.parked}
           travellers={travellers}
           messages={ahead}
           onReach={reach}
@@ -767,7 +768,6 @@ export function RadioScreen({
         />
         {/* Night mode's rest area takes over the map: the road can wait. Once the route's set it
             folds to a strip, so you can see the way there. */}
-        {nightDrive.phase === "rest" && <RestSign folded={nightDrive.routed} />}
         {/* Glass: inner shadow so the map reads as a screen set into the case */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
       </section>
@@ -832,7 +832,7 @@ export function RadioScreen({
           ) : drop.active && state !== "pick" ? (
             <DropLcd controls={drop} />
           ) : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? (
-            <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} routed={nightDrive.routed} />
+            <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} />
           ) : messageOn ? (
             <MessageLcd controls={message} />
           ) : (
@@ -857,8 +857,8 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        {/* Told to stop, the key row is one wide key: route there (lit once it's set). Parked at the
-            rest area, it's the way back: stories come back on. */}
+        {/* Rerouting, the key row is one wide key, pressed in and lit: the route's already set, nothing
+            to tap. Parked at the rest area, it's the way back: stories come back on, the dot moves again. */}
         {nightDrive.phase === "stopped" && !radioOn && !arrived && (
           <div className="absolute left-[26px] top-[166px] flex w-[351px]">
             <HardwareButton className="flex-1" onClick={nightDrive.backOnTheRoad} aria-label="Back on the road">
@@ -867,16 +867,11 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        {nightDrive.phase === "rest" && !radioOn && !arrived && (
+        {nightDrive.phase === "rerouting" && !radioOn && !arrived && (
           <div className="absolute left-[26px] top-[166px] flex w-[351px]">
-            <HardwareButton
-              className="flex-1"
-              pressed={nightDrive.routed}
-              onClick={nightDrive.routed ? undefined : nightDrive.route}
-              aria-label={nightDrive.routed ? "Route to the rest area set" : "Route to the rest area"}
-            >
-              <NavigationArrow size={24} className={nightDrive.routed ? undefined : "opacity-80"} aria-hidden />
-              <span className="text-[13px] font-bold opacity-80">{nightDrive.routed ? "ROUTE SET" : "ROUTE TO REST AREA"}</span>
+            <HardwareButton className="flex-1" pressed aria-disabled aria-label="Rerouting to the rest area">
+              <NavigationArrow size={24} aria-hidden />
+              <span className="text-[13px] font-bold opacity-80">TO REST AREA</span>
             </HardwareButton>
           </div>
         )}

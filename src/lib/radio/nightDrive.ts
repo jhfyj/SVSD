@@ -17,11 +17,12 @@ export const NIGHT_STARTS: NightStart[] = ["fall", "checkin", "rest"];
  * dusk: the sun sinks across the map and its light fades toward amber.
  * relight: the radio dips and flickers back on in amber (the theme switches under the flicker).
  * nightOn: NIGHT MODE ON on the LCD. night: the quiet amber radio, before it checks in.
- * checkin: the radio asks its question out loud. listening: your answer, slow.
- * rest: the rest area takes over the map; stories pause. stopped: you're at the rest area, and
+ * checkin: it asks its question out loud. listening: it waits for an answer, and none comes.
+ * nothing: NOTHING HEARD. rerouting: it reroutes you to the rest area by itself (nothing to tap)
+ * and stories pause. stopped: you're at the rest area, parked: the dot on the map holds still and
  * stories wait until you say you're back on the road.
  */
-export type NightPhase = "off" | "day" | "dusk" | "relight" | "nightOn" | "night" | "checkin" | "listening" | "rest" | "stopped";
+export type NightPhase = "off" | "day" | "dusk" | "relight" | "nightOn" | "night" | "checkin" | "listening" | "nothing" | "rerouting" | "stopped";
 
 /** The day radio holds this long before sunset, so the day cockpit reads first (and the map has loaded). */
 export const DAY_MS = 3000;
@@ -44,14 +45,18 @@ export const DRIVING_TONIGHT = 214;
 
 export const REST_AREA = { miles: 9, breakMinutes: 15 };
 
-/** From Route set to pulling in at the rest area, in the demo (really: 9 miles, then parked). */
+/** How long it listens for an answer before it gives up. */
+export const LISTEN_MS = 5000;
+/** NOTHING HEARD holds on the LCD before the reroute. */
+export const NOTHING_MS = 2200;
+/** From the reroute to pulling in at the rest area, in the demo (really: 9 miles, then parked). */
 export const REST_ARRIVE_MS = 7000;
 
 /** What the radio says when you pull in. */
 export const STOPPED_LINE = `You made it. Take ${REST_AREA.breakMinutes} minutes. Your stories will wait.`;
 
-/** What the radio says when it tells you to stop, while the rest area takes over. */
-export const REST_LINE = `Your answers are slowing down. There's a rest area in ${REST_AREA.miles} miles. Let's stop there.`;
+/** What the radio says when nobody answers and it reroutes you. */
+export const REST_LINE = `I didn't hear anything. Rerouting you to the rest area in ${REST_AREA.miles} miles.`;
 
 /**
  * Jay's answer, slow and yawning: "…a sign. A… green sign." Three short bursts with long gaps,
