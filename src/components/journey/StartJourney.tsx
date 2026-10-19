@@ -11,7 +11,8 @@ export function StartJourney({ href = "/journey", journeys }: { href?: string; j
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <TopBar />
-      <div className="flex flex-1 flex-col items-center gap-12 pb-12 pt-[96px]">
+      {/* The title sits as close under the top bar as History's does (pt-6), not floating halfway down. */}
+      <div className="flex flex-1 flex-col items-center gap-12 pb-12 pt-6">
         <StartButton href={href} />
         <RecentJourneys journeys={journeys} />
       </div>
