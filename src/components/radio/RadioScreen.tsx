@@ -1056,8 +1056,10 @@ export function RadioScreen({
             </>
           )}
           {/* Drop is for planting your own thing while you drive alone: not on a call (you're
-              talking to someone) and not while a message plays (that has its own Respond). */}
-          {!radioOn && !questionDemo && (
+              talking to someone) and not while a message plays (that has its own Respond). In Flow 4
+              it steps aside only while the question has the screen, then it's back: planting your
+              own answer is the end of that flow. */}
+          {!radioOn && (!questionDemo || questionStage === "driving") && (
           <HardwareButton
             className={CALL_KEY}
             // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
