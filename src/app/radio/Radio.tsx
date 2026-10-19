@@ -58,7 +58,9 @@ export function Radio() {
   const me = companyDemo || storyDemo ? "@NightOwl" : handle(params.get("me")) ?? (session ? `@traveller${session.phone.slice(-4)}` : undefined);
   const peer = companyDemo ? "@Mothlight" : handle(params.get("peer")) ?? undefined;
   const tripMiles = journey?.route ? Math.max(1, Math.round(journey.route.distance / METRES_PER_MILE)) : undefined;
-  const miles = Number(params.get("miles")) || tripMiles;
+  // The Company demo is the script's 84 miles, the number spoken in the recorded intro
+  // (public/voice/intro-nightowl-mothlight.mp3). Any other number skips the recording.
+  const miles = companyDemo ? 84 : Number(params.get("miles")) || tripMiles;
   const demo =
     companyDemo
       ? COMPANY_DRIVE
