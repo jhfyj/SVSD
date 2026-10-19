@@ -26,7 +26,8 @@ import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
-import { playVoice, type Level } from "@/lib/radio/voice";
+import { playVoice, recordReply, type Level, type Recording } from "@/lib/radio/voice";
+import { canRecognise, listenYesNo } from "@/lib/radio/yesNo";
 import { QUESTION_UNLOCK, REPLY_PROMPT, sayIntro, THANK_YOU } from "@/lib/radio/scriptVoice";
 import { IntentKeys } from "./IntentKeys";
 import { formatCountdown, HANG_UP_RULE, recordHangUp, timedOutUntil, type HangUpRule } from "@/lib/radio/hangups";
@@ -156,6 +157,15 @@ const COMPANY_TURNS = [
 const ROAD_QUESTION = "What got you through today?";
 const ROAD_ANSWER = "I’m driving up to SF to see my hometown friends, so honestly, thinking of all the fun we’ll have!";
 const ROAD_ANSWER_MS = Math.ceil((ROAD_ANSWER.trim().split(/\s+/).length / 2.4) * 1000);
+/** Flow 4, after "Would you like to respond?": any voice this loud for this long counts as speaking. */
+const ANSWER_VOICE_LEVEL = 0.25;
+const ANSWER_VOICE_MS = 300;
+/** Quiet this long after you have spoken ends your answer. */
+const ANSWER_QUIET_MS = 2500;
+/** The mic waits this long for a yes or no, and for your answer to start, before giving up. */
+const ANSWER_WAIT_MS = 10_000;
+/** The longest an answer can run. */
+const ANSWER_MAX_MS = 45_000;
 
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
@@ -293,6 +303,9 @@ export function RadioScreen({
   const [collected, setCollected] = useState<Partial<Record<DropKind, number>>>({});
   const [tallyFlash, setTallyFlash] = useState(0);
   const [questionStage, setQuestionStage] = useState<QuestionStage>("driving");
+  // Flow 4: the mic that opens after "Would you like to respond?" and stays open through your answer.
+  const [questionMicLive, setQuestionMicLive] = useState(false);
+  const questionMic = useRef<Recording | null>(null);
   const [storyStage, setStoryStage] = useState<StoryStage>("driving");
   const onCollect = (pickup: Pickup, at: { x: number; y: number }) => {
     const box = root.current?.getBoundingClientRect();
@@ -529,19 +542,95 @@ export function RadioScreen({
     };
   }, [questionDemo, questionStage]);
 
+  // Flow 4: once the radio has asked "Would you like to respond?", the mic opens by itself and
+  // stays open until your answer is done. Blocked mic: REPLY still works and the answer is acted out.
+  const questionMicOpen = questionDemo && (questionStage === "reply-ready" || questionStage === "answering");
+  useEffect(() => {
+    if (!questionMicOpen) return;
+    let live = true;
+    recordReply().then(
+      (rec) => {
+        if (!live) return rec.cancel();
+        questionMic.current = rec;
+        setQuestionMicLive(true);
+      },
+      () => {},
+    );
+    return () => {
+      live = false;
+      questionMic.current?.cancel();
+      questionMic.current = null;
+      setQuestionMicLive(false);
+    };
+  }, [questionMicOpen]);
+
+  // Listening for the yes: say yes and your answer starts, say no (or nothing) and the radio goes
+  // quiet. Where the browser can't recognise words, speaking up at all is a yes.
+  useEffect(() => {
+    if (!questionDemo || questionStage !== "reply-ready" || !questionMicLive) return;
+    const rec = questionMic.current;
+    if (!rec) return;
+    let live = true;
+    const yes = () => live && setQuestionStage("answering");
+    const no = () => live && setQuestionStage("driving");
+    const giveUp = setTimeout(no, ANSWER_WAIT_MS);
+    let poll: ReturnType<typeof setInterval> | undefined;
+    let stop = () => {};
+    if (canRecognise()) {
+      stop = listenYesNo((a) => (a === "yes" ? yes() : no()));
+    } else {
+      let loudSince: number | null = null;
+      poll = setInterval(() => {
+        const now = Date.now();
+        if (rec.level() < ANSWER_VOICE_LEVEL) loudSince = null;
+        else if (loudSince === null) loudSince = now;
+        else if (now - loudSince >= ANSWER_VOICE_MS) yes();
+      }, 50);
+    }
+    return () => {
+      live = false;
+      clearTimeout(giveUp);
+      clearInterval(poll);
+      stop();
+    };
+  }, [questionDemo, questionStage, questionMicLive]);
+
+  // Your answer: the mic is still open and your voice rises from the bottom as you talk. It ends
+  // when you go quiet after speaking (or tap SEND). No mic: the answer is acted out for its length.
   useEffect(() => {
     if (!questionDemo || questionStage !== "answering") return;
-    const startedAt = performance.now();
-    callVoiceLevel.current = () => {
-      const t = (performance.now() - startedAt) / 115;
-      return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
-    };
-    const done = setTimeout(() => setQuestionStage("answered"), ROAD_ANSWER_MS);
-    return () => {
-      clearTimeout(done);
-      callVoiceLevel.current = null;
-    };
-  }, [questionDemo, questionStage]);
+    const done = () => setQuestionStage("answered");
+    const rec = questionMicLive ? questionMic.current : null;
+    if (!rec) {
+      const startedAt = performance.now();
+      callVoiceLevel.current = () => {
+        const t = (performance.now() - startedAt) / 115;
+        return 0.18 + Math.max(0, Math.sin(t) * Math.sin(t * 0.37)) * 0.75;
+      };
+      const t = setTimeout(done, ROAD_ANSWER_MS);
+      return () => {
+        clearTimeout(t);
+        callVoiceLevel.current = null;
+      };
+    }
+    const startedAt = Date.now();
+    let spoke = false;
+    let loudSince: number | null = null;
+    let quietSince = startedAt;
+    const poll = setInterval(() => {
+      const now = Date.now();
+      if (rec.level() >= ANSWER_VOICE_LEVEL) {
+        loudSince ??= now;
+        if (now - loudSince >= ANSWER_VOICE_MS) spoke = true;
+        quietSince = now;
+      } else {
+        loudSince = null;
+      }
+      const quiet = now - quietSince;
+      if ((spoke && quiet >= ANSWER_QUIET_MS) || (!spoke && now - startedAt >= ANSWER_WAIT_MS) || now - startedAt >= ANSWER_MAX_MS) done();
+    }, 50);
+    return () => clearInterval(poll);
+  }, [questionDemo, questionStage, questionMicLive]);
 
   // The continuous story flow holds the roadside voice animation for the full voiceover, then
   // speaks the reply question automatically. The story itself is intentionally visual-only.
@@ -637,15 +726,19 @@ export function RadioScreen({
                   mode={companyTurn?.speaker === "NightOwl" ? "reply" : "voice"}
                   color={companyTurn?.speaker === "NightOwl" ? "lime" : "magenta"}
                   level={callVoiceLevel}
-                  className={companyTurn?.speaker === "NightOwl" ? "inset-x-0 bottom-0 h-[132px]" : "inset-x-0 top-0 h-[132px]"}
+                  // Yours (NightOwl) rises from the bottom over the whole map, like every reply glow;
+                  // a short box here stayed pinned to the top (the base inset-0 keeps top: 0).
+                  className={companyTurn?.speaker === "NightOwl" ? undefined : "inset-x-0 top-0 h-[132px]"}
                 />
               )}
               {/* A pickup (story or question) and the AI are only their colour glowing down from the top:
                   no banner, no words over the map. */}
-              {questionDemo && (questionStage === "unlocking" || questionStage === "answering") && (
-                <>
-                  <MessageGlow mode="voice" color="sky" level={callVoiceLevel} className="inset-x-0 top-0 h-[132px]" />
-                </>
+              {questionDemo && questionStage === "unlocking" && (
+                <MessageGlow mode="voice" color="sky" level={callVoiceLevel} className="inset-x-0 top-0 h-[132px]" />
+              )}
+              {/* Flow 4: the mic is open (listening for yes, then your answer): your voice rises from the bottom. */}
+              {questionDemo && (questionStage === "reply-ready" || questionStage === "answering") && (questionMicLive || questionStage === "answering") && (
+                <MessageGlow mode="reply" color={youColor} level={questionMicLive ? { current: () => questionMic.current?.level() ?? 0 } : callVoiceLevel} />
               )}
               {storyDemo && (storyStage === "story" || storyStage === "prompt") && (
                 <>
@@ -734,7 +827,7 @@ export function RadioScreen({
           {storyDemo && storyStage !== "driving" ? (
             <StoryDemoLcd stage={storyStage} />
           ) : questionDemo && questionStage !== "driving" ? (
-            <QuestionDemoLcd stage={questionStage} />
+            <QuestionDemoLcd stage={questionStage} listening={questionMicLive} />
           ) : drop.active && state !== "pick" ? (
             <DropLcd controls={drop} />
           ) : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? (
@@ -742,7 +835,7 @@ export function RadioScreen({
           ) : messageOn ? (
             <MessageLcd controls={message} />
           ) : (
-            <RadioLcd state={state} peerCharacter={companyTurn?.character ?? caller.character} peer={companyTurn ? `@${companyTurn.speaker}` : caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={(companyDemo ? companySpeaking : speaking) && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
+            <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
           )}
           <CollectedTally counts={collected} flash={tallyFlash} />
         </LcdScreen>
@@ -795,12 +888,20 @@ export function RadioScreen({
           {questionDemo && questionStage !== "driving" ? (
             <HardwareButton
               className="flex-1"
-              disabled={questionStage !== "reply-ready"}
-              onClick={() => setQuestionStage("answering")}
-              aria-label={questionStage === "reply-ready" ? "Reply to question" : "Question reply"}
+              disabled={questionStage !== "reply-ready" && questionStage !== "answering"}
+              onClick={() => setQuestionStage(questionStage === "answering" ? "answered" : "answering")}
+              aria-label={questionStage === "reply-ready" ? "Reply to question" : questionStage === "answering" ? "Send your answer" : "Question reply"}
             >
               <span className="text-base font-bold opacity-80">
-                {questionStage === "reply-ready" ? "REPLY" : questionStage === "unlocking" ? "QUESTION UNLOCKED" : questionStage === "answering" ? "PLAYING REPLY" : "ANSWER PLAYED"}
+                {questionStage === "reply-ready"
+                  ? questionMicLive
+                    ? "LISTENING"
+                    : "REPLY"
+                  : questionStage === "unlocking"
+                  ? "QUESTION UNLOCKED"
+                  : questionStage === "answering"
+                  ? "SEND"
+                  : "ANSWER SENT"}
               </span>
             </HardwareButton>
           ) : radioOn ? (
@@ -915,7 +1016,7 @@ function StoryDemoLcd({ stage }: { stage: StoryStage }) {
   );
 }
 
-function QuestionDemoLcd({ stage }: { stage: QuestionStage }) {
+function QuestionDemoLcd({ stage, listening }: { stage: QuestionStage; listening: boolean }) {
   const heading =
     stage === "unlocking"
       ? "A question from @NightOwl"
@@ -936,6 +1037,7 @@ function QuestionDemoLcd({ stage }: { stage: QuestionStage }) {
     <p role="status" className="px-3 text-center font-mono uppercase leading-tight text-lcd-ink">
       <span className="block text-[10px]">{heading}</span>
       <span className="mt-1 block text-[12px] normal-case">{detail}</span>
+      {stage === "reply-ready" && listening && <span className="mt-1 block text-[10px]">Say yes or no</span>}
     </p>
   );
 }
