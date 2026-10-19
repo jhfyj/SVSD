@@ -244,6 +244,29 @@ body {
 }
 
 /*
+  On a phone, behave like an app while filming: no pinch-zoom (iOS ignores the viewport's
+  user-scalable, so touch-action does it), no pull-to-refresh or bounce that could reload or jolt
+  a take, no grey flash on tap, and no text-selection loupe from a long hold. Fields stay selectable.
+*/
+html,
+body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/*
   Film grain behind a screen: put .grain on the phone column. The grain sits above the column's own
   background and below its content, so panels and text stay clean. Still, so it reads as paper, not noise.
 */

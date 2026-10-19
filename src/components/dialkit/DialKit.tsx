@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
@@ -10,6 +10,7 @@ import { clearHangUps } from "@/lib/radio/hangups";
 import { AMBER_KEY, amberOn, setAmber, setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
 import { cn } from "../ui/cn";
+import { useTwoFingerHold } from "./useTwoFingerHold";
 
 /*
   Prototype controls beside the phone column on wide screens: pin the theme and jump to any moment
@@ -17,7 +18,14 @@ import { cn } from "../ui/cn";
   away. Screens that aren't built yet (NEW) open a blank stand-in; ones that differ from the script
   (CHANGE) carry a note, so the kit doubles as the build list. TO-DOS hides the notes for recording.
   Hidden on phone-sized screens, so it never shows on a real phone.
+
+  The hosted site (the production build on Vercel, filmed on a phone) never shows the panel at all:
+  the only control is the flow picker, six keys along the bottom that appear when you hold two
+  fingers on the screen (or press ` on a keyboard). Locally (next dev) the panel stays as it was.
 */
+
+/** The side panel: only while working locally. The hosted site shows nothing but the hidden picker. */
+const PANEL = process.env.NODE_ENV !== "production";
 
 const OPEN_KEY = "svsd-dialkit";
 const TODOS_KEY = "svsd-dialkit-todos";
@@ -114,6 +122,20 @@ export function DialKit() {
   const showTodos = useSyncExternalStore(subscribe, () => read(TODOS_KEY) !== "hidden", () => true);
   const theme = useSyncExternalStore(subscribe, themeChoice, () => "auto" as ThemeChoice);
   const amber = useSyncExternalStore(subscribe, amberOn, () => false);
+
+  // The flow picker: two fingers held on the screen (or ` on a keyboard) shows it, again hides it.
+  const [picking, setPicking] = useState(false);
+  const togglePicker = useCallback(() => setPicking((p) => !p), []);
+  useTwoFingerHold(togglePicker);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && e.target.closest("input, textarea, [contenteditable]");
+      if (e.key === "`" && !typing) togglePicker();
+      if (e.key === "Escape") setPicking(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [togglePicker]);
 
   const toggle = () => write(OPEN_KEY, open ? "closed" : "open");
   const toggleTodos = () => write(TODOS_KEY, showTodos ? "hidden" : "shown");
@@ -442,15 +464,34 @@ export function DialKit() {
     </div>
   );
 
+  const picker = picking && (
+    <FlowPicker
+      flows={numbered}
+      onPick={(f) => {
+        setPicking(false);
+        startFlow(f);
+      }}
+      onClose={() => setPicking(false)}
+    />
+  );
+
+  // The hosted site: nothing on screen until two fingers are held down.
+  if (!PANEL) return picker;
+
   if (!open) {
     return (
-      <div className="fixed left-4 top-4 z-50 hidden lg:block">
-        <Chip onClick={toggle}>Dial kit</Chip>
-      </div>
+      <>
+        {picker}
+        <div className="fixed left-4 top-4 z-50 hidden lg:block">
+          <Chip onClick={toggle}>Dial kit</Chip>
+        </div>
+      </>
     );
   }
 
   return (
+    <>
+    {picker}
     <aside
       aria-label="Dial kit"
       className="fixed left-4 top-4 z-50 hidden max-h-[calc(100dvh-2rem)] w-[260px] overflow-y-auto border border-border bg-surface p-3 font-mono text-foreground lg:block"
@@ -512,6 +553,30 @@ export function DialKit() {
 
       {playBar}
     </aside>
+    </>
+  );
+}
+
+/**
+ * The six flows along the bottom of the screen, over whatever's showing: the only prototype control
+ * on the hosted site, and only after a two-finger hold. Tap a number to start that flow from its
+ * first screen (the app's own keys carry you on from there); tap anywhere else to hide it.
+ */
+function FlowPicker({ flows, onPick, onClose }: { flows: Flow[]; onPick: (f: Flow) => void; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[60] font-mono text-foreground" role="dialog" aria-label="Start a flow">
+      <button type="button" aria-label="Close" className="absolute inset-0 cursor-default" onClick={onClose} />
+      <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[393px] border-t border-border bg-surface px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        <h2 className="mb-2 text-xs uppercase text-foreground/70">Start a flow</h2>
+        <div className="grid grid-cols-6 gap-1.5">
+          {flows.map((f) => (
+            <Chip key={f.n} onClick={() => onPick(f)} className="h-12 text-center! text-base!" title={`${f.n} · ${f.title}`}>
+              {f.n}
+            </Chip>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

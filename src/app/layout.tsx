@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { DialKit } from "@/components/dialkit/DialKit";
@@ -15,6 +15,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SVSD",
   description: "SVSD hackathon project",
+};
+
+// Filmed on a phone: no pinch-zoom (a two-finger hold opens the flow picker, it shouldn't zoom the
+// page), and the page runs under the notch and home bar like an app.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
