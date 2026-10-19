@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
 import { IntentPicker } from "./IntentPicker";
 import { JourneyMap } from "./JourneyMap";
-import { JourneySetup } from "./JourneySetup";
+import { JourneyShape } from "./JourneyShape";
+import { PastJourneys } from "./PastJourneys";
 import { RouteTrail } from "./RouteTrail";
 import { StartJourney } from "./StartJourney";
 import { StartingRadio } from "./StartingRadio";
@@ -20,16 +21,32 @@ const SAMPLE_ROUTE = [
   [40.7346, -73.979], [40.733, -73.975], [40.7302, -73.972], [40.728, -73.9715],
 ].map(([lat, lng]) => ({ lat, lng }));
 
-export const Start: StoryObj = { render: () => <StartJourney href="#" journeys={sampleHistory()} /> };
+/** Where to, with the destination search and the earth on top, then the last four drives as their shapes. */
+export const Start: StoryObj = { render: () => <StartJourney journeys={sampleHistory()} /> };
 
 /** A first visit, before any journeys. */
-export const StartFirstTime: StoryObj = { render: () => <StartJourney href="#" journeys={[]} /> };
+export const StartFirstTime: StoryObj = { render: () => <StartJourney journeys={[]} /> };
+
+/** The last four drives: tap one for its recap, or its corner key to drive it again. */
+export const RecentShapes: StoryObj = {
+  render: () => (
+    <div className="w-[393px] bg-background py-6 text-foreground">
+      <PastJourneys journeys={sampleHistory()} onAgain={() => {}} />
+    </div>
+  ),
+};
+
+/** One drive's shape, with its stories lit and the one worth repeating ringed. */
+export const Shape: StoryObj = {
+  render: () => (
+    <div className="w-[160px] border border-border bg-background">
+      <JourneyShape points={sampleHistory()[2].trip.route} stories={24} questions={6} highlight={0.5} />
+    </div>
+  ),
+};
 
 /** What brings you here today: pick one intent, then Next opens trip setup. */
 export const Intents: StoryObj = { render: () => <IntentPicker href="#" /> };
-
-/** Asks for your location; searches and routes against the live OpenStreetMap services. */
-export const Setup: StoryObj = { render: () => <JourneySetup /> };
 
 /** The splash after Start journey; it stays put here instead of opening the radio. */
 export const Starting: StoryObj = { render: () => <StartingRadio /> };

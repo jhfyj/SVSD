@@ -16,7 +16,7 @@ import { RouteTrail } from "./RouteTrail";
 
 const NORTH = 84;
 const SOUTH = -58; // leaves Antarctica out, like week 6
-const DEG = 4; // degrees per land dot
+const DEG = 2.5; // degrees per land dot (the mask is 1°, so this is about as fine as it reads)
 const DOT = DEG * 0.62;
 
 /** The trail's drawing box, as RouteTrail lays it out. */
@@ -86,7 +86,8 @@ export function JourneyMap({ here, destination, route, stories = 0, questions = 
 
   const world: View = useMemo(() => {
     const h = (360 * BOX.h) / BOX.w;
-    return { x: west, y: -NORTH - (h - (NORTH - SOUTH)) / 2, w: 360, h };
+    // The spare height goes above the land, so the earth sits on whatever comes under the map.
+    return { x: west, y: -NORTH - (h - (NORTH - SOUTH)), w: 360, h };
   }, [west]);
 
   // The view where the route's ends sit exactly on the trail's first and last dots.

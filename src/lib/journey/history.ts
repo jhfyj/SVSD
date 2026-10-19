@@ -75,17 +75,47 @@ export function subscribeHistory(onChange: () => void) {
   return () => window.removeEventListener("storage", handler);
 }
 
-/** The San Francisco to Santa Cruz drive: a stand-in journey for Storybook and screen mockups. */
+const DAY = 24 * 60 * 60_000;
+
+/** Rough drives around California, so the samples have shapes of their own. */
+const SAMPLES: (Omit<Trip, "startedAt" | "route"> & { route: [number, number][]; daysAgo: number })[] = [
+  { ...SAMPLE_TRIP, route: SAMPLE_TRIP.route.map(({ lat, lng }) => [lat, lng]), daysAgo: 1 },
+  {
+    from: "Los Angeles", to: "Joshua Tree", minutes: 140, miles: 130, daysAgo: 6,
+    route: [
+      [34.0522, -118.2437], [34.0686, -117.939], [34.0633, -117.6509], [34.0555, -117.1825], [33.9425, -116.9772],
+      [33.9256, -116.8764], [33.92, -116.61], [34.06, -116.56], [34.12, -116.43], [34.135, -116.313],
+    ],
+  },
+  {
+    from: "San Francisco", to: "Lake Tahoe", minutes: 210, miles: 190, daysAgo: 19,
+    route: [
+      [37.7749, -122.4194], [37.8044, -122.2712], [38.1041, -122.2566], [38.2494, -122.04], [38.5449, -121.7405],
+      [38.5816, -121.4944], [38.7521, -121.288], [38.8966, -121.0769], [39.0955, -120.9505], [39.328, -120.1833],
+      [39.1677, -120.1452], [39.0968, -120.0324],
+    ],
+  },
+  {
+    from: "San Francisco", to: "Point Reyes", minutes: 75, miles: 50, daysAgo: 33,
+    route: [
+      [37.7749, -122.4194], [37.8078, -122.475], [37.859, -122.4852], [37.9358, -122.5311], [37.9735, -122.5611],
+      [38.0085, -122.664], [38.044, -122.74], [38.069, -122.807], [38.03, -122.95], [37.9955, -123.023],
+    ],
+  },
+];
+
+/** A few drives around California, shown until you've been on a journey of your own. */
 export function sampleHistory(now = Date.now()): PastJourney[] {
-  const end = SAMPLE_TRIP.route[SAMPLE_TRIP.route.length - 1];
-  return [
-    {
-      id: "sample",
-      trip: { ...SAMPLE_TRIP, startedAt: now - 26 * 60 * 60_000 },
+  return SAMPLES.map(({ route: pairs, daysAgo, ...trip }, i) => {
+    const route = pairs.map(([lat, lng]) => ({ lat, lng }));
+    const end = route[route.length - 1];
+    return {
+      id: `sample-${i}`,
+      trip: { ...trip, route, startedAt: now - daysAgo * DAY - 2 * 60 * 60_000 },
       journey: {
-        destination: { id: "sample", name: "Santa Cruz", detail: "Santa Cruz, CA", ...end },
-        route: { points: SAMPLE_TRIP.route, duration: SAMPLE_TRIP.minutes * 60, distance: SAMPLE_TRIP.miles * 1609.34 },
+        destination: { id: `sample-${i}`, name: trip.to, detail: `${trip.to}, CA`, ...end },
+        route: { points: route, duration: trip.minutes * 60, distance: trip.miles * 1609.34 },
       },
-    },
-  ];
+    };
+  });
 }

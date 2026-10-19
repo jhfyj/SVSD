@@ -220,7 +220,7 @@ export function DialKit() {
       title: "Stories on the road",
       time: "1:05",
       steps: [
-        { label: "Destination", href: "/journey" },
+        { label: "Pick a destination", href: "/" },
         {
           label: "Splash · connecting to radio",
           href: "/journey/starting",

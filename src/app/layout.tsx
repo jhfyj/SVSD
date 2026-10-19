@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { DialKit } from "@/components/dialkit/DialKit";
+import { DeviceFrame } from "@/components/DeviceFrame";
 import { SoundProvider } from "@/components/sound";
 import { ThemeClock } from "@/components/theme/ThemeClock";
 import { themeScript } from "@/lib/theme";
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <DeviceFrame>{children}</DeviceFrame>
         <ThemeClock />
         <SoundProvider />
         <Suspense>

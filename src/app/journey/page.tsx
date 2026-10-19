@@ -1,11 +1,6 @@
-import { JourneySetup } from "@/components/journey";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Set up your journey · SVSD" };
-
+/** The old Destination step. The search and the map now sit at the top of the start screen. */
 export default function JourneyPage() {
-  return (
-    <main className="flex min-h-full flex-1 justify-center bg-backdrop">
-      <JourneySetup />
-    </main>
-  );
+  redirect("/");
 }

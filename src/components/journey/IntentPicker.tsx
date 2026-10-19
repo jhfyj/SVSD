@@ -19,7 +19,7 @@ export const INTENTS = [
 export type IntentId = (typeof INTENTS)[number]["id"];
 
 /** After Start your journey (Figma iPhone 16 - 69): pick what brings you here, then set up the trip. */
-export function IntentPicker({ href = "/journey", initial = "listen" }: { href?: string; initial?: IntentId }) {
+export function IntentPicker({ href = "/", initial = "listen" }: { href?: string; initial?: IntentId }) {
   const [intent, setIntent] = useState<IntentId>(initial);
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background uppercase text-foreground">
