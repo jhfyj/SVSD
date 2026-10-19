@@ -18,6 +18,34 @@ function audio() {
   return ctx;
 }
 
+/**
+ * Browsers only play sound on a page after someone has tapped, clicked or pressed a key on it.
+ * True once that's happened (or where the browser can't tell us, so we never wait for nothing).
+ */
+export function soundAllowed(): boolean {
+  const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+  return ua ? ua.hasBeenActive : true;
+}
+
+/**
+ * Calls `go` once sound can play: straight away if the page has already been tapped, otherwise on
+ * the first tap, click or key press anywhere. Wakes the audio inside that tap, so the voice that
+ * follows isn't blocked. Returns a cancel.
+ */
+export function whenSoundAllowed(go: () => void): () => void {
+  if (soundAllowed()) {
+    go();
+    return () => {};
+  }
+  const events = ["pointerdown", "keydown", "touchend"] as const;
+  const unlock = () => {
+    events.forEach((e) => document.removeEventListener(e, unlock, true));
+    audio();
+    go();
+  };
+  events.forEach((e) => document.addEventListener(e, unlock, true));
+  return () => events.forEach((e) => document.removeEventListener(e, unlock, true));
+}
 /** RMS of the waveform, scaled so ordinary speech sits around 0.3–0.8. */
 function meter(analyser: AnalyserNode, boost: number): Level {
   const buf = new Float32Array(analyser.fftSize);

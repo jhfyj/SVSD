@@ -18,7 +18,7 @@ import {
   type NightStart,
 } from "@/lib/radio/nightDrive";
 import { START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
-import { announce, playVoice, type Level } from "@/lib/radio/voice";
+import { announce, playVoice, whenSoundAllowed, type Level } from "@/lib/radio/voice";
 
 export type NightDriveControls = {
   phase: NightPhase;
@@ -58,17 +58,29 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
     nightfall.current = onNightfall;
   }, [onNightfall]);
 
+  // Night mode plays by itself, so nobody taps once it's going. If the page opened straight into it
+  // (a reload, a shared link), the browser would block every line, so the script waits on the first
+  // tap anywhere: the day radio just keeps driving until then. Already tapped: it starts at once.
+  const [ready, setReady] = useState(false);
+  useEffect(() => whenSoundAllowed(() => setReady(true)), []);
+
   // A recorded line is playing: stories on the road hold off until it's done, then carry on.
   const [speaking, setSpeaking] = useState(false);
   // "214 driving tonight" is said once, the first time night settles in, not after every rest.
   const toldTonight = useRef(start === "rest");
 
   useEffect(() => {
+    if (!ready) return;
     let t: ReturnType<typeof setTimeout> | undefined;
     const lines: { stop: () => void }[] = [];
     let live = true;
     const after = (ms: number, next: NightPhase) => (t = setTimeout(() => setPhase(next), ms));
-    // Play one of Night mode's recordings; then (and at least `min` ms after it began) go on to `next`.
+    // A silent line still holds stories off for as long as it would take to say.
+    const hold = (line: { done: Promise<void>; stop: () => void }) => {
+      lines.push(line);
+      setSpeaking(true);
+      void line.done.then(() => live && setSpeaking(false));
+    };    // Play one of Night mode's recordings; then (and at least `min` ms after it began) go on to `next`.
     const say = (src: string, next?: NightPhase, min = 0) => {
       const began = Date.now();
       const v = speak(src);
@@ -124,10 +136,7 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
     if (phase === "stopped") {
       cue("ready", { theme: "mech", emphasis: "subtle" });
       // No recording for this one yet: silent, but it still holds stories off for as long as it would take.
-      const line = announce(STOPPED_LINE);
-      lines.push(line);
-      setSpeaking(true);
-      void line.done.then(() => live && setSpeaking(false));
+      hold(announce(STOPPED_LINE));
     }
     return () => {
       live = false;
@@ -135,7 +144,7 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
       lines.forEach((l) => l.stop());
       setSpeaking(false);
     };
-  }, [phase]);
+  }, [phase, ready]);
   return {
     phase,
     level,
