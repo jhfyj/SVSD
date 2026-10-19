@@ -348,7 +348,7 @@ export function DialKit() {
           },
           radio: true,
           active: path === "/radio" && params.get("night") === "rest",
-          note: "REST AREA 9 MI takes over the map; stories paused until you're back. One key: Route to rest area.",
+          note: "REST AREA 9 MI takes over the map; stories paused until you're back. Route to rest area folds the sign to a strip; 7 s later you're parked: Back on the road brings stories back.",
         },
         { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => pickTheme("dark"), note: "Any radio state at night is amber." },
       ],
