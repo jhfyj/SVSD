@@ -511,6 +511,33 @@ export function RadioScreen({
 
   const companyTurn = conversationIndex >= 0 ? COMPANY_TURNS[conversationIndex] : undefined;
   const companySpeaking = Boolean(companyTurn);
+  // Flow 3: your side of the call is your real microphone. While the call is on and the mic key is
+  // lit, your voice rises from the bottom in green; mute it (or take a break) and the green goes.
+  // Mothlight's purple still comes down from the top on her scripted turns.
+  const companyMicOn = companyDemo && state === "connected" && !greeting && !micMuted && !onBreak;
+  const companyMicLevel = useRef<Level | null>(null);
+  const [companyMicLive, setCompanyMicLive] = useState(false);
+  useEffect(() => {
+    if (!companyMicOn) return;
+    let live = true;
+    let mic: Recording | null = null;
+    recordReply().then(
+      (rec) => {
+        if (!live) return rec.cancel();
+        mic = rec;
+        companyMicLevel.current = rec.level;
+        setCompanyMicLive(true);
+      },
+      // Mic blocked: no green, the rest of the call plays on.
+      () => {},
+    );
+    return () => {
+      live = false;
+      mic?.cancel();
+      companyMicLevel.current = null;
+      setCompanyMicLive(false);
+    };
+  }, [companyMicOn]);
   useEffect(() => {
     if (!companyDemo || !companyTurn) return;
     const startedAt = performance.now();
@@ -786,15 +813,19 @@ export function RadioScreen({
           // bottom in your colour. It sits under the turn banner so it never hides the directions.
           overlay={
             <>
+              {/* Flow 3: the radio's intro and Mothlight's turns come down from the top in purple, on
+                  their scripted timing. NightOwl's turns are left to your real mic below. */}
               {companyDemo && (greeting || companySpeaking) && (
                 <MessageGlow
-                  mode={companyTurn?.speaker === "NightOwl" ? "reply" : "voice"}
-                  color={companyTurn?.speaker === "NightOwl" ? "lime" : "magenta"}
+                  mode={greeting || companyTurn?.speaker === "Mothlight" ? "voice" : "off"}
+                  color="magenta"
                   level={callVoiceLevel}
-                  // Yours (NightOwl) rises from the bottom over the whole map, like every reply glow;
-                  // a short box here stayed pinned to the top (the base inset-0 keeps top: 0).
-                  className={companyTurn?.speaker === "NightOwl" ? undefined : "inset-x-0 top-0 h-[132px]"}
+                  className="inset-x-0 top-0 h-[132px]"
                 />
+              )}
+              {/* Your real mic, rising from the bottom over the whole map like every reply glow. */}
+              {companyDemo && state === "connected" && (
+                <MessageGlow mode={companyMicLive && companyMicOn ? "reply" : "off"} color={youColor} level={companyMicLevel} />
               )}
               {/* A pickup (story or question) and the AI are only their colour glowing down from the top:
                   no banner, no words over the map. */}
@@ -821,7 +852,7 @@ export function RadioScreen({
                 <MessageGlow mode="reply" color={youColor} level={nightDrive.level} />
               ) : (
                 <MessageGlow
-                  mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
+                  mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "empty" || message.phase === "noMic" ? "off" : "voice"}
                   color={message.phase === "recording" ? youColor : MESSAGE_COLOR[message.message?.kind ?? "message"]}
                   level={message.level}
                 />
