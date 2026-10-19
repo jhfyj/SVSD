@@ -6,6 +6,12 @@ const FRAME_WIDTH = 430;
 const FRAME_HEIGHT = 880;
 const SCREEN_WIDTH = 393;
 const SCREEN_HEIGHT = 852;
+/** On a wide screen (a laptop), zoomed out a little so more of the starry backdrop shows round the phone. */
+const WIDE = 1024;
+const WIDE_MAX_SCALE = 0.86;
+/** Room kept above and below the phone, in px: more on a wide screen. */
+const WIDE_EDGE_Y = 160;
+const EDGE_Y = 48;
 
 /** Centers the app in the supplied phone frame and scales both together to fit the viewport. */
 export function DeviceFrame({ children }: { children: ReactNode }) {
@@ -16,7 +22,8 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
       const viewport = window.visualViewport;
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
-      setScale(Math.min(1, (width - 32) / FRAME_WIDTH, (height - 48) / FRAME_HEIGHT));
+      const wide = width >= WIDE;
+      setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (width - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
     };
     fit();
     window.addEventListener("resize", fit);
