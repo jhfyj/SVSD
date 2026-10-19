@@ -193,7 +193,7 @@ export function DialKit() {
         {
           label: "Tuning in · loading",
           href: "/welcome",
-          note: "The radio tunes in to Caravan, then hands over to Overview 1. Tap to skip.",
+          note: "The caravan crosses the road, then hands over to Overview 1. Tap to skip.",
         },
         {
           label: "Overview 1 · Stories",
