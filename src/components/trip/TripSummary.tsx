@@ -7,7 +7,6 @@ import { QuestionRow, QUESTIONS_PREVIEW } from "./TripQuestions";
 import { formatDuration } from "@/lib/journey/duration";
 import { loadTrip, placeName, SAMPLE_TRIP, savedTripRaw, sharedMiles, tripEvents, type TripSummary as Summary } from "@/lib/trip/trip";
 import { TopBar } from "../journey/TopBar";
-import { TabBar } from "../ui/TabBar";
 import { TripMap } from "./TripMap";
 import { plural } from "@/lib/plural";
 
@@ -125,7 +124,8 @@ export function TripSummary({ trip: given, doneHref = "/", allQuestionsHref = "/
         </section>
       )}
 
-      <div className="px-11 pb-14 pt-10">
+      {/* No tab bar on the recap: it ends the trip, so Done is the only way on. */}
+      <div className="px-11 pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-10">
         <Link
           href={doneHref}
           data-cuelume-tap=""
@@ -135,7 +135,6 @@ export function TripSummary({ trip: given, doneHref = "/", allQuestionsHref = "/
           <span aria-hidden className="size-2.5 rounded-full bg-current" />
         </Link>
       </div>
-      <TabBar current="history" />
     </div>
   );
 }
