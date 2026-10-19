@@ -8,6 +8,10 @@ import { useJourney } from "@/lib/journey/session";
 import { DEMO_HANG_UP_RULE } from "@/lib/radio/hangups";
 import { SAMPLE_MESSAGES } from "@/lib/radio/messages";
 import { STORY_DRIVE } from "@/lib/demo/storyDrive";
+import { useCharacter } from "@/lib/profile/avatar";
+import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
+import { NIGHT_CLOCK, NIGHT_STARTS, type NightStart } from "@/lib/radio/nightDrive";
+import { setThemeChoice } from "@/lib/theme";
 
 const CALL_STATES: CallState[] = ["off", "pick", "connecting", "connected", "lost"];
 
@@ -27,6 +31,9 @@ const handle = (text: string | null) => (text ? (text.startsWith("@") ? text : `
  * A new `?load=` value plays the load-in again: the page is kept alive between visits, so without
  * it the radio comes back already loaded.
  * `?demo=story` drives the scripted story-unlock drive (no load-in), and a new `?t=` starts it over.
+ * `?night=fall|checkin|rest` plays Night mode (Flow 6) from sunset, the check-in or the rest area
+ * (no load-in, nothing else on the road); a new `?t=` starts it over. Sunset ends by pinning the
+ * night theme, as the dial kit's theme switch would.
  */
 export function Radio() {
   const router = useRouter();
@@ -47,15 +54,23 @@ export function Radio() {
   const tripMiles = journey?.route ? Math.max(1, Math.round(journey.route.distance / METRES_PER_MILE)) : undefined;
   const miles = Number(params.get("miles")) || tripMiles;
   const demo = params.get("demo") === "story" ? STORY_DRIVE : undefined;
+  const nightParam = params.get("night") as NightStart | null;
+  const night = nightParam && NIGHT_STARTS.includes(nightParam) ? nightParam : undefined;
+  const meCharacter = useCharacter(session?.phone) ?? DEFAULT_CHARACTER;
   return (
-    <RadioIntro key={params.get("load") ?? "radio"} skip={!!demo}>
+    <RadioIntro key={params.get("load") ?? "radio"} skip={!!demo || !!night}>
       <RadioScreen
         // A new state (or a new demo run) from the dial kit starts the radio over in it.
-        key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo ? params.get("t") : ""}`}
+        key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo || night ? params.get("t") : ""}-${night}`}
         demo={demo}
+        night={night}
+        time={night ? NIGHT_CLOCK[night] : undefined}
+        onNightfall={() => setThemeChoice("dark")}
+        meCharacter={meCharacter}
         defaultState={state}
-        // The story-unlock demo has its own story on the road; nothing else comes in during it.
-        messages={quiet || demo ? [] : undefined}
+        // The story-unlock demo has its own story on the road, and Night mode talks to you itself;
+        // nothing else comes in during either.
+        messages={quiet || demo || night ? [] : undefined}
         outcome={outcome}
         hangUpRule={timeout ? DEMO_HANG_UP_RULE : null}
         defaultMessage={message}

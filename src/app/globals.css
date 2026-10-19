@@ -92,6 +92,10 @@
   --led-red: #ff3535;
   /* The LED's ring: night label gray, kept in both themes because the LED is a physical part. */
   --led-ring: #bababa;
+  /* Night mode's sunset (Flow 6): the sun's amber, and the near-black that falls with it. The same
+     near-black is the rest-area sign's ground. Both themes: the sunset starts by day. */
+  --sun: #ffb020;
+  --nightfall: #0a0805;
 
   /* Motion (DESIGN.md §9): the curve comes from what's moving, the duration from its tier. */
   --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -219,6 +223,8 @@
   --color-led-amber: var(--led-amber);
   --color-led-red: var(--led-red);
   --color-led-ring: var(--led-ring);
+  --color-sun: var(--sun);
+  --color-nightfall: var(--nightfall);
   --color-rocker-housing: var(--rocker-housing);
   --color-rocker-well: var(--rocker-well);
   --color-rocker-glyph: var(--rocker-glyph);
@@ -381,6 +387,55 @@ body {
 }
 :root[data-theme="light"] .radio-map .bg-marker-lime {
   background-color: #fdfcf9;
+}
+
+/*
+  Night mode (DESIGN.md §3.8): at night the radio is amber on near-black, so it won't light up a
+  dark car and is easiest on night vision. Only the radio (.radio-night on RadioScreen): Screens
+  keep the night theme. Everything printed or lit turns amber; content keeps its shape (drop pins
+  keep their icons) so it still reads without colour. The LEDs, the power key, the red End call
+  and the rocker's black body are physical parts and stay as they are.
+  Custom properties resolve where they're declared, so --story and --question are set again here.
+*/
+:root:not([data-theme="light"]) .radio-night {
+  --foreground: #ffb020;
+  --background: #0d0a06;
+  --surface: #17120b;
+  --surface-raised: #221a0f;
+  --border: #5a3f12;
+  --label: #c98f2c;
+  --muted: #7a5414;
+  --lcd: #1a1207;
+  --lcd-ink: #ffb020;
+  --lcd-inset: inset 4px 4px 4px rgb(0 0 0 / 0.6);
+  --character: rgb(255 176 32 / 0.2);
+  --character-lit: #ffb020;
+  --marker-lime: #ffc24d;
+  --marker-magenta: #ff8f3a;
+  --marker-sky: #e0a24a;
+  --marker-orange: #ff7a2e;
+  --story: #ffc24d;
+  --question: #ff8f3a;
+  --tip: #d9a35f;
+  --drop-ink: #111111;
+  --key-lit: #ffb020;
+  --key-lit-glow: drop-shadow(0 0 1.6px #ffb020) drop-shadow(0 0 5px rgb(255 176 32 / 0.45));
+  --panel-gradient: linear-gradient(180deg, #17120b 0%, #0d0a06 100%);
+  --panel-highlight: inset 1px 2px 2px rgb(255 190 90 / 0.12);
+  --casing-gradient: linear-gradient(180deg, #17120b 0%, #120e08 55%, #0b0905 100%);
+  --button-gradient: linear-gradient(180deg, #221a0f 0%, #16110a 100%);
+  --button-highlight: inset 1px 2px 2px rgb(255 190 90 / 0.1);
+  --button-gradient-pressed: linear-gradient(180deg, #0e0b06 0%, #1b150c 100%);
+  --button-pressed-shadow: inset 0 3px 6px rgb(0 0 0 / 0.8), inset 0 -1px 1px rgb(255 190 90 / 0.05);
+  --rocker-glyph: #c98f2c;
+  /* The map in amber: black and white first, then all the way to sepia and warmed up. */
+  --map-lcd-tint: grayscale(1) contrast(1.2) brightness(0.85) sepia(1) saturate(2.6) hue-rotate(-6deg);
+  --grid-ink: 255 176 32;
+  --panel-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.69 0 0 0 0 0.13 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* You on the amber map: a pale amber square, the brightest thing on the road. */
+:root:not([data-theme="light"]) .radio-night .radio-map {
+  --marker-lime: #ffe2a6;
 }
 
 /* The route trail lights up one dot at a time. */
@@ -739,4 +794,97 @@ body {
 }
 .respond-segment {
   animation: respond-segment 5s linear forwards;
+}
+
+/*
+  Night mode moments (NightDrive.tsx). Sunset: the sun sinks one sprite pixel (5px) at a time
+  while the light goes amber and the radio dims. Relight: the radio dips to black and flickers back
+  on in hard frames. Timings match DUSK_MS and RELIGHT_MS in lib/radio/nightDrive.ts.
+*/
+@keyframes night-sun {
+  to {
+    transform: translateY(560px);
+  }
+}
+@keyframes night-dusk {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes night-relight {
+  0% { opacity: 1; }
+  30% { opacity: 0; }
+  50% { opacity: 1; }
+  75%, 100% { opacity: 0; }
+}
+.night-sun {
+  animation: night-sun 2400ms steps(112, end) both;
+}
+.night-dusk-map {
+  opacity: 0.85;
+  animation: night-dusk 2400ms var(--motion-ease-out) both;
+}
+.night-dusk-casing {
+  opacity: 0.6;
+  animation: night-dusk 2400ms var(--motion-ease-out) both;
+}
+.night-relight {
+  animation: night-relight 480ms step-end both;
+}
+
+/*
+  The rest-area sign: rows switch on one after another in hard frames, then scroll like a
+  dot-matrix ticker, 4px at a time (one copy of the words is 408px: 102 steps). Each letter bobs
+  in a 4-frame wave, offset along the row so the wave travels. Still for reduced motion.
+*/
+@keyframes night-sign-on {
+  from {
+    visibility: hidden;
+  }
+}
+@keyframes night-sign-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes night-sign-scroll-back {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes night-sign-wave {
+  0%, 100% { transform: translateY(0); }
+  25%, 75% { transform: translateY(-4px); }
+  50% { transform: translateY(-8px); }
+}
+.night-sign-row {
+  animation: night-sign-on 1ms step-end calc(var(--row) * 100ms) both;
+}
+/* Folding to a strip once the route's set: it switches on from the bottom in 4 hard steps. */
+@keyframes night-sign-fold {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .night-sign-row {
+    animation:
+      night-sign-on 1ms step-end calc(var(--row) * 100ms) both,
+      night-sign-scroll 6s steps(102, end) infinite;
+  }
+  .night-sign-row-back {
+    animation:
+      night-sign-on 1ms step-end calc(var(--row) * 100ms) both,
+      night-sign-scroll-back 6s steps(102, end) infinite;
+  }
+  .night-sign-fold {
+    animation: night-sign-fold 240ms steps(4, end) both;
+  }
+  .night-sign-letter {
+    animation: night-sign-wave 1.2s steps(1) infinite;
+    animation-delay: calc(var(--i) * -70ms);
+  }
 }

@@ -1,6 +1,6 @@
 # SVSD design system
 
-SVSD is a pocket radio for a journey. Half of it is a **flat screen** like paper: starting a journey, signing in, picking a character, choosing why you're driving, setting a destination, the trip recap. The other half is **hardware you hold**: a radio with a live map, a small LCD, a rocker switch and chunky keys. It runs in **two themes**, night and day, switched by the sun. Everything below keeps those halves and themes feeling like one object, so new screens are built from rules instead of guessed.
+SVSD is a pocket radio for a journey. Half of it is a **flat screen** like paper: starting a journey, signing in, picking a character, choosing why you're driving, setting a destination, the trip recap. The other half is **hardware you hold**: a radio with a live map, a small LCD, a rocker switch and chunky keys. It runs in **two themes**, night and day, switched by the sun. At night the radio goes further: **Night mode** turns it amber on near-black so it won't light up a dark car ([§3.8](#38-night-mode-amber)). Everything below keeps those halves and themes feeling like one object, so new screens are built from rules instead of guessed.
 
 **Source of truth, in order:** this file → tokens in [`src/app/globals.css`](src/app/globals.css) → the Figma section [“CLAUDE LOOK HERE”](https://www.figma.com/design/aDzc2bXm7lrwe8ewApmlxe/SVSD--Design-file?node-id=123-130) (node `123:130`). When Figma and this file disagree, this file wins; the overrides are listed in [§11](#11-figma-overrides). When the code and this file disagree, see [§13](#13-known-drift-in-code).
 
@@ -22,7 +22,7 @@ SVSD is a pocket radio for a journey. Half of it is a **flat screen** like paper
 | # | Principle | What it means in practice |
 |---|---|---|
 | 1 | **Two materials, never blended** | A surface is either **Screen** (flat paper, 1px borders, film grain, no shadows) or **Hardware** (casing gradients, light from above, panel grain, keys that travel). Don't put shadows on Screens or flat outlined boxes on the radio. |
-| 2 | **Two themes, one object** | Night is the default; day turns the paper and casing cream. Hardware keeps its physical parts in both: the rocker, the map bezel, the red end-call key and the LEDs don't change. |
+| 2 | **Two themes, one object** | Night is the default; day turns the paper and casing cream. At night the radio is amber (Night mode, [§3.8](#38-night-mode-amber)). Hardware keeps its physical parts in all of them: the rocker, the map bezel, the red end-call key and the LEDs don't change. |
 | 3 | **Square world** | Corner radius is 0. Only things that are physically round are round: dots, LEDs, bulbs. |
 | 4 | **One color, one meaning** | Lime is a story, magenta is a question, green means on, red is danger. A color never shows up just for decoration. |
 | 5 | **Readouts are digital, words are mono, pictures are pixels** | The segment font (DSEG14) is only for numbers a device would show. Every word is Geist Mono. Every picture (weather, characters, sign-in icons) is drawn on the same 16×16 one-ink pixel grid. |
@@ -101,8 +101,9 @@ Non-text shades: `foreground/20` for unlit dots and empty tracks, `foreground/15
 | `character` / `character-lit` | white 20% / `#8dff7e` | ink 22% / `#2f8f3a` | Pixel characters: unlit, and the picked one lit |
 | `danger` | `#ff5151` | `#ca3838` | Destructive actions and errors |
 | `power` | `#ff3535` | same | The lit power key (an emitter, not a printed color) |
-| `lcd` / `lcd-ink` | `#97bd93` / `#1e2a1d` | `#b5b3a8` / `#2b2a27` | The radio LCD: **green at night, gray by day** |
+| `lcd` / `lcd-ink` | `#97bd93` / `#1e2a1d` | `#b5b3a8` / `#2b2a27` | The LCD: green at night, gray by day. **On the radio at night it's amber** (`#1a1207` / `#ffb020`, [§3.8](#38-night-mode-amber)), so the green only shows off the radio |
 | `lcd-green` / `lcd-green-ink` | `#97bd93` / `#1e2a1d` | same | The always-green screen behind the Customize profile preview |
+| `sun` / `nightfall` | `#ffb020` / `#0a0805` | same | Night mode's sunset only: the sinking sun, and the near-black that falls with it (also the rest-area sign's ground). Same in both themes because the sunset starts by day. |
 
 **Green means on.** LEDs, lit keys and the picked character all use green to say “this is active”. Never use green for decoration or for content.
 
@@ -132,6 +133,7 @@ Recipes, not colors. Use them only on the radio. Each has a day version in the t
 - **With a Google key:** `NavMap` is a Google vector map tilted into a 3D follow view; the route ahead is white on a dark casing and nothing is drawn behind you (`--route`, `--route-casing`, read by `useToken` because Google's polylines take color strings), the next turn shows at the top. Tiles go black and white through `--map-lcd-tint`: a slight LCD-green cast at night, plain grayscale by day, so it reads as the same kind of screen as the LCD. Markers are HTML on top and keep their colors.
 - **Without a key:** the dithered placeholder map ([§7](#7-texture)) and OpenStreetMap search and routes.
 - **Washes:** when a story or question arrives, the map takes a `mix-blend-color` wash of that kind's color, rising from the bottom.
+- **Night mode:** the same tiles go all the way to sepia and warm (`--map-lcd-tint` in `.radio-night`), so the map is amber with the rest of the radio.
 
 ### 3.6 Retired values
 
@@ -159,6 +161,27 @@ The day theme is new, and a few of its values fell below the minimums. They now 
 | Night input edge (`--border-input`) | white 20% | 1.9:1 | `#6c6c6c` (= `border`) | 3.2:1 |
 
 `border` itself (`#c7c1b7`, 1.6:1 by day) is fine for dividers between content. Anything you type into or tap needs the stronger edge.
+
+### 3.8 Night mode (amber)
+
+At night the radio is **amber on near-black**. A bright screen lights up a dark car, and amber is easiest on night vision. It's only tokens: `.radio-night` sits on `RadioScreen`, and `:root:not([data-theme="light"]) .radio-night` in `globals.css` reassigns the semantic tokens inside it, so every radio state (off, connecting, a call, a message, a drop, the load-in) turns amber with no code. **Screens keep the normal night theme**; only the radio, the thing you see while driving, goes amber.
+
+| Token in Night mode | Value | Note |
+|---|---|---|
+| `foreground` | `#ffb020` | Clock, readouts, sign text. 10.5:1 on the casing |
+| `label`, `rocker-glyph` | `#c98f2c` | Engraved labels at 80%: 4.7:1 |
+| `lcd` / `lcd-ink` | `#1a1207` / `#ffb020` | The LCD stops being a lit panel: amber ink on near-black glass, 10.1:1 |
+| `casing-gradient`, `panel-gradient`, `button-gradient(-pressed)` | `#221a0f` … `#0b0905` | Warm near-blacks; highlights are faint amber instead of white |
+| `key-lit` (+ glow) | `#ffb020` | Lit = on, in amber |
+| `story` / `question` / `tip` | `#ffc24d` / `#ff8f3a` / `#d9a35f` | Three ambers. Close on purpose: **shape and icon carry the kind** (drop pins keep `EnvelopeSimple` / `QuestionMark` / `Note`), so they read without colour |
+| `marker-*`, you on the map | amber shades; you `#ffe2a6` | You stay the brightest thing on the road |
+| `map-lcd-tint` | `grayscale(1) contrast(1.2) brightness(0.85) sepia(1) saturate(2.6) hue-rotate(-6deg)` | |
+
+**Unchanged in Night mode:** the LEDs (green / amber / red keep their meaning and are 8px), the red power key, the red End call and the rocker's black body. They're physical parts.
+
+**When it's on:** whenever the theme is night and you're on the radio. Sunset during a drive plays the Night falls moment ([§9.8](#98-current-motion-inventory)); opening the radio after dark starts amber.
+
+**What Night mode does** (Flow 6, `useNightDrive`): after dark it checks in with a question to answer out loud (“Still with me? Tell me one thing you can see.”), because answering keeps your mind awake. Nothing to tap: the LCD shows the question and LISTENING with a stepped meter, and your voice rises from the bottom of the map like a reply. When the answers slow down, the **rest-area sign** takes over the map, stories pause until you're back, and the key row becomes one wide ROUTE TO REST AREA key (lit once it's set). Once the route's set the sign **folds to a strip** along the bottom of the map, so the way there shows. Pulled in, the sign clears, the LCD says “Take 15 min · stories wait”, and the key becomes **BACK ON THE ROAD**: stories come back, and the radio doesn't check in again straight away. Flipping Company on mid check-in stops it asking. We don't keep you awake; we tell you to stop.
 
 ---
 
@@ -205,6 +228,7 @@ The radio, its LCD and its map are a **scale model**: they don't shrink when the
 | `lcd-name` | `text-[16px]` | The other person's @handle |
 | `lcd-num` | `font-display text-[20px]` | Countdowns on the LCD |
 | `tag` | `text-[9px] uppercase leading-[13px]` | Blueprint tags and map labels only. Never for anything you need to read. |
+| `sign` | `text-[40px] font-bold leading-none` | The rest-area sign that takes over the map in Night mode. Nothing else. |
 
 **Floors:** 10px on Screens, 11px on hardware, 9px only for `tag`.
 
@@ -342,7 +366,8 @@ Clock, frequency, counts and countdowns use the segment font with `tabular-nums`
 | **Power key** | Phosphor `Power` 20 in a 44 button, `text-power` with a three-layer glow. Pressed: glow drops to 1px, `translate-y-px`, 80%. |
 | **Rocker switch** | 46×98 housing; the paddle tilts on its center hinge ([§9.5](#95-3d-and-physical-motion)). `O` / `|` glyphs, engraved OFF / ON. |
 | **LED** | 8px bulb in a 1px ring. Off: dark bulb. Connecting: amber. On a call: green. Lost: red. Each lit state glows in its own color. |
-| **LCD** (`RadioLcd`) | `bg-lcd`, `lcd-ink`, inset shadow. One state at a time: blank (off), CONNECTING with stepping dots, the other person's character + @handle (idle / speaking frames), CONNECTION LOST, a break countdown, or a thank-you on arrival. Text uses the `lcd-*` roles. |
+| **LCD** (`RadioLcd`) | `bg-lcd`, `lcd-ink`, inset shadow. One state at a time: blank (off), CONNECTING with stepping dots, the other person's character + @handle (idle / speaking frames), CONNECTION LOST, a break countdown, or a thank-you on arrival. Text uses the `lcd-*` roles. Night mode (`NightLcd`) adds NIGHT MODE ON, NIGHT MODE + drivers tonight, the check-in with LISTENING and a stepped 2px-bar meter, and your character dozing (held on one frame, three pixel z's stepping in) over “Stories paused until you're back”. |
+| **Rest-area sign** (`RestSign`) | Night mode only. Fills the map window on `nightfall`: five rows of REST AREA 9 MI in the `sign` role, a dot-matrix ticker. Middle row at 100%, the other four echo it at 40% so the sign says stop without lighting up the car. Folded (route set): just the bright row, in a 72px strip along the bottom of the map with a `foreground/40` top edge, switched on from the bottom in `steps(4)`. |
 | **Settings panel** | Grows up out of the console in 4 hard steps. Sections with `engraved` titles; choices are small keys that latch and light (intents: Meet someone, Chit-chat, Share a story, Off my chest). Report reasons are short enough to fit a key. |
 | **Map window** | See [§3.5](#35-the-map). People are 20px squares, 2px `marker-border`. |
 | **Reply recorder** | Replaces Figma's blue rounded widget. The LCD shows the waveform (2px `lcd-ink` bars) and the count-up time as `lcd-num`; below, a FINISH key and a square Pause key. No blue, no radius. |
@@ -489,6 +514,9 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 | `StartingRadio` | Splash `fade-out` 400ms `ease-out` | ✅ |
 | `RadioSettings` | Panel is revealed bottom-up by a `clip-path` transition in `steps(4)` | ✅ |
 | `ToggleSwitch` | Knob slides with `transform`, `quick` `ease-mechanical` | ✅ |
+| `Nightfall` (Night falls) | A **moment**: the pixel sun sinks 560px in `steps(112)` (one sprite pixel at a time) over 2400ms while the map's amber wash and the casing's dimming fade in `ease-out`; then the radio dips and flickers back on in amber, 480ms `step-end`, and the theme switches on the black frame. Reduced motion: straight to NIGHT MODE ON | ✅ |
+| `RestSign` | Rows switch on 100ms apart (`step-end`), scroll 4px at a time (`steps(102)` over 6s, alternate rows reversed), letters bob in a 4-frame wave (`steps(1)`, offset 70ms per letter). Still for reduced motion | ✅ |
+| `NightLcd` | NIGHT MODE ON flashes in (`lcd-flash`), the meter steps every 100ms, the z's reuse the LCD dots' 1.6s steps | ✅ |
 | `Button`, `MenuRow`, `SegmentedTabs`, options | `transition-colors` / `transition-opacity` `duration-150 ease-out` | ✅ |
 
 ---
@@ -544,7 +572,7 @@ Two families, never mixed in one spot:
 
 **Figma map** (file `aDzc2bXm7lrwe8ewApmlxe`, section `123:130`): Getting set up `123:533`, `125:807`, `123:131`–`123:207` · Splash `123:728` · Sync calling `123:287` connecting, `123:246` connected, `123:319` off · Receive `123:352` message, `123:441` question · Respond `123:471`, `123:502`, `123:727` · Profile `123:647` sign in, `123:541` profile. Day theme reference: Connecting `154:1263`.
 
-**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
+**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived; `?night=fall|checkin|rest` plays Night mode) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
 
 ---
 
