@@ -9,6 +9,7 @@ import { markOnboarded } from "@/lib/profile/onboarding";
 import { clearHangUps } from "@/lib/radio/hangups";
 import { AMBER_KEY, amberOn, setAmber, setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
+import { setSoundOn, useSoundOn } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { useTwoFingerHold } from "./useTwoFingerHold";
 
@@ -455,7 +456,13 @@ export function DialKit() {
   // the app itself carries you through the rest (NEXT, Save, Start journey...): nothing plays on a
   // timer. Flow 1 signs out first so it runs as a new person would see it.
   const numbered = flows.filter((f) => f.n);
-  const startFlow = (f: Flow) => (f.start ? f.start() : void run(f.steps[0]));
+  // Every flow is for filming, so starting one always turns the sound back on (the mute is
+  // remembered per device, and the hosted site has no panel to see it on).
+  const soundOn = useSoundOn();
+  const startFlow = (f: Flow) => {
+    setSoundOn(true);
+    return f.start ? f.start() : void run(f.steps[0]);
+  };
 
   const playBar = (
     <div className="sticky bottom-0 -mx-3 -mb-3 mt-4 border-t border-border bg-surface p-3">
@@ -509,6 +516,16 @@ export function DialKit() {
         </button>
       </div>
 
+      <Group title="Sound">
+        <div className="grid grid-cols-2 gap-1">
+          <Chip active={!soundOn} onClick={() => setSoundOn(false)}>
+            off
+          </Chip>
+          <Chip active={soundOn} onClick={() => setSoundOn(true)}>
+            on
+          </Chip>
+        </div>
+      </Group>
       <Group title="Theme">
         <div className="grid grid-cols-3 gap-1">
           {THEMES.map((t) => (

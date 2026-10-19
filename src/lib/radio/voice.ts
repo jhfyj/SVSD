@@ -17,6 +17,13 @@ function audio() {
   void ctx.resume();
   return ctx;
 }
+// Browsers keep audio locked until a tap or key press. Wake the voices' audio on the first one
+// (and any after), so a recording that starts later on a timer is never held back silent.
+if (typeof window !== "undefined") {
+  const wake = () => void audio();
+  window.addEventListener("pointerdown", wake, { capture: true, passive: true });
+  window.addEventListener("keydown", wake, { capture: true });
+}
 
 /** RMS of the waveform, scaled so ordinary speech sits around 0.3–0.8. */
 function meter(analyser: AnalyserNode, boost: number): Level {
