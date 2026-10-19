@@ -10,7 +10,7 @@ import { cn } from "../ui/cn";
 import { JourneyShape } from "./JourneyShape";
 
 export type PastJourneysProps = {
-  /** The journeys to show. Leave unset to read this device's history (or samples when it's empty). */
+  /** The journeys to show. Leave unset to read this device's history, topped up with samples to four. */
   journeys?: PastJourney[];
   /** Drive one again: the start screen puts it back in the destination field. */
   onAgain?: (past: PastJourney) => void;
@@ -32,7 +32,9 @@ export function PastJourneys({ journeys: given, onAgain, className }: PastJourne
     if (given) return given;
     if (raw === undefined) return [];
     const saved = loadHistory(raw);
-    return saved.length ? saved : sampleHistory();
+    // Until you've driven four times, sample drives fill the rest (never a place you've already been).
+    const been = new Set(saved.map((past) => past.trip.to));
+    return [...saved, ...sampleHistory().filter((past) => !been.has(past.trip.to))].slice(0, LIMIT);
   }, [given, raw]);
 
   if (!journeys.length) return null;
