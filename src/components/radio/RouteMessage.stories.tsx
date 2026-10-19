@@ -58,6 +58,7 @@ const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => 
   respondWindow: "open",
   listening: false,
   replyLeft: 42_000,
+  sendsIn: null,
   level: { current: null },
   play: () => {},
   reply: () => {},
@@ -67,7 +68,10 @@ const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => 
   ...over,
 });
 
-/** Every LCD a message can show: who it's from (Figma), with a reply chosen, the radio asking "Reply?", recording, sent, and no mic. */
+/**
+ * Every LCD a message can show: who it's from (Figma), with a reply chosen, the radio asking "Reply?",
+ * recording (talking, then gone quiet: it sends itself after 10 seconds), sent, nothing heard, and no mic.
+ */
 export const Lcd: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4 bg-[#262626] p-6">
@@ -78,7 +82,9 @@ export const Lcd: Story = {
         controls({ phase: "asking", respondWindow: "closed" }),
         controls({ phase: "asking", respondWindow: "closed", listening: true }),
         controls({ phase: "recording" }),
+        controls({ phase: "recording", replyLeft: 31_000, sendsIn: 4_200 }),
         controls({ phase: "sent" }),
+        controls({ phase: "empty" }),
         controls({ phase: "noMic" }),
       ].map((c, i) => (
         <LcdScreen key={i} className="h-[130px] w-[221px]">

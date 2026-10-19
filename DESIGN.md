@@ -372,7 +372,7 @@ Clock, frequency, counts and countdowns use the segment font with `tabular-nums`
 | **Rest-area sign** (`RestSign`) | Night mode only. Fills the map window on `nightfall`: five rows of REST AREA 9 MI in the `sign` role, a dot-matrix ticker. Middle row at 100%, the other four echo it at 40% so the sign says stop without lighting up the car. Folded (route set): just the bright row, in a 72px strip along the bottom of the map with a `foreground/40` top edge, switched on from the bottom in `steps(4)`. |
 | **Settings panel** | Grows up out of the console in 4 hard steps. Sections with `engraved` titles; choices are small keys that latch and light (intents: Meet someone, Chit-chat, Share a story, Off my chest). Report reasons are short enough to fit a key. |
 | **Map window** | See [§3.5](#35-the-map). People are 20px squares, 2px `marker-border`. |
-| **Reply recorder** | Replaces Figma's blue rounded widget. The LCD shows the waveform (2px `lcd-ink` bars) and the count-up time as `lcd-num`; below, a FINISH key and a square Pause key. No blue, no radius. |
+| **Reply recorder** | Replaces Figma's blue rounded widget. The LCD shows YOUR REPLY with a blinking dot, the 60-second cap counting down in 28px with “to @handle” beside it, and the same hint as a drop: “Tap send or stop speaking for 10 sec”. Go quiet for 10 s and it sends itself (“Sending in 5…” for the last 5 s; talking again cancels it); at 60 s it sends whatever happens. Nothing said at all and it's thrown away: NOTHING HEARD, “No reply sent to @handle”. Below, a SEND key and a square X to throw it away. Drop and reply share one quiet clock (`quietClock`, `quietHint`). No blue, no radius. |
 
 ---
 

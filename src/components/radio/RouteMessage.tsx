@@ -4,6 +4,7 @@ import { ArrowBendUpLeft, PaperPlaneRight, SkipForward, X } from "@phosphor-icon
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { formatCountdown } from "@/lib/radio/hangups";
 import { RESPOND_WINDOW_MS } from "@/lib/radio/messages";
+import { quietHint } from "@/lib/radio/quiet";
 import type { Level } from "@/lib/radio/voice";
 import type { MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
@@ -226,7 +227,7 @@ export function MessageGlow({
 
 /** The LCD while a message plays: who it's from (as in Figma), then your reply's timer. */
 export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
-  const { message, phase, respond, replyLeft } = controls;
+  const { message, phase, respond, replyLeft, sendsIn } = controls;
   if (!message) return null;
   if (phase === "recording") {
     return (
@@ -238,9 +239,22 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
         {replyLeft === null ? (
           <span className="mt-1 block text-[11px] normal-case">Waiting for the mic…</span>
         ) : (
-          <span className="mt-1 block text-[28px] leading-none">{formatCountdown(replyLeft)}</span>
+          // The 60-second cap counting down, with who it's for beside it.
+          <span className="mt-1 flex items-baseline gap-2">
+            <span className="text-[28px] leading-none tabular-nums">{formatCountdown(replyLeft)}</span>
+            <span className="min-w-0 truncate text-[11px] normal-case">to {message.from}</span>
+          </span>
         )}
-        <span className="mt-1.5 block text-[11px] normal-case">to {message.from}</span>
+        {/* Same as a drop: gone quiet, it says when it sends itself. Talking again takes it back to the tap hint. */}
+        {replyLeft !== null && <span className="mt-1.5 block text-[11px] normal-case">{quietHint(sendsIn)}</span>}
+      </Lcd>
+    );
+  }
+  if (phase === "empty") {
+    return (
+      <Lcd>
+        NOTHING HEARD
+        <span className="mt-1 block text-[11px] normal-case">No reply sent to {message.from}</span>
       </Lcd>
     );
   }
@@ -332,7 +346,7 @@ export function MessageKeys({
   }
 
   const listening = phase === "playing" && respondWindow === "closed" && !respond;
-  const done = phase === "sent" || phase === "noMic";
+  const done = phase === "sent" || phase === "empty" || phase === "noMic";
   const counting = (phase === "tuning" || phase === "playing") && respondWindow !== "closed";
   return (
     <>

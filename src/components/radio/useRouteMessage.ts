@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { REPLY_MAX_MS, RESPOND_WINDOW_MS, type RouteMessage } from "@/lib/radio/messages";
 import { playVoice, recordReply, tuneIn, type Level, type Recording, type Voice } from "@/lib/radio/voice";
 import { QUESTION_UNLOCK, REPLY_PROMPT, START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
+import { quietClock } from "@/lib/radio/quiet";
 import { cue } from "@/lib/sound";
 import { canRecognise, listenYesNo } from "@/lib/radio/yesNo";
 
@@ -11,14 +12,15 @@ import { canRecognise, listenYesNo } from "@/lib/radio/yesNo";
  * Where a message on the road is up to:
  * tuning (static, then the station locks), playing (their voice), asking (the radio's recorded
  * voice: "Would you like to reply to this message?", when you haven't already said yes), recording (your reply),
- * sent (a moment to say it went), noMic (you chose to respond but the mic is blocked), or idle.
+ * sent (a moment to say it went), empty (you never said anything, so nothing went), noMic (you
+ * chose to respond but the mic is blocked), or idle.
  */
-export type MessagePhase = "idle" | "tuning" | "playing" | "asking" | "recording" | "sent" | "noMic";
+export type MessagePhase = "idle" | "tuning" | "playing" | "asking" | "recording" | "sent" | "empty" | "noMic";
 
 /** The 5 seconds to choose to respond: not started (still tuning in), open, or gone. */
 export type RespondWindow = "waiting" | "open" | "closed";
 
-/** How long "Sent" or "Mic is off" stays on the LCD. */
+/** How long "Sent", "Nothing heard" or "Mic is off" stays on the LCD. */
 const NOTICE_MS = 1800;
 
 /** After the radio asks, how long the mic stays open for a yes or no before it takes silence as no. */
@@ -40,6 +42,8 @@ export type RouteMessageControls = {
   listening: boolean;
   /** While recording: how long you have left, in ms; null until the mic is live (e.g. at the browser's prompt). */
   replyLeft: number | null;
+  /** While recording, once you've gone quiet: ms until it sends itself; null while you're talking. */
+  sendsIn: number | null;
   /** The voice playing right now (theirs, the static, or yours), for the glow. */
   level: RefObject<Level | null>;
   play: (message: RouteMessage) => void;
@@ -57,6 +61,7 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
   const [respond, setRespond] = useState(false);
   const [respondWindow, setWindow] = useState<RespondWindow>("waiting");
   const [replyLeft, setReplyLeft] = useState<number | null>(null);
+  const [sendsIn, setSendsIn] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
   const level = useRef<Level | null>(null);
   const voice = useRef<Voice | null>(null);
@@ -243,7 +248,17 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     };
   }, [phase, kind]);
 
-  // Your reply: a beep, then the mic is live for up to 60 seconds; it sends itself at the end.
+  // Nothing said at all: throw it away rather than send ten seconds of road noise (as a drop does).
+  const discard = useCallback(() => {
+    recording.current?.cancel();
+    recording.current = null;
+    level.current = null;
+    cue("error", { theme: "mech" });
+    setPhase("empty");
+  }, []);
+
+  // Your reply: a beep, then the mic is live. It sends itself once you've gone quiet for 10 seconds,
+  // like a drop (talking again resets it), or at 60 seconds whatever happens. Tap send any time.
   useEffect(() => {
     if (phase !== "recording") return;
     let live = true;
@@ -256,12 +271,19 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
         // The beep says the mic is live, so it only plays once it is.
         cue("ready", { theme: "mech" });
         const start = Date.now();
+        const quiet = quietClock(start);
         setReplyLeft(REPLY_MAX_MS);
         tick = setInterval(() => {
-          const left = Math.max(0, REPLY_MAX_MS - (Date.now() - start));
+          const now = Date.now();
+          const left = Math.max(0, REPLY_MAX_MS - (now - start));
+          const { spoke, sendsIn, done } = quiet(rec.level(), now);
           setReplyLeft(left);
-          if (left === 0) void send();
-        }, 250);
+          setSendsIn(sendsIn);
+          if (!done && left > 0) return;
+          clearInterval(tick);
+          if (spoke) void send();
+          else discard();
+        }, 100);
       },
       () => {
         if (!live) return;
@@ -276,15 +298,16 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
       recording.current = null;
       level.current = null;
       setReplyLeft(null);
+      setSendsIn(null);
     };
-  }, [phase, send]);
+  }, [phase, send, discard]);
 
-  // "Sent" and "Mic is off" show for a moment, then the radio goes quiet again.
+  // "Sent", "Nothing heard" and "Mic is off" show for a moment, then the radio goes quiet again.
   useEffect(() => {
-    if (phase !== "sent" && phase !== "noMic") return;
+    if (phase !== "sent" && phase !== "noMic" && phase !== "empty") return;
     const t = setTimeout(() => setPhase("idle"), NOTICE_MS);
     return () => clearTimeout(t);
   }, [phase]);
 
-  return { message, phase, respond, respondWindow, listening, replyLeft, level, play, reply, toggleRespond, send, skip };
+  return { message, phase, respond, respondWindow, listening, replyLeft, sendsIn, level, play, reply, toggleRespond, send, skip };
 }
