@@ -12,7 +12,7 @@ import { ARRIVE_DRIVE, COMPANY_DRIVE, QUESTION_DRIVE, STORY_DRIVE } from "@/lib/
 import { useCharacter } from "@/lib/profile/avatar";
 import { fallbackHandle, useHandle } from "@/lib/profile/handle";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
-import { NIGHT_CLOCK, NIGHT_STARTS, type NightStart } from "@/lib/radio/nightDrive";
+import { NIGHT_STARTS, type NightStart } from "@/lib/radio/nightDrive";
 import { setThemeChoice } from "@/lib/theme";
 import { onArrival } from "@/lib/trip/arrival";
 
@@ -101,7 +101,6 @@ export function Radio() {
         key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo || night ? params.get("t") : ""}-${night}-${params.has("arrived")}`}
         demo={demo}
         night={night}
-        time={night ? NIGHT_CLOCK[night] : undefined}
         onNightfall={() => setThemeChoice("dark")}
         meCharacter={meCharacter}
         companyDemo={companyDemo}

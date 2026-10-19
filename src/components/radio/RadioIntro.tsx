@@ -18,8 +18,6 @@ type Part = { label: string; box: [x: number, y: number, w: number, h: number] }
 
 /** Where each part of the 393×852 radio screen sits, in frame order. */
 const PARTS: Part[] = [
-  { label: "Weather", box: [17, 24, 32, 30] },
-  { label: "Clock", box: [296, 26, 80, 20] },
   { label: "Map · 365×509", box: [14, 64, 365, 509] },
   { label: "Radio", box: [30, 605, 55, 20] },
   { label: "Switch", box: [26, 629, 46, 98] },

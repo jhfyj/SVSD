@@ -40,7 +40,7 @@ function SignInScreen({
           {icon}
           {children}
         </div>
-        <div className={cn("flex pb-14 pt-8", submitLabel ? "justify-center" : "justify-end pr-[30px]")}>
+        <div className={"flex justify-end px-edge pb-edge-bottom pt-8"}>
           <button
             type="submit"
             data-cuelume-tap=""
@@ -48,7 +48,7 @@ function SignInScreen({
             aria-busy={!!busyLabel}
             className={cn(
               "inline-flex min-h-11 items-center justify-center bg-foreground px-6 py-3 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40",
-              submitLabel ? "w-[332px]" : "min-w-[125px]",
+              submitLabel ? "w-full" : "min-w-[125px]",
             )}
           >
             {busyLabel ?? submitLabel ?? (

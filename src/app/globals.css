@@ -85,7 +85,9 @@ body::-webkit-scrollbar {
   display: flex;
   flex-direction: column;
   overflow: auto;
-  padding-top: 64px;
+  /* Room for the phone's status bar. A screen built to sit under it (the radio) pulls up by this. */
+  --status-bar-height: 64px;
+  padding-top: var(--status-bar-height);
   overscroll-behavior: none;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -339,6 +341,13 @@ body::-webkit-scrollbar {
 }
 
 @theme inline {
+  /*
+    Screen edges (DESIGN.md §5.2): nothing sits closer than 30px to the left or right of the phone
+    screen, and the action at the bottom of a screen sits 56px up from its edge, clear of the
+    rounded corners. px-edge / mx-edge, pb-edge-bottom / mb-edge-bottom.
+  */
+  --spacing-edge: 1.875rem; /* 30px */
+  --spacing-edge-bottom: 3.5rem; /* 56px */
   /*
     Type scale, set a step smaller than Tailwind's default for a quieter, premium feel.
     The LCD faces (text-4xl and up) keep their size.

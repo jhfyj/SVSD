@@ -121,7 +121,7 @@ export function TripSummary({ trip: given, doneHref = "/", allQuestionsHref = "/
       )}
 
       {/* No tab bar on the recap: it ends the trip, so Done is the only way on. */}
-      <div className="px-11 pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-10">
+      <div className="px-edge pb-[calc(var(--spacing-edge-bottom)+env(safe-area-inset-bottom))] pt-10">
         <Link
           href={doneHref}
           data-cuelume-tap=""

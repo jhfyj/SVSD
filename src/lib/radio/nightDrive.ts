@@ -47,9 +47,6 @@ export const REST_AREA = { miles: 9, breakMinutes: 15 };
 /** From Route set to pulling in at the rest area, in the demo (really: 9 miles, then parked). */
 export const REST_ARRIVE_MS = 7000;
 
-/** The radio's clock for each take: the sun going down, and the small hours for the check-in. */
-export const NIGHT_CLOCK: Record<NightStart, string> = { fall: "7:48 PM", checkin: "1:14 AM", rest: "1:16 AM" };
-
 /** What the radio says when you pull in. */
 export const STOPPED_LINE = `You made it. Take ${REST_AREA.breakMinutes} minutes. Your stories will wait.`;
 

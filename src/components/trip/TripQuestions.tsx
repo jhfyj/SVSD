@@ -79,7 +79,7 @@ export function TripQuestions({ trip: given, backHref = "/trip" }: TripQuestions
         <h1 className="text-xl">Questions on the way</h1>
       </header>
       {trip && (
-        <section aria-label="All questions" className="flex flex-1 flex-col px-11 pb-14">
+        <section aria-label="All questions" className="flex flex-1 flex-col px-11 pb-edge-bottom">
           <p className="mt-2 text-center text-sm text-foreground/70">
             {trip.questions.length} asked · {answered} answered
           </p>

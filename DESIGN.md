@@ -221,7 +221,7 @@ The radio, its LCD and its map are a **scale model**: they don't shrink when the
 
 | Role | Class | Used for |
 |---|---|---|
-| `clock` | `font-display text-[20px] leading-none` | The clock on the radio and in the top bar (same size everywhere) |
+| `clock` | `font-display text-[20px] leading-none` | The clock in the Screen top bar. The radio has no clock of its own: the phone's status bar shows the time |
 | `engraved` | `text-[11px] font-bold uppercase text-label/80` | Labels printed on the radio (RADIO, OFF, ON), settings section titles, field labels |
 | `key` | `text-[13px] font-bold uppercase` | Console key labels |
 | `key-sm` | `text-[11px] font-bold uppercase` | Labels on small keys (intents, report reasons). Wrap to 2 lines rather than shrink. |
@@ -270,9 +270,10 @@ The unit is 4px. Use only these steps:
 ### 5.2 Screen layout
 
 - **Frame:** `max-w-[393px]` column, `min-h-dvh`, centered on `bg-backdrop`. The `.grain` film grain goes on the column ([§7](#7-texture)).
+- **Screen edges (every Screen, one rule):** nothing sits closer than **30px** to the left or right edge of the phone screen (`px-edge` / `mx-edge`), and the action at the bottom of a Screen sits **56px** up from the bottom edge (`pb-edge-bottom` / `mb-edge-bottom`), clear of the phone's rounded corners. Tokens: `--spacing-edge`, `--spacing-edge-bottom` in `globals.css`. Bottom actions span the screen inside the 30px edges (sign-in, onboarding overview, Customize profile, Allow access, the trip recap); text columns use the 44px gutter below. The top 64px belong to the phone's status bar (`--status-bar-height`); Screens start below it.
 - **Gutter: 44px (`px-11` / `mx-11`) on every Screen.** That gives a 305px column at 393 wide, matching Figma's buttons, sign-in and profile. Wider and narrower gutters (31, 33, 19) snap to 44.
 - **Top:** most Screens open with the top bar (`h-14`): pixel weather icon + clock, nothing else. Sign-in and verification have no top bar. Titles sit below it and scramble in.
-- **Bottom:** one primary action pinned to the bottom of the column, `pb-14` (56) from the edge. On Screens with the [tab bar](#83-hardware-components), the tab bar is that edge: it comes last in the column and sticks to the bottom while the Screen scrolls.
+- **Bottom:** one primary action pinned to the bottom of the column, `pb-edge-bottom` (56) from the edge. On Screens with the [tab bar](#83-hardware-components), the tab bar is that edge: it comes last in the column and sticks to the bottom while the Screen scrolls.
 - **Dial Kit:** a prototype panel beside the column on wide screens (theme, every flow, every radio state, arrive now). It's hidden at phone width and is never part of the product UI.
 
 ### 5.3 Console geometry
@@ -281,8 +282,8 @@ The radio is an object with fixed geometry on a 393×852 artboard. Don't respace
 
 | Part | Box | Part | Box |
 |---|---|---|---|
-| Weather | 17, 24, 32×30 | LCD | 156, 603, 221×130 |
-| Clock (right) | 296, 26, 80×20 | Start / End journey key (off) | 26, 751, 195×70 |
+| Phone status bar (over the casing; the radio has no top bar) | 0, 0, 393×64 | LCD | 156, 603, 221×130 |
+| — | — | Start / End journey key (off) | 26, 751, 195×70 |
 | Map window | 14, 64, 365×509 | Drop key | 229, 751, 70×70 |
 | RADIO label | 30, 605, 55×20 | Settings key | 307, 751, 70×70 |
 | Rocker switch | 26, 629, 46×98 | Key gap | 8 |

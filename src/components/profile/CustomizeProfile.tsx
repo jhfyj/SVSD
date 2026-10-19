@@ -146,13 +146,13 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
         })}
       </div>
 
-      <div className={cn("mt-auto flex justify-center", compact ? "pb-2 pt-2" : "pb-14 pt-8")}>
+      <div className={cn("mt-auto flex justify-center", compact ? "pb-2 pt-2" : "px-edge pb-edge-bottom pt-8")}>
         <button
           type="button"
           onClick={() => onSave(picked, handle)}
           data-cuelume-tap="success"
           disabled={saving || !!error}
-          className={cn("inline-flex items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40", compact ? "min-h-10 w-[315px] max-w-[calc(100%-24px)]" : "min-h-[45px] w-[332px]")}
+          className={cn("inline-flex items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40", compact ? "min-h-10 w-[315px] max-w-[calc(100%-24px)]" : "min-h-[45px] w-full")}
         >
           {saving ? "SAVING…" : "SAVE"}
         </button>

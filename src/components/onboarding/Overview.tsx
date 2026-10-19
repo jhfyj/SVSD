@@ -44,7 +44,7 @@ export function Overview({ step, doneHref = "/profile?welcome=1" }: OverviewProp
   const startsSignUp = step === 3;
 
   return (
-    <div className="grain flex min-h-dvh w-full flex-col bg-background px-[18px] pb-6 pt-5 text-foreground">
+    <div className="grain flex min-h-dvh w-full flex-col bg-background px-edge pb-edge-bottom pt-5 text-foreground">
       <main className="flex flex-1 flex-col gap-5">
         <div
           role="group"

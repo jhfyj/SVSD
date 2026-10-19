@@ -158,14 +158,14 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
           <AccessRow key={kind} kind={kind} state={states[kind]} on={isOn(kind)} onToggle={(next) => toggle(kind, next)} />
         ))}
       </ul>
-      <div className="mt-auto flex flex-col items-center gap-2 pb-14 pt-8">
+      <div className="mt-auto flex flex-col items-center gap-2 px-edge pb-edge-bottom pt-8">
         {firstTime && !allOn && <span className="text-xs text-foreground/70">You can skip and turn them on later.</span>}
         <button
           type="button"
           onClick={onDone}
           data-cuelume-tap=""
           data-cuelume-theme="mech"
-          className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          className="inline-flex min-h-[45px] w-full items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
         >
           {firstTime ? (allOn ? "LET'S GO" : "CONTINUE") : "DONE"}
         </button>

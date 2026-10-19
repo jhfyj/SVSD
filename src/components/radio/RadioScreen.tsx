@@ -1,7 +1,6 @@
 "use client";
 
 import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon } from "@phosphor-icons/react";
-import { WeatherIcon } from "../journey/WeatherIcon";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { DROP_LABEL, type Drop } from "@/lib/radio/drops";
@@ -83,7 +82,6 @@ export const DEFAULT_TRAVELLERS: Traveller[] = [
 ];
 
 export type RadioScreenProps = {
-  time?: string;
   /** How a call ends up after connecting (mocked until there's a backend). */
   outcome?: "connected" | "lost";
   /** How long "Connecting..." shows before the outcome, in ms. */
@@ -240,7 +238,6 @@ const casing =
 
 /** The "Connected" radio screen (Figma node 123:246): the navigation map on an inset screen above the radio console. */
 export function RadioScreen({
-  time = "3:30 AM",
   outcome = "connected",
   connectMs = 3000,
   me = "@you",
@@ -907,12 +904,8 @@ export function RadioScreen({
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_3px_8px_rgb(0_0_0/0.75),inset_0_0_0_1px_rgb(0_0_0/0.8)]" />
       </section>
 
-      {/* Top bar */}
-      {/* Weather on the left, the clock on the right. No power key: End journey is how you leave. */}
-      <header className="absolute inset-x-0 top-[10px] flex h-[52px] items-center justify-between px-[17px]">
-        <WeatherIcon />
-        <span className="font-display text-[20px] leading-none">{time}</span>
-      </header>
+      {/* No top bar of its own: the phone's status bar sits over the top of the casing and already
+          shows the time. No power key either: End journey is how you leave. */}
 
       {/* Console */}
       <div className="absolute inset-x-0 top-[585px] h-[267px]">
