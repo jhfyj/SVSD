@@ -195,7 +195,8 @@ export function JourneySetup() {
         <dl className="mx-11 mt-10 grid grid-cols-2 gap-y-2 text-base">
           <div>
             <dt className="sr-only">Trip</dt>
-            <dd className="text-foreground/70">{formatDuration(minutes)} trip</dd>
+            {/* The trip time leads (full foreground); the distance under it stays support (micro, /70). */}
+            <dd className="text-foreground">{formatDuration(minutes)} trip</dd>
           </div>
           <div className="text-right">
             <dt className="sr-only">Stories</dt>
