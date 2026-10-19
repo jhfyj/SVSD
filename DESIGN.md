@@ -520,7 +520,7 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 | `Nightfall` (Night falls) | A **moment**: the pixel sun sinks 560px in `steps(112)` (one sprite pixel at a time) over 2400ms while the map's amber wash and the casing's dimming fade in `ease-out`; then the radio dips and flickers back on in amber, 480ms `step-end`, and the theme switches on the black frame. Reduced motion: straight to NIGHT MODE ON | ✅ |
 | `RestSign` | Rows switch on 100ms apart (`step-end`), scroll 4px at a time (`steps(102)` over 6s, alternate rows reversed), letters bob in a 4-frame wave (`steps(1)`, offset 70ms per letter). Still for reduced motion | ✅ |
 | `NightLcd` | NIGHT MODE ON flashes in (`lcd-flash`), the meter steps every 100ms, the z's reuse the LCD dots' 1.6s steps | ✅ |
-| `CollectedTally` | A pickup flashes in (`lcd-flash`). Once you've sent a reply to that story, it goes back out with `lcd-leave`: flicker, shrink to 60%, flicker, gone at 30% in 360ms `steps(1)`, so no book stays in the LCD's corner (skipping keeps it). Reduced motion: it just goes | ✅ |
+| `CollectedTally` | A pickup flashes in (`lcd-flash`). The count steps aside while YOUR REPLY or YOUR DROP records; once you've sent a reply to that pickup (Flow 2's book, Flow 4's question) it's answered and comes out of the count, so at REPLY SENT the corner comes back without it. Skipping or saying no keeps it | ✅ |
 | `Button`, `MenuRow`, `SegmentedTabs`, options | `transition-colors` / `transition-opacity` `duration-150 ease-out` | ✅ |
 
 ---

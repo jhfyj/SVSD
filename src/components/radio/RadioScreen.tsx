@@ -332,8 +332,11 @@ export function RadioScreen({
     const k = box.width / 393;
     setFlights((f) => [...f, { id: pickup.id, kind: pickup.kind, pickup, from: { x: (at.x - box.left) / k, y: (at.y - box.top) / k } }]);
   };
+  // Which pickups are in the tally, so replying to one can take its icon back out.
+  const tallied = useRef(new Map<string, DropKind>());
   const landed = (flight: Flight) => {
     setFlights((f) => f.filter((x) => x.id !== flight.id));
+    tallied.current.set(flight.pickup.id, flight.kind);
     setCollected((c) => ({ ...c, [flight.kind]: (c[flight.kind] ?? 0) + 1 }));
     setTallyFlash((n) => n + 1);
     if (flight.pickup.id === "nightowl-burrito") {
@@ -356,6 +359,16 @@ export function RadioScreen({
   const messageOn = message.phase !== "idle" && !radioOn;
   // Your reply glows in your own marker's colour.
   const youColor = travellers.find((t) => t.ahead === 0)?.color ?? "lime";
+  // Reply sent to something you picked up (Flow 2's book, Flow 4's question): it's answered, so it
+  // comes out of the LCD's count. The count is hidden while you record, so at REPLY SENT the corner
+  // simply comes back without it. Skipping or saying no keeps it.
+  const repliedTo = message.phase === "sent" ? message.message?.id : undefined;
+  useEffect(() => {
+    const kind = repliedTo ? tallied.current.get(repliedTo) : undefined;
+    if (!repliedTo || !kind) return;
+    tallied.current.delete(repliedTo);
+    setCollected((c) => ({ ...c, [kind]: Math.max(0, (c[kind] ?? 1) - 1) }));
+  }, [repliedTo]);
   const [passed, setPassed] = useState<string[]>(() => (defaultMessage ? [defaultMessage.id] : []));
   const [queue, setQueue] = useState<RouteMessage[]>(() => (defaultMessage ? [defaultMessage] : []));
   const ahead = useMemo(
