@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { getCharacter, type CharacterId } from "@/lib/profile/characters";
 import { cn } from "../ui/cn";
 
@@ -5,7 +6,7 @@ export type CharacterSpriteProps = {
   character: CharacterId;
   /** Size of one sprite pixel in CSS px (the sprites are 16 × 16). */
   pixel?: number;
-  /** Swap between the two frames; otherwise it holds frame one. */
+  /** Bob up and down; otherwise hold still. */
   playing?: boolean;
   className?: string;
 };
@@ -23,10 +24,12 @@ export function CharacterSprite({ character, pixel = 4, playing = true, classNam
       shapeRendering="crispEdges"
       fill="currentColor"
       className={cn(playing && "sprite-play", className)}
+      style={{ "--sprite-pixel": `${pixel}px` } as CSSProperties}
     >
       {frames.map((rows, f) => (
         <g key={f} className={f === 0 ? "sprite-a" : "sprite-b"}>
-          {rows.flatMap((row, y) => {
+          {rows.flatMap((rawRow, y) => {
+            const row = rawRow.slice(0, 16);
             // One rect per horizontal run keeps the DOM small.
             const rects = [];
             for (let x = 0; x < row.length; x++) {

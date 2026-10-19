@@ -1,4 +1,4 @@
-import { bind, play, setEnabled, type PlayOptions, type SoundName } from "cuelume";
+import { bind, play, setEnabled, unlock, type PlayOptions, type SoundName } from "cuelume";
 import { useSyncExternalStore } from "react";
 
 /*
@@ -59,7 +59,18 @@ export function startSound() {
   on = stored();
   setEnabled(on);
   listeners.forEach((l) => l());
-  return bind();
+  const unbind = bind();
+  // Unlock during the real user gesture so delayed radio load-in cues can sound reliably.
+  const unlockOnGesture = () => {
+    if (on) void unlock();
+  };
+  document.addEventListener("pointerdown", unlockOnGesture, true);
+  document.addEventListener("keydown", unlockOnGesture, true);
+  return () => {
+    unbind();
+    document.removeEventListener("pointerdown", unlockOnGesture, true);
+    document.removeEventListener("keydown", unlockOnGesture, true);
+  };
 }
 
 const subscribe = (l: () => void) => {

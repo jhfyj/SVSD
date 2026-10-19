@@ -28,13 +28,10 @@ export type Drop = {
 /** What each kind is called on the LCD once it's dropped. */
 export const DROP_LABEL: Record<DropKind, string> = { question: "Question", story: "Story", tip: "Tip" };
 
-/**
- * No time limit: a drop counts up like a recording. It sends itself once you've gone quiet this
- * long (or you tap send). Quiet means the mic level stays under DROP_VOICE_LEVEL.
- */
-export const DROP_QUIET_MS = 10_000;
-/** Mic level (0–1, ordinary speech sits around 0.3–0.8) that counts as you talking. */
-export const DROP_VOICE_LEVEL = 0.12;
+/*
+  No time limit: a drop counts up like a recording. It sends itself once you've gone quiet for
+  QUIET_MS (or you tap send), on the same quiet clock as a reply (src/lib/radio/quiet.ts).
+*/
 /** Shorter than this and it was a slip of the finger: nothing is dropped. */
 export const DROP_MIN_MS = 1000;
 /** How long the LCD says it's sorting, then how long it shows what was dropped. */

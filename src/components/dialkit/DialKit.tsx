@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
@@ -10,6 +10,7 @@ import { clearHangUps } from "@/lib/radio/hangups";
 import { AMBER_KEY, amberOn, setAmber, setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
 import { cn } from "../ui/cn";
+import { useTwoFingerHold } from "./useTwoFingerHold";
 
 /*
   Prototype controls beside the phone column on wide screens: pin the theme and jump to any moment
@@ -17,7 +18,14 @@ import { cn } from "../ui/cn";
   away. Screens that aren't built yet (NEW) open a blank stand-in; ones that differ from the script
   (CHANGE) carry a note, so the kit doubles as the build list. TO-DOS hides the notes for recording.
   Hidden on phone-sized screens, so it never shows on a real phone.
+
+  The hosted site (the production build on Vercel, filmed on a phone) never shows the panel at all:
+  the only control is the flow picker, six keys along the bottom that appear when you hold two
+  fingers on the screen (or press ` on a keyboard). Locally (next dev) the panel stays as it was.
 */
+
+/** The side panel: only while working locally. The hosted site shows nothing but the hidden picker. */
+const PANEL = process.env.NODE_ENV !== "production";
 
 const OPEN_KEY = "svsd-dialkit";
 const TODOS_KEY = "svsd-dialkit-todos";
@@ -46,7 +54,16 @@ type Step = {
   active?: boolean;
 };
 
-type Flow = { /** Order in the video; empty for groups outside the script. */ n: string; title: string; time?: string; note?: string; steps: Step[] };
+type Flow = {
+  /** Order in the video; empty for groups outside the script. */
+  n: string;
+  title: string;
+  time?: string;
+  note?: string;
+  /** Where the flow's key at the bottom of the kit starts it (default: its first step). */
+  start?: () => void;
+  steps: Step[];
+};
 
 const listeners = new Set<() => void>();
 
@@ -63,9 +80,14 @@ function subscribe(listener: () => void) {
 /** The radio with a fresh ?load=, so its load-in plays again. */
 const loadIn = () => `/radio?load=${Date.now()}`;
 /** The scripted story drive, from the start each time. */
-const storyDrive = () => `/radio?demo=story&t=${Date.now()}`;
+const storyDrive = () => {
+  const run = Date.now();
+  return `/radio?demo=story&load=${run}&t=${run}`;
+};
 
 /** Night mode from one of its moments, from the start each time, driving the demo route. */
+/** Flow 5: the last stretch into the destination (a new t= starts it over). */
+const arriveDrive = () => `/radio?demo=arrive&t=${Date.now()}`;
 const nightDrive = (start: "fall" | "checkin" | "rest") => `/radio?night=${start}&sim&t=${Date.now()}`;
 
 /** The stand-in for a screen that isn't built yet. */
@@ -100,6 +122,20 @@ export function DialKit() {
   const showTodos = useSyncExternalStore(subscribe, () => read(TODOS_KEY) !== "hidden", () => true);
   const theme = useSyncExternalStore(subscribe, themeChoice, () => "auto" as ThemeChoice);
   const amber = useSyncExternalStore(subscribe, amberOn, () => false);
+
+  // The flow picker: two fingers held on the screen (or ` on a keyboard) shows it, again hides it.
+  const [picking, setPicking] = useState(false);
+  const togglePicker = useCallback(() => setPicking((p) => !p), []);
+  useTwoFingerHold(togglePicker);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && e.target.closest("input, textarea, [contenteditable]");
+      if (e.key === "`" && !typing) togglePicker();
+      if (e.key === "Escape") setPicking(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [togglePicker]);
 
   const toggle = () => write(OPEN_KEY, open ? "closed" : "open");
   const toggleTodos = () => write(TODOS_KEY, showTodos ? "hidden" : "shown");
@@ -136,9 +172,10 @@ export function DialKit() {
   // Already on the radio: change the URL in the browser (Next keeps useSearchParams in step) so it
   // starts over at once, without a round trip for the same page.
   const openRadio = (href: string) => (path === "/radio" ? window.history.pushState(null, "", href) : router.push(href));
+  // ?arrived opens the radio mid-drive (already started), so it can reach the destination.
   const arrive = () => {
     arrival.arrive();
-    if (path !== "/radio") router.push("/radio");
+    openRadio("/radio?arrived=1");
   };
 
   const flows: Flow[] = [
@@ -146,15 +183,12 @@ export function DialKit() {
       n: "1",
       title: "Intro to Caravan",
       time: "0:50",
+      // Jen's order: the three overview cards, sign in with your number, pick an avatar, then home.
+      start: () => {
+        signOut();
+        router.push("/overview?step=1");
+      },
       steps: [
-        { label: "Sign in with number", href: "/profile", go: signOut },
-        {
-          label: "Roadside avatar",
-          href: "/profile",
-          go: newAccount,
-          todo: "change",
-          note: "Customize profile picks a character; add picking a handle (card 3 promises one).",
-        },
         {
           label: "Overview 1 · Stories",
           href: "/overview?step=1",
@@ -168,13 +202,15 @@ export function DialKit() {
         {
           label: "Overview 3 · Anonymous",
           href: "/overview?step=3",
-          note: "“Pick a handle and avatar to stay anonymous.”",
+          note: "“Pick a handle and avatar to stay anonymous.” NEXT goes to sign in.",
         },
+        { label: "Sign in with number", href: "/profile?welcome=1", go: signOut },
         {
-          label: "Splash · connecting to radio",
-          href: "/journey/starting",
+          label: "Roadside avatar",
+          href: "/profile?welcome=1",
+          go: newAccount,
           todo: "change",
-          note: "Today the splash opens the radio; here it comes before Start your journey.",
+          note: "Save goes straight to Start your journey. Add picking a handle (card 3 promises one).",
         },
         { label: "Start your journey", href: "/" },
       ],
@@ -185,6 +221,11 @@ export function DialKit() {
       time: "1:05",
       steps: [
         { label: "Pick a destination", href: "/" },
+        {
+          label: "Splash · connecting to radio",
+          href: "/journey/starting",
+          note: "Start journey on Destination plays it, then the radio loads in with the story drive.",
+        },
         {
           label: "Radio loads in",
           // Restarts at once when already on the radio (see openRadio).
@@ -205,7 +246,7 @@ export function DialKit() {
           go: () => openRadio(storyDrive()),
           radio: true,
           active: path === "/radio" && params.get("demo") === "story",
-          note: "Prototype: about 5 s down the I-10, a story waits off the road; the car pulls it in, it pops and flies into the LCD. Plays again on every click.",
+          note: "The radio load-in plays first, then the car waits three seconds and drives for about three seconds. A story pulls in, the pixel trail lingers, then @NightOwl's story plays with a spoken reply prompt.",
         },
         {
           label: "Message unlocks · Angelina's",
@@ -216,16 +257,16 @@ export function DialKit() {
         },
         {
           label: "@NightOwl's voice message",
-          href: blank("@NightOwl's voice message"),
-          todo: "new",
-          note: "“Whoever's hearing this, there's a gas station there that sells the best breakfast burrito in California…”",
+          go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
+          radio: true,
+          note: "The story unlock demo above includes @NightOwl's breakfast burrito message and reply prompt.",
         },
         {
           label: "Reply?",
-          href: "/radio?message=message",
+          go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
           radio: true,
           todo: "change",
-          note: "Built: RESPOND for the first 5 s of their voice. If you didn't, the radio asks in its recorded voice (public/voice/reply-prompt.mp3): “Would you like to reply to this message? Reply with yes or no.” RESPOND is yes; skip or a few quiet seconds is no.",
+          note: "After the message, the recorded radio voice asks whether you want to reply. RESPOND is yes; skip or a few quiet seconds is no.",
         },
       ],
     },
@@ -235,38 +276,35 @@ export function DialKit() {
       time: "1:45",
       steps: [
         {
-          label: "Company off",
-          href: "/radio?call=off",
+          label: "Company · one stranger",
+          href: "/radio?demo=company",
           radio: true,
-          todo: "change",
-          note: "Engraved RADIO; the script calls it Company. Skip the load-in here: it belongs to 2 · Radio loads in.",
+          note: "Starts on a moving navigation map. Turn the radio on and choose Off my chest to meet Mothlight; their conversation plays from NightOwl’s perspective.",
         },
         {
           label: "Mood: pick an intent",
-          href: "/radio?call=pick",
+          href: "/radio?demo=company&call=pick",
           radio: true,
-          note: "Built: flip the switch on and the four keys ask what you're up for (Meet someone, Chit-chat, Share a story, Off my chest). The script's Something real is this pick.",
+          note: "Choose Off my chest to connect with Mothlight.",
         },
-        { label: "Connecting", href: "/radio?call=connecting", radio: true },
+        { label: "Connecting", href: "/radio?demo=company&call=connecting", radio: true },
         {
           label: "Meet @Mothlight",
-          href: "/radio?me=NightOwl&peer=Mothlight&miles=84",
+          href: "/radio?demo=company&call=connected",
           radio: true,
-          note: "Flip on and pick an intent: the radio says “@NightOwl, meet @Mothlight. You've got 84 miles of road together. To start, where are you both headed tonight?” in the recorded voice (public/voice), the LCD turning its page on “To start”. Other pairs get the browser's speech.",
+          note: "The recorded radio voice introduces @NightOwl and @Mothlight; the LCD turns to “To start” as it asks where they’re headed. Mothlight’s rabbit appears on the green LCD.",
         },
         {
           label: "@Mothlight speaking",
-          href: "/radio?call=connected&speaking=them",
+          href: "/radio?demo=company&call=connected",
           radio: true,
-          todo: "change",
-          note: "Their character hops with sound waves, but it alternates on its own. Pin it on cue (?speaking=them isn't wired yet).",
+          note: "Mothlight speaks first; their rabbit avatar and the dithered map glow animate in the clipped strip at the map’s top.",
         },
         {
-          label: "Ray answers back",
-          href: "/radio?call=connected&speaking=you",
+          label: "NightOwl answers back",
+          href: "/radio?demo=company&call=connected",
           radio: true,
-          todo: "new",
-          note: "A second animation for you talking, so the two sides read differently.",
+          note: "The speaker treatment switches to NightOwl, then back to Mothlight, without covering the route.",
         },
       ],
     },
@@ -277,16 +315,15 @@ export function DialKit() {
       steps: [
         {
           label: "Question unlocks",
-          href: "/radio?message=question",
+          href: "/radio?demo=question",
           radio: true,
-          todo: "change",
-          note: "Built: opens with your recorded unlock line (public/voice/unlock-question.mp3: “You just unlocked a question from NightOwl. Would you like to respond?”), then plays a sample question (@urmom2424, favorite song). Script: “A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
+          note: "Start already driving. A 3D question mark pulls into the radio; the radio says You just unlocked a question from NightOwl. Would you like to respond? The question stays hidden until you say yes.",
         },
         {
           label: "Answering",
-          href: blank("Answering"),
-          todo: "new",
-          note: "Answering animation: the reply recorder on the LCD. Figma 123:502, 123:727.",
+          href: "/radio?demo=question",
+          radio: true,
+          note: "The mic opens by itself (your green from the bottom). Say yes (or tap Respond): the question shows on the LCD while NightOwl’s pink comes down from the top (silent until there's a recording). Then the beep, YOUR REPLY, your green from the bottom; SEND or 10 s of quiet sends it, then back to the usual screen.",
         },
         {
           label: "Planting your answer",
@@ -301,6 +338,12 @@ export function DialKit() {
       title: "Your drive becomes a story",
       time: "3:20",
       steps: [
+        {
+          label: "Arriving",
+          go: () => openRadio(arriveDrive()),
+          radio: true,
+          note: "The last stretch of the drive: the map pulls up at the destination pin, then the radio switches on and says Thank you so much for riding with us.",
+        },
         { label: "Arrive now", go: arrive },
         {
           label: "Trip recap",
@@ -402,15 +445,53 @@ export function DialKit() {
     if (step.href) router.push(step.href);
   };
 
+  // The six flows, one key each at the bottom of the kit. A key opens the flow's first screen and
+  // the app itself carries you through the rest (NEXT, Save, Start journey...): nothing plays on a
+  // timer. Flow 1 signs out first so it runs as a new person would see it.
+  const numbered = flows.filter((f) => f.n);
+  const startFlow = (f: Flow) => (f.start ? f.start() : void run(f.steps[0]));
+
+  const playBar = (
+    <div className="sticky bottom-0 -mx-3 -mb-3 mt-4 border-t border-border bg-surface p-3">
+      <h2 className="mb-1 text-xs uppercase text-foreground/70">Start a flow</h2>
+      <div className="grid grid-cols-6 gap-1">
+        {numbered.map((f) => (
+          <Chip key={f.n} onClick={() => startFlow(f)} className="text-center" title={`${f.n} · ${f.title}`}>
+            {f.n}
+          </Chip>
+        ))}
+      </div>
+    </div>
+  );
+
+  const picker = picking && (
+    <FlowPicker
+      flows={numbered}
+      onPick={(f) => {
+        setPicking(false);
+        startFlow(f);
+      }}
+      onClose={() => setPicking(false)}
+    />
+  );
+
+  // The hosted site: nothing on screen until two fingers are held down.
+  if (!PANEL) return picker;
+
   if (!open) {
     return (
-      <div className="fixed left-4 top-4 z-50 hidden lg:block">
-        <Chip onClick={toggle}>Dial kit</Chip>
-      </div>
+      <>
+        {picker}
+        <div className="fixed left-4 top-4 z-50 hidden lg:block">
+          <Chip onClick={toggle}>Dial kit</Chip>
+        </div>
+      </>
     );
   }
 
   return (
+    <>
+    {picker}
     <aside
       aria-label="Dial kit"
       className="fixed left-4 top-4 z-50 hidden max-h-[calc(100dvh-2rem)] w-[260px] overflow-y-auto border border-border bg-surface p-3 font-mono text-foreground lg:block"
@@ -469,7 +550,41 @@ export function DialKit() {
           </Group>
         );
       })}
+
+      {playBar}
     </aside>
+    </>
+  );
+}
+
+/**
+ * The six flows along the bottom of the screen, over whatever's showing: the only prototype control
+ * on the hosted site, and only after a two-finger hold. Tap a number to start that flow from its
+ * first screen (the app's own keys carry you on from there); tap anywhere else to hide it.
+ */
+export function FlowPicker<F extends Pick<Flow, "n" | "title">>({
+  flows,
+  onPick,
+  onClose,
+}: {
+  flows: F[];
+  onPick: (f: F) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] font-mono text-foreground" role="dialog" aria-label="Start a flow">
+      <button type="button" aria-label="Close" className="absolute inset-0 cursor-default" onClick={onClose} />
+      <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[393px] border-t border-border bg-surface px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        <h2 className="mb-2 text-xs uppercase text-foreground/70">Start a flow</h2>
+        <div className="grid grid-cols-6 gap-1.5">
+          {flows.map((f) => (
+            <Chip key={f.n} onClick={() => onPick(f)} className="h-12 text-center! text-base!" title={`${f.n} · ${f.title}`}>
+              {f.n}
+            </Chip>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -519,21 +634,28 @@ function Chip({
   active,
   onClick,
   className,
+  title,
+  disabled,
   children,
 }: {
   active?: boolean;
   onClick: () => void;
   className?: string;
+  title?: string;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
+      disabled={disabled}
       aria-pressed={active}
       className={cn(
         "rounded-token border px-2 py-1 text-left text-xs uppercase transition-colors duration-150 ease-out",
         active ? "border-foreground bg-foreground text-background" : "border-border text-foreground hover:bg-surface-raised",
+        "disabled:pointer-events-none disabled:opacity-40",
         className,
       )}
     >

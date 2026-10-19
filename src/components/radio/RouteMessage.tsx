@@ -4,6 +4,7 @@ import { ArrowBendUpLeft, PaperPlaneRight, SkipForward, X } from "@phosphor-icon
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { formatCountdown } from "@/lib/radio/hangups";
 import { RESPOND_WINDOW_MS } from "@/lib/radio/messages";
+import { quietHint } from "@/lib/radio/quiet";
 import type { Level } from "@/lib/radio/voice";
 import type { MarkerColor } from "../ui/MapMarker";
 import { cn } from "../ui/cn";
@@ -87,13 +88,23 @@ export function MessageGlow({
   mode,
   color,
   level,
+  rest = 0.3,
   className,
 }: {
   mode: GlowMode;
   color: MarkerColor;
   level: RefObject<Level | null>;
+  /**
+   * How far up it sits while nobody's talking (half-widths of the screen). It still reaches the
+   * same height at full voice. A call keeps this low so the quiet stretches don't cover the map.
+   */
+  rest?: number;
   className?: string;
 }) {
+  const restRef = useRef(rest);
+  useEffect(() => {
+    restRef.current = rest;
+  }, [rest]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const tint = useRef<HTMLDivElement>(null);
   const modeRef = useRef(mode);
@@ -160,7 +171,8 @@ export function MessageGlow({
       const dist = reply ? field.bottom : field.top;
       // Both reach about a third of the screen at their loudest, then rings carry on and fade
       // before the middle, so the road and you always stay clear.
-      const reach = 0.3 + 0.7 * env;
+      const floor = restRef.current;
+      const reach = floor + (1 - floor) * env;
       const life = 1500;
       const travel = 1.3;
       ripples = ripples.filter((r) => now - r.born < life);
@@ -188,7 +200,8 @@ export function MessageGlow({
         }
       }
       g.putImageData(img, 0, 0);
-      if (tint.current) tint.current.style.opacity = String(presence * (0.25 + 0.35 * env));
+      // The colour wash rests lower too when the glow rests low (same 0.25 at the usual rest).
+      if (tint.current) tint.current.style.opacity = String(presence * ((0.25 * floor) / 0.3 + 0.35 * env));
       frame = requestAnimationFrame(tick);
     };
 
@@ -226,7 +239,7 @@ export function MessageGlow({
 
 /** The LCD while a message plays: who it's from (as in Figma), then your reply's timer. */
 export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
-  const { message, phase, respond, replyLeft } = controls;
+  const { message, phase, respond, replyLeft, sendsIn } = controls;
   if (!message) return null;
   if (phase === "recording") {
     return (
@@ -238,9 +251,22 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
         {replyLeft === null ? (
           <span className="mt-1 block text-[11px] normal-case">Waiting for the mic…</span>
         ) : (
-          <span className="mt-1 block text-[28px] leading-none">{formatCountdown(replyLeft)}</span>
+          // The 60-second cap counting down, with who it's for beside it.
+          <span className="mt-1 flex items-baseline gap-2">
+            <span className="text-[28px] leading-none tabular-nums">{formatCountdown(replyLeft)}</span>
+            <span className="min-w-0 truncate text-[11px] normal-case">to {message.from}</span>
+          </span>
         )}
-        <span className="mt-1.5 block text-[11px] normal-case">to {message.from}</span>
+        {/* Same as a drop: gone quiet, it says when it sends itself. Talking again takes it back to the tap hint. */}
+        {replyLeft !== null && <span className="mt-1.5 block text-[11px] normal-case">{quietHint(sendsIn)}</span>}
+      </Lcd>
+    );
+  }
+  if (phase === "empty") {
+    return (
+      <Lcd>
+        NOTHING HEARD
+        <span className="mt-1 block text-[11px] normal-case">No reply sent to {message.from}</span>
       </Lcd>
     );
   }
@@ -256,7 +282,9 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
     return (
       <Lcd>
         <span className="block text-[20px] font-medium leading-[1.2]">REPLY?</span>
-        <span className="mt-1 block text-[11px] normal-case">Tap respond to answer {message.from}</span>
+        <span className="mt-1 block text-[11px] normal-case">
+          {controls.listening ? "Say yes or no" : `Tap respond to answer ${message.from}`}
+        </span>
       </Lcd>
     );
   }
@@ -276,6 +304,9 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
         {message.from}
       </span>
       {respond && <span className="mt-2 block text-[11px]">Reply after they finish</span>}
+      {phase === "playing" && message.transcript && (
+        <span className="mt-2 block max-h-16 overflow-hidden text-[10px] normal-case leading-[1.35]">{message.transcript}</span>
+      )}
     </Lcd>
   );
 }
@@ -327,7 +358,7 @@ export function MessageKeys({
   }
 
   const listening = phase === "playing" && respondWindow === "closed" && !respond;
-  const done = phase === "sent" || phase === "noMic";
+  const done = phase === "sent" || phase === "empty" || phase === "noMic";
   const counting = (phase === "tuning" || phase === "playing") && respondWindow !== "closed";
   return (
     <>

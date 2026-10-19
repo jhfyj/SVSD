@@ -51,21 +51,36 @@ export const Glow: Story = {
   ),
 };
 
+/**
+ * Your mic on a call (Flow 3): it rises from the bottom like any reply, but between your turns it
+ * rests right down at the edge so it doesn't cover the map. It still climbs as high when you talk.
+ */
+export const CallMic: Story = {
+  ...Glow,
+  args: { mode: "reply", color: "lime", rest: 0.07 },
+};
+
 const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => ({
   message: SAMPLE_MESSAGES[0],
   phase: "playing",
   respond: false,
   respondWindow: "open",
+  listening: false,
   replyLeft: 42_000,
+  sendsIn: null,
   level: { current: null },
   play: () => {},
+  reply: () => {},
   toggleRespond: () => {},
   send: () => {},
   skip: () => {},
   ...over,
 });
 
-/** Every LCD a message can show: who it's from (Figma), with a reply chosen, the radio asking "Reply?", recording, sent, and no mic. */
+/**
+ * Every LCD a message can show: who it's from (Figma), with a reply chosen, the radio asking "Reply?",
+ * recording (talking, then gone quiet: it sends itself after 10 seconds), sent, nothing heard, and no mic.
+ */
 export const Lcd: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4 bg-[#262626] p-6">
@@ -74,8 +89,11 @@ export const Lcd: Story = {
         controls({ message: SAMPLE_MESSAGES[1] }),
         controls({ respond: true }),
         controls({ phase: "asking", respondWindow: "closed" }),
+        controls({ phase: "asking", respondWindow: "closed", listening: true }),
         controls({ phase: "recording" }),
+        controls({ phase: "recording", replyLeft: 31_000, sendsIn: 4_200 }),
         controls({ phase: "sent" }),
+        controls({ phase: "empty" }),
         controls({ phase: "noMic" }),
       ].map((c, i) => (
         <LcdScreen key={i} className="h-[130px] w-[221px]">

@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { DialKit } from "@/components/dialkit/DialKit";
+import { DeviceFrame } from "@/components/DeviceFrame";
 import { SoundProvider } from "@/components/sound";
 import { ThemeClock } from "@/components/theme/ThemeClock";
 import { themeScript } from "@/lib/theme";
@@ -17,6 +18,16 @@ export const metadata: Metadata = {
   description: "SVSD hackathon project",
 };
 
+// Filmed on a phone: no pinch-zoom (a two-finger hold opens the flow picker, it shouldn't zoom the
+// page), and the page runs under the notch and home bar like an app.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -29,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <DeviceFrame>{children}</DeviceFrame>
         <ThemeClock />
         <SoundProvider />
         <Suspense>

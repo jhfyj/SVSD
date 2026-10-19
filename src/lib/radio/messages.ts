@@ -23,6 +23,8 @@ export type RouteMessage = {
    * placeholder: it still plays (the glow moves with it, the timing holds) but silently.
    */
   recorded?: boolean;
+  /** Optional transcript shown while the recording plays. */
+  transcript?: string;
   /** Where it was left, as a share of the way along your route (0 is the start, 1 the destination). */
   at: number;
 };
@@ -36,8 +38,8 @@ export const RESPOND_WINDOW_MS = 5000;
 export const REPLY_MAX_MS = 60_000;
 
 export const SAMPLE_MESSAGES: RouteMessage[] = [
-  { id: "water-tower", kind: "message", from: "@Hufflepuff23", character: "pip", src: "/messages/water-tower.mp3", at: 0.12 },
-  { id: "favorite-song", kind: "question", from: "@urmom2424", character: "bun", src: "/messages/favorite-song.mp3", at: 0.35 },
-  { id: "diner-pie", kind: "message", from: "@Nightowl88", character: "boo", src: "/messages/diner-pie.mp3", at: 0.6 },
-  { id: "up-tonight", kind: "question", from: "@Roadrunner5", character: "tako", src: "/messages/up-tonight.mp3", at: 0.82 },
+  { id: "water-tower", kind: "message", from: "@Hufflepuff23", character: "squirrel", src: "/messages/water-tower.mp3", at: 0.12 },
+  { id: "favorite-song", kind: "question", from: "@urmom2424", character: "rabbit", src: "/messages/favorite-song.mp3", at: 0.35 },
+  { id: "diner-pie", kind: "message", from: "@Nightowl88", character: "frog", src: "/messages/diner-pie.mp3", at: 0.6 },
+  { id: "up-tonight", kind: "question", from: "@Roadrunner5", character: "turtle", src: "/messages/up-tonight.mp3", at: 0.82 },
 ];

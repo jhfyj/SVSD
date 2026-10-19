@@ -8,7 +8,7 @@ import { usePressTilt } from "./usePressTilt";
 export type Tab = "journey" | "history" | "profile";
 
 const TABS: { id: Tab; href: string; label: string; icon: Icon }[] = [
-  { id: "journey", href: "/", label: "Start a journey", icon: PaperPlaneTilt },
+  { id: "journey", href: "/", label: "Journey", icon: PaperPlaneTilt },
   { id: "history", href: "/history", label: "History", icon: ClockCounterClockwise },
   { id: "profile", href: "/profile", label: "Profile", icon: User },
 ];
@@ -53,7 +53,7 @@ function TabKey({ href, label, icon: Glyph, selected }: (typeof TABS)[number] & 
       <span
         ref={face}
         className={cn(
-          "relative flex size-full items-center justify-center overflow-hidden transition-[box-shadow,filter] duration-75 ease-out",
+          "relative flex size-full flex-col items-center justify-center gap-1 overflow-hidden transition-[box-shadow,filter] duration-75 ease-out",
           "group-focus-visible:outline-2 group-focus-visible:-outline-offset-4 group-focus-visible:outline-foreground",
           down
             ? "[background:var(--button-gradient-pressed)] shadow-[var(--button-pressed-shadow)]"
@@ -61,7 +61,8 @@ function TabKey({ href, label, icon: Glyph, selected }: (typeof TABS)[number] & 
         )}
       >
         <span ref={shade} aria-hidden className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-150 ease-out" />
-        <Glyph size={24} aria-hidden className={cn("relative text-foreground", !selected && "opacity-40")} />
+        <Glyph size={22} aria-hidden className={cn("relative text-foreground", !selected && "opacity-40")} />
+        <span className={cn("text-[10px] leading-3", !selected && "text-foreground/40")}>{label}</span>
       </span>
     </Link>
   );

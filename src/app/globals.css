@@ -1,5 +1,58 @@
 @import "tailwindcss";
 
+.device-stage {
+  display: flex;
+  min-height: 100dvh;
+  flex: 1 1 auto;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--backdrop);
+}
+
+.device-frame-scale {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.device-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+}
+
+.device-frame-art {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  filter: grayscale(1) brightness(0.42) contrast(1.12);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.device-screen {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 32px / 34px;
+  background: var(--background);
+}
+
+.device-screen-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
 /*
   Design tokens from the SVSD Figma file (section "CLAUDE LOOK HERE", node 123:130).
   DESIGN.md at the repo root is the spec: what each token means, when to use it, and the
@@ -244,6 +297,29 @@ body {
 }
 
 /*
+  On a phone, behave like an app while filming: no pinch-zoom (iOS ignores the viewport's
+  user-scalable, so touch-action does it), no pull-to-refresh or bounce that could reload or jolt
+  a take, no grey flash on tap, and no text-selection loupe from a long hold. Fields stay selectable.
+*/
+html,
+body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/*
   Film grain behind a screen: put .grain on the phone column. The grain sits above the column's own
   background and below its content, so panels and text stay clean. Still, so it reads as paper, not noise.
 */
@@ -272,26 +348,35 @@ body {
   }
 }
 
-/* Profile characters: two frames that swap like an LCD pet. Still (frame A) for reduced motion. */
+/* Profile avatars bob as one sprite; their expression stays still. */
 .sprite-b {
   visibility: hidden;
 }
-@keyframes sprite-a {
-  50% {
-    visibility: hidden;
+@keyframes sprite-bob {
+  0%,
+  34% {
+    transform: translateY(0);
   }
-}
-@keyframes sprite-b {
-  50% {
-    visibility: visible;
+  35%,
+  64% {
+    transform: translateY(calc(var(--sprite-pixel, 4px) * -1));
+  }
+  65%,
+  100% {
+    transform: translateY(0);
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .sprite-play .sprite-a {
-    animation: sprite-a 1s steps(1) infinite;
+  .sprite-play {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sprite-bob 760ms steps(1, end) infinite;
   }
-  .sprite-play .sprite-b {
-    animation: sprite-b 1s steps(1) infinite;
+  /* Your character resting on the idle LCD: the same one-pixel bob at half the pace. */
+  .lcd-companion {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sprite-bob 1520ms steps(1, end) infinite;
   }
 }
 
@@ -720,7 +805,17 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
 }
 /* The other person talking: their character hops one sprite pixel (two frames), sound waves swap fast. */
 @keyframes lcd-hop {
-  50% { transform: translateY(-4px); }
+  0%, 24% { transform: translateY(0); }
+  25%, 54% { transform: translateY(-4px); }
+  55%, 100% { transform: translateY(0); }
+}
+@keyframes call-ring-one {
+  0%, 38% { opacity: 0.25; transform: scale(0.86); }
+  39%, 100% { opacity: 0.9; transform: scale(1); }
+}
+@keyframes call-ring-two {
+  0%, 62% { opacity: 0.2; transform: scale(0.82); }
+  63%, 100% { opacity: 0.8; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .lcd-dots span {
@@ -732,8 +827,10 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
   .lcd-dots span:nth-child(2) { animation: lcd-dot-2 1.6s steps(1) infinite; }
   .lcd-dots span:nth-child(3) { animation: lcd-dot-3 1.6s steps(1) infinite; }
   .lcd-hop {
-    animation: lcd-hop 400ms steps(1) infinite;
+    animation: lcd-hop 640ms steps(1, end) infinite;
   }
+  .call-ring-one { animation: call-ring-one 520ms steps(1, end) infinite; }
+  .call-ring-two { animation: call-ring-two 760ms steps(1, end) infinite; }
   .sprite-fast .sprite-a { animation: sprite-a 400ms steps(1) infinite; }
   .sprite-fast .sprite-b { animation: sprite-b 400ms steps(1) infinite; }
 }

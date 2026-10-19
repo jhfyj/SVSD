@@ -71,7 +71,7 @@ export function DropSparkle({ kind, onDone }: { kind: DropKind; onDone: () => vo
   );
 }
 
-const SPARKLE_MS = 1400;
+const SPARKLE_MS = 2400;
 
 /** [left, top, delay ms, big] for each star around the spot. */
 const STARS: [number, number, number, boolean][] = [

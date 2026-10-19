@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { DROP_MIN_MS, DROP_QUIET_MS, DROP_SHOW_MS, DROP_SORT_MS, DROP_VOICE_LEVEL, sampleTranscript, saveDrop, sortDrop, transcribe, type Drop } from "@/lib/radio/drops";
+import { DROP_MIN_MS, DROP_SHOW_MS, DROP_SORT_MS, sampleTranscript, saveDrop, sortDrop, transcribe, type Drop } from "@/lib/radio/drops";
+import { quietClock } from "@/lib/radio/quiet";
 import { recordReply, type Level, type Recording } from "@/lib/radio/voice";
 import { cue } from "@/lib/sound";
 
@@ -98,7 +99,7 @@ export function useDrop(): DropControls {
   }, []);
 
   // Recording: the mic goes live (a beep says so) and the time counts up, no limit. Go quiet for
-  // DROP_QUIET_MS and it sends itself, the way a voice note does; tapping send does it sooner.
+  // QUIET_MS and it sends itself, the way a voice note does; tapping send does it sooner.
   useEffect(() => {
     if (phase !== "recording") return;
     let live = true;
@@ -111,20 +112,14 @@ export function useDrop(): DropControls {
         words.current = transcribe();
         cue("ready", { theme: "mech" });
         started.current = Date.now();
-        let lastVoice = started.current;
-        let spoke = false;
+        const quiet = quietClock(started.current);
         setElapsed(0);
         tick = setInterval(() => {
           const now = Date.now();
-          if (rec.level() > DROP_VOICE_LEVEL) {
-            lastVoice = now;
-            spoke = true;
-          }
-          const quiet = now - lastVoice;
+          const { spoke, sendsIn, done } = quiet(rec.level(), now);
           setElapsed(now - started.current);
-          // The "sends in" hint only shows for the back half of the wait, so a breath doesn't flash it.
-          setSendsIn(quiet >= DROP_QUIET_MS / 2 ? DROP_QUIET_MS - quiet : null);
-          if (quiet >= DROP_QUIET_MS) {
+          setSendsIn(sendsIn);
+          if (done) {
             clearInterval(tick);
             if (spoke) void finish();
             else discard();

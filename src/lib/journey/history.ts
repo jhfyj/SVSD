@@ -3,19 +3,33 @@ import { saveJourney, type Journey } from "./session";
 
 /*
   Journeys you've been on, newest first, for "Recent journeys" on the start screen. No backend yet,
-  so they live in localStorage on this device. Each keeps the destination and route (to drive it
-  again) and the trip (to open its recap).
+  so they live in localStorage on this device, one list per account (the phone number you signed
+  in with): a brand-new account starts with none, even on a device someone else has driven with.
+  Each keeps the destination and route (to drive it again) and the trip (to open its recap).
 */
 
 export type PastJourney = { id: string; journey: Journey; trip: Trip };
 
-const KEY = "svsd.history";
+const PREFIX = "svsd.history";
 const MAX = 10;
 
-/** Stored as-is, for `useSyncExternalStore` (a string compares stably between renders). */
-export function historyRaw(): string | null {
+/** Whoever is signed in on this device (read straight from the session), or null. */
+function signedInPhone(): string | null {
   try {
-    return localStorage.getItem(KEY);
+    const raw = localStorage.getItem("svsd.session");
+    return raw ? ((JSON.parse(raw) as { phone?: string }).phone ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** This account's list. Signed out shares one guest list. */
+const keyFor = (phone: string | null | undefined = signedInPhone()) => `${PREFIX}.${phone || "guest"}`;
+
+/** Stored as-is, for `useSyncExternalStore` (a string compares stably between renders). */
+export function historyRaw(phone?: string | null): string | null {
+  try {
+    return localStorage.getItem(keyFor(phone));
   } catch {
     return null;
   }
@@ -34,8 +48,9 @@ export function loadHistory(raw = historyRaw()): PastJourney[] {
 export function recordJourney(journey: Journey, trip: Trip) {
   const entry: PastJourney = { id: `${trip.startedAt}`, journey, trip };
   try {
-    localStorage.setItem(KEY, JSON.stringify([entry, ...loadHistory()].slice(0, MAX)));
-    window.dispatchEvent(new StorageEvent("storage", { key: KEY }));
+    const key = keyFor();
+    localStorage.setItem(key, JSON.stringify([entry, ...loadHistory()].slice(0, MAX)));
+    window.dispatchEvent(new StorageEvent("storage", { key }));
   } catch {
     // Storage blocked: the start screen just shows no history.
   }
@@ -55,7 +70,7 @@ export function repeatJourney(past: PastJourney) {
 }
 
 export function subscribeHistory(onChange: () => void) {
-  const handler = (e: StorageEvent) => (e.key === KEY || e.key === null) && onChange();
+  const handler = (e: StorageEvent) => (e.key === null || e.key.startsWith(PREFIX)) && onChange();
   window.addEventListener("storage", handler);
   return () => window.removeEventListener("storage", handler);
 }

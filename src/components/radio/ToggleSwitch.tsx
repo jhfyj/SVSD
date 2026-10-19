@@ -6,14 +6,16 @@ export type ToggleSwitchProps = {
   on: boolean;
   onChange: (on: boolean) => void;
   label?: string;
+  /** Show the OFF / ON words beside it (default). Off where the row is tight. */
+  labels?: boolean;
   className?: string;
 };
 
 /** Physical ON / OFF slider from the radio top bar. */
-export function ToggleSwitch({ on, onChange, label = "Radio", className }: ToggleSwitchProps) {
+export function ToggleSwitch({ on, onChange, label = "Radio", labels = true, className }: ToggleSwitchProps) {
   return (
     <div className={cn("flex items-center gap-2 text-[11px] uppercase text-label/80", className)}>
-      <span aria-hidden className={cn(!on && "text-foreground")}>Off</span>
+      {labels && <span aria-hidden className={cn(!on && "text-foreground")}>Off</span>}
       <button
         type="button"
         role="switch"
@@ -32,7 +34,7 @@ export function ToggleSwitch({ on, onChange, label = "Radio", className }: Toggl
           )}
         />
       </button>
-      <span aria-hidden className={cn(on && "text-foreground")}>On</span>
+      {labels && <span aria-hidden className={cn(on && "text-foreground")}>On</span>}
     </div>
   );
 }

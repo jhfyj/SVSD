@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { DROP_LABEL, type DropKind } from "@/lib/radio/drops";
+import { quietHint } from "@/lib/radio/quiet";
 import { DropMarker } from "../drops/DropMarker";
 import { DROP_ICON } from "../ui/DropPin";
 import type { DropControls } from "./useDrop";
@@ -38,7 +39,7 @@ export function DropLcd({ controls }: { controls: DropControls }) {
         )}
         <span className="mt-1.5 block text-[11px] normal-case">
           {/* Gone quiet: say when it sends itself. Talking again takes it back to the tap hint. */}
-          {sendsIn === null ? "Tap send or stop speaking for 10 sec" : `Sending in ${Math.ceil(sendsIn / 1000)}…`}
+          {quietHint(sendsIn)}
         </span>
       </Lcd>
     );

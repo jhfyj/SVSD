@@ -1,17 +1,20 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { RadioIntro, RadioScreen } from "@/components/radio";
+import { useEffect, useState } from "react";
+import { INTRO_MS, RadioIntro, RadioScreen } from "@/components/radio";
 import type { CallState } from "@/components/radio/RadioLcd";
 import { useSession } from "@/lib/auth/session";
 import { useJourney } from "@/lib/journey/session";
 import { DEMO_HANG_UP_RULE } from "@/lib/radio/hangups";
 import { SAMPLE_MESSAGES } from "@/lib/radio/messages";
-import { STORY_DRIVE } from "@/lib/demo/storyDrive";
+import { ARRIVE_DRIVE, COMPANY_DRIVE, QUESTION_DRIVE, STORY_DRIVE } from "@/lib/demo/storyDrive";
 import { useCharacter } from "@/lib/profile/avatar";
+import { fallbackHandle, useHandle } from "@/lib/profile/handle";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { NIGHT_CLOCK, NIGHT_STARTS, type NightStart } from "@/lib/radio/nightDrive";
 import { setThemeChoice } from "@/lib/theme";
+import { onArrival } from "@/lib/trip/arrival";
 
 const CALL_STATES: CallState[] = ["off", "pick", "connecting", "connected", "lost"];
 
@@ -30,10 +33,13 @@ const handle = (text: string | null) => (text ? (text.startsWith("@") ? text : `
  * `?messages=off&sim` is Planting your answer: nothing comes in, and the map drives the demo route.
  * A new `?load=` value plays the load-in again: the page is kept alive between visits, so without
  * it the radio comes back already loaded.
- * `?demo=story` drives the scripted story-unlock drive (no load-in), and a new `?t=` starts it over.
+ * `?demo=story&load=` plays the radio load-in, holds on the route for three seconds, then starts
+ * the scripted story-unlock drive. A new `?t=` starts it over.
  * `?night=fall|checkin|rest` plays Night mode (Flow 6) from sunset, the check-in or the rest area
  * (no load-in, nothing else on the road); a new `?t=` starts it over. Sunset ends by pinning the
  * night theme, as the dial kit's theme switch would.
+ * `?demo=arrive` (Flow 5) drives the last stretch into the destination; arriving there switches
+ * the radio on to thank you. A new `?t=` starts it over.
  * Plain `/radio` or `/radio?sim` (a new journey, the dial kit's load-in, Tracking the road) opens on
  * Start journey; the others above open mid-drive, already started.
  */
@@ -45,31 +51,62 @@ export function Radio() {
   const outcome = params.get("outcome") === "lost" ? "lost" : "connected";
   const timeout = params.get("timeout") === "on";
   const kind = params.get("message");
+  const companyDemo = params.get("demo") === "company";
+  const questionDemo = params.get("demo") === "question";
+  const storyDemo = params.get("demo") === "story";
+  // Flow 5: the last stretch of the drive, arriving when the map pulls up at the destination.
+  const arriveDemo = params.get("demo") === "arrive";
   const message = SAMPLE_MESSAGES.find((m) => m.kind === kind);
   // ?messages=off: nothing on the road comes in (the dial kit's Planting your answer, where you leave your own).
   const quiet = params.get("messages") === "off";
   // You: as on your profile. Shared road: your whole drive until matching knows the other route.
   const session = useSession();
   const journey = useJourney();
-  const me = handle(params.get("me")) ?? (session ? `@traveller${session.phone.slice(-4)}` : undefined);
-  const peer = handle(params.get("peer")) ?? undefined;
+  // Your own @handle from Customize profile (or @traveller + last 4 digits from before handles).
+  const myHandle = useHandle(session?.phone);
+  const me = companyDemo || storyDemo ? "@NightOwl" : handle(params.get("me")) ?? (session ? `@${myHandle ?? fallbackHandle(session.phone)}` : undefined);
+  const peer = companyDemo ? "@Mothlight" : handle(params.get("peer")) ?? undefined;
   const tripMiles = journey?.route ? Math.max(1, Math.round(journey.route.distance / METRES_PER_MILE)) : undefined;
-  const miles = Number(params.get("miles")) || tripMiles;
-  const demo = params.get("demo") === "story" ? STORY_DRIVE : undefined;
+  // The Company demo is the script's 84 miles, the number spoken in the recorded intro
+  // (public/voice/intro-nightowl-mothlight.mp3). Any other number skips the recording.
+  const miles = companyDemo ? 84 : Number(params.get("miles")) || tripMiles;
+  const demo =
+    companyDemo
+      ? COMPANY_DRIVE
+      : questionDemo
+      ? QUESTION_DRIVE
+      : storyDemo
+      ? { ...STORY_DRIVE, startDelayMs: (params.has("load") ? INTRO_MS : 0) + 3000 }
+      : arriveDemo
+      ? ARRIVE_DRIVE
+      : undefined;
   const nightParam = params.get("night") as NightStart | null;
   const night = nightParam && NIGHT_STARTS.includes(nightParam) ? nightParam : undefined;
   const meCharacter = useCharacter(session?.phone) ?? DEFAULT_CHARACTER;
-  const midDrive = ["call", "message", "messages", "timeout", "arrived", "demo", "night"].some((k) => params.has(k));
+  // Flow 5 arrives only when the map pulls up at the destination (or the dial kit's Arrive now),
+  // never off a trip timer saved earlier, so the thank-you can't play before you're there.
+  const arriveRun = arriveDemo ? params.get("t") ?? "" : null;
+  const [arrivedRun, setArrivedRun] = useState<string | null>(null);
+  useEffect(() => {
+    if (arriveRun === null) return;
+    return onArrival((now) => setArrivedRun(now ? arriveRun : null));
+  }, [arriveRun]);
+  // ?demo=story is Flow 2, a new journey: it waits on Start journey like any new journey. The other
+  // demos (company, question) are mid-drive moments.
+  const midDrive = ["call", "message", "messages", "timeout", "arrived", "night"].some((k) => params.has(k)) || ((companyDemo || questionDemo || arriveDemo) && !storyDemo);
   return (
-    <RadioIntro key={params.get("load") ?? "radio"} skip={!!demo || !!night}>
+    <RadioIntro key={params.get("load") ?? "radio"} skip={!!night || (!!demo && !params.has("load"))}>
       <RadioScreen
         // A new state (or a new demo run) from the dial kit starts the radio over in it.
-        key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo || night ? params.get("t") : ""}-${night}`}
+        key={`${state}-${outcome}-${timeout}-${kind}-${quiet}-${params.get("sim")}-${demo || night ? params.get("t") : ""}-${night}-${params.has("arrived")}`}
         demo={demo}
         night={night}
         time={night ? NIGHT_CLOCK[night] : undefined}
         onNightfall={() => setThemeChoice("dark")}
         meCharacter={meCharacter}
+        companyDemo={companyDemo}
+        questionDemo={questionDemo}
+        storyDemo={storyDemo}
         defaultState={state}
         // The story-unlock demo has its own story on the road, and Night mode talks to you itself;
         // nothing else comes in during either.
@@ -79,7 +116,11 @@ export function Radio() {
         defaultMessage={message}
         me={me}
         peer={peer}
+        peerCharacter={companyDemo ? "rabbit" : undefined}
         sharedMiles={miles}
+        // Only Flow 5 ends the journey. Flows 2 to 4 (story, company, question) never arrive, so
+        // the thank-you and End journey can't take over while they play: the drive keeps going.
+        arrived={arriveRun !== null ? arrivedRun === arriveRun : storyDemo || companyDemo || questionDemo ? false : undefined}
         // A new journey opens on Start journey (plain ?sim too: press it and the demo drive sets off).
         // Every other dial kit moment (a call state, a message, the demo, Night mode) is mid-drive.
         started={midDrive}
