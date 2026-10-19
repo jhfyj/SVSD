@@ -51,18 +51,27 @@ export type Voice = {
 /**
  * Play someone's recording. If the browser blocks it until a tap, it starts on the next tap.
  * `silent` plays it with no sound: the glow and timing still follow the voice, but nothing is
- * heard (for placeholder voices that aren't the demo's ElevenLabs takes).
+ * heard (for placeholder voices that aren't the demo's ElevenLabs takes). `gain` evens out
+ * recordings made at different levels (lib/radio/demoVoices), before the glow reads it, so a quiet
+ * take moves the glow as much as a loud one.
  */
-export function playVoice(src: string, speaker: boolean, { silent = false }: { silent?: boolean } = {}): Voice {
+export function playVoice(
+  src: string,
+  speaker: boolean,
+  { silent = false, gain: level = 1 }: { silent?: boolean; gain?: number } = {},
+): Voice {
   const c = audio();
   const el = new Audio(src);
   const source = c.createMediaElementSource(el);
   const analyser = analyserOf(c);
+  const even = c.createGain();
+  even.gain.value = level;
   const gain = c.createGain();
   const loudness = (on: boolean) => (silent ? 0 : volume(on));
   gain.gain.value = loudness(speaker);
-  source.connect(analyser);
-  source.connect(gain).connect(c.destination);
+  source.connect(even);
+  even.connect(analyser);
+  even.connect(gain).connect(c.destination);
 
   let stopped = false;
   const retry = () => {
@@ -85,6 +94,7 @@ export function playVoice(src: string, speaker: boolean, { silent = false }: { s
       document.removeEventListener("pointerdown", retry);
       el.pause();
       source.disconnect();
+      even.disconnect();
       gain.disconnect();
     },
   };

@@ -98,6 +98,13 @@ export const REPLY_PROMPT = "/voice/reply-prompt.mp3";
  */
 export const QUESTION_UNLOCK = "/voice/unlock-question.mp3";
 
+/**
+ * The same take split at its pause, for Flow 4, where NightOwl asks his question between the two
+ * lines, as in the script: "You just unlocked a question from NightOwl." … "Would you like to respond?"
+ */
+export const QUESTION_UNLOCKED = "/voice/unlock-question-1.mp3";
+export const QUESTION_PROMPT = "/voice/unlock-question-2.mp3";
+
 /** The journey's over (you've arrived): "Every journey tells a story. Thank you for sharing yours with us." */
 export const THANK_YOU = "/voice/thank-you.mp3";
 

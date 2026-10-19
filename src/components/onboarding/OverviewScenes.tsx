@@ -11,6 +11,7 @@ import { CHARACTERS } from "@/lib/profile/characters";
 import { headingAt, measure, offset, pointAt } from "@/lib/nav/path";
 import { STORY_DRIVE, type DemoDrive } from "@/lib/demo/storyDrive";
 import type { DropKind } from "@/lib/radio/drops";
+import { cue, warmAhh } from "@/lib/sound";
 
 const pickupPath = measure(STORY_DRIVE.route.points);
 const pickupAt = (id: string, kind: DropKind, distance: number) => {
@@ -32,6 +33,12 @@ const STORY_OVERVIEW_DRIVE: DemoDrive = {
   ],
 };
 
+/** Each pickup pops with the radio's payoff: a bright chime, then a warm "ahh" blooming under it. */
+const chime = () => {
+  cue("success", { emphasis: "strong" });
+  setTimeout(warmAhh, 90);
+};
+
 /** The actual navigation map, with the three real drop types collected in sequence. */
 export function StoriesScene() {
   return (
@@ -39,6 +46,7 @@ export function StoriesScene() {
       <NavMap
         travellers={[]}
         demo={STORY_OVERVIEW_DRIVE}
+        onCollect={chime}
         fallback={<div className="absolute inset-0 bg-lcd" />}
         className="nav-map overview-lcd-map overview-story-map absolute inset-0"
       />
