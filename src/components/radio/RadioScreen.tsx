@@ -936,7 +936,9 @@ export function RadioScreen({
           ) : (
             <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />
           )}
-          <CollectedTally counts={collected} flash={tallyFlash} />
+          {/* The pickup count steps aside while you record (YOUR REPLY / YOUR DROP): their heading
+              sits in the same top-left corner. It comes back once you've sent. */}
+          {!((messageOn && message.phase === "recording") || (drop.active && dropRecording)) && <CollectedTally counts={collected} flash={tallyFlash} />}
         </LcdScreen>
 
         {arrived && (
