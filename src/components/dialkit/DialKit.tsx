@@ -65,6 +65,9 @@ const loadIn = () => `/radio?load=${Date.now()}`;
 /** The scripted story drive, from the start each time. */
 const storyDrive = () => `/radio?demo=story&t=${Date.now()}`;
 
+/** Night mode from one of its moments, from the start each time, driving the demo route. */
+const nightDrive = (start: "fall" | "checkin" | "rest") => `/radio?night=${start}&sim&t=${Date.now()}`;
+
 /** The stand-in for a screen that isn't built yet. */
 const blank = (screen: string) => `/blank?${new URLSearchParams({ screen })}`;
 
@@ -118,6 +121,9 @@ export function DialKit() {
     saveCharacter(phone, DEFAULT_CHARACTER);
     markOnboarded(phone);
   };
+  // Already on the radio: change the URL in the browser (Next keeps useSearchParams in step) so it
+  // starts over at once, without a round trip for the same page.
+  const openRadio = (href: string) => (path === "/radio" ? window.history.pushState(null, "", href) : router.push(href));
   const arrive = () => {
     arrival.arrive();
     if (path !== "/radio") router.push("/radio");
@@ -172,9 +178,8 @@ export function DialKit() {
         { label: "Destination", href: "/journey" },
         {
           label: "Radio loads in",
-          // Already on the radio: change the URL in the browser (Next keeps useSearchParams in step)
-          // so the load-in restarts at once, without a round trip for the same page.
-          go: () => (path === "/radio" ? window.history.pushState(null, "", loadIn()) : router.push(loadIn())),
+          // Restarts at once when already on the radio (see openRadio).
+          go: () => openRadio(loadIn()),
           radio: true,
           active: path === "/radio" && params.has("load"),
           note: "The blueprint load-in: the start of every journey, for everyone. Plays again on every click.",
@@ -188,7 +193,7 @@ export function DialKit() {
         },
         {
           label: "Message unlocks · 3D story",
-          go: () => (path === "/radio" ? window.history.pushState(null, "", storyDrive()) : router.push(storyDrive())),
+          go: () => openRadio(storyDrive()),
           radio: true,
           active: path === "/radio" && params.get("demo") === "story",
           note: "Prototype: about 5 s down the I-10, a story waits off the road; the car pulls it in, it pops and flies into the LCD. Plays again on every click.",
@@ -311,16 +316,41 @@ export function DialKit() {
     },
     {
       n: "6",
-      title: "Behind the scenes",
-      time: "3:45",
+      title: "Night mode",
+      note: "Plays by itself, nothing to tap: sunset, NIGHT MODE ON, the check-in, a slow answer, then the rest area. Each step starts there.",
       steps: [
-        { label: "Night mode", href: "/radio", radio: true, go: () => pickTheme("dark") },
         {
-          label: "Stay-awake warning",
-          href: blank("Stay-awake warning"),
-          todo: "new",
-          note: "A warning to stay awake on long drives.",
+          label: "Night falls",
+          // Starts by day: the sunset turns the radio amber and pins the night theme.
+          go: () => {
+            pickTheme("light");
+            openRadio(nightDrive("fall"));
+          },
+          radio: true,
+          active: path === "/radio" && params.get("night") === "fall",
+          note: "The sun sinks across the map, the light goes amber, the radio flickers back on in amber: NIGHT MODE ON, then 214 driving tonight.",
         },
+        {
+          label: "Check-in",
+          go: () => {
+            pickTheme("dark");
+            openRadio(nightDrive("checkin"));
+          },
+          radio: true,
+          active: path === "/radio" && params.get("night") === "checkin",
+          note: "“Still with me? Tell me one thing you can see.” Listening; Jay's slow answer rises from the bottom of the map.",
+        },
+        {
+          label: "Rest area",
+          go: () => {
+            pickTheme("dark");
+            openRadio(nightDrive("rest"));
+          },
+          radio: true,
+          active: path === "/radio" && params.get("night") === "rest",
+          note: "REST AREA 9 MI takes over the map; stories paused until you're back. One key: Route to rest area.",
+        },
+        { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => pickTheme("dark"), note: "Any radio state at night is amber." },
       ],
     },
     {

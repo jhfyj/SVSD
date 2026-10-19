@@ -1,6 +1,6 @@
 "use client";
 
-import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, MusicNotes, PaperPlaneRight, PhoneDisconnect } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, MusicNotes, NavigationArrow, PaperPlaneRight, PhoneDisconnect } from "@phosphor-icons/react";
 import { WeatherIcon } from "../journey/WeatherIcon";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -33,6 +33,9 @@ import { PowerButton } from "./PowerButton";
 import { MessageGlow, MessageKeys, MessageLcd } from "./RouteMessage";
 import { useRouteMessage } from "./useRouteMessage";
 import { RockerSwitch } from "./RockerSwitch";
+import { Nightfall, NightLcd, RestSign } from "./NightDrive";
+import { useNightDrive } from "./useNightDrive";
+import type { NightStart } from "@/lib/radio/nightDrive";
 
 /** Mic and Settings during a call (and Drop/Settings beside a message): square keys, as tall as the row (70px). */
 const CALL_KEY = "w-[70px] shrink-0";
@@ -114,8 +117,20 @@ export type RadioScreenProps = {
   messageEveryMs?: number;
   /** A scripted drive for the story-unlock demo, with pickups to collect along it. */
   demo?: DemoDrive;
+  /**
+   * Night mode's script (Flow 6), from sunset, the check-in, or the rest area. Plays by itself.
+   * The amber look itself needs no prop: at night the radio is always amber.
+   */
+  night?: NightStart;
+  /** Called under the relight flicker at sunset: switch the app to the night theme here. */
+  onNightfall?: () => void;
+  /** Your own character, for the LCD when Night mode tells you to rest. */
+  meCharacter?: CharacterId;
   className?: string;
 };
+
+/** Night mode phases that put something on the LCD (the sunset itself keeps the usual LCD). */
+const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "rest"];
 
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
@@ -152,6 +167,9 @@ export function RadioScreen({
   defaultMessage,
   messageEveryMs = 30_000,
   demo,
+  night,
+  onNightfall,
+  meCharacter = "freddie",
   className,
 }: RadioScreenProps) {
   const [state, setState] = useState<CallState>(defaultState);
@@ -243,6 +261,9 @@ export function RadioScreen({
   };
   // At the destination the button row becomes a single End trip.
   const arrived = useArrived(forceArrived);
+  // Night mode: the radio checks in with you, and tells you to stop when your answers slow down.
+  const nightDrive = useNightDrive({ start: night, onNightfall });
+  const nightTalking = nightDrive.busy && !radioOn;
 
   // Messages on the road. Each plays once, as you pass it, and only while the radio's off: they never
   // talk over a live call. Pass one mid-call and it's gone; pass two close together and they queue.
@@ -260,7 +281,8 @@ export function RadioScreen({
         .map((m) => ({ id: m.id, at: m.at, color: MESSAGE_COLOR[m.kind], label: `${m.kind === "question" ? "Question" : "Message"} from ${m.from}` })),
     [messages, passed],
   );
-  const listening = state === "off" && !arrived && !leaving;
+  // Stories wait while Night mode talks to you, and stay paused at the rest area until you're back.
+  const listening = state === "off" && !arrived && !leaving && !nightDrive.busy;
   const reach = useCallback(
     (id: string) => {
       const m = messages.find((x) => x.id === id);
@@ -292,7 +314,7 @@ export function RadioScreen({
   }, [queue, messageOn, listening, dropBusy, play, message.message]);
 
   // Music only plays while the radio is off and quiet; a message, the radio, or leaving the screen stops it.
-  const playing = musicOn && !radioOn && !messageOn;
+  const playing = musicOn && !radioOn && !messageOn && !nightTalking;
   useEffect(() => {
     if (!playing) return;
     startMusic();
@@ -404,7 +426,8 @@ export function RadioScreen({
       // Radio hardware sounds mechanical: clicks, latches, detents.
       data-cuelume-theme="mech"
       className={cn(
-        "relative h-[852px] w-[393px] overflow-hidden font-sans text-foreground",
+        // radio-night: amber at night (globals.css), whatever state the radio is in.
+        "radio-night relative h-[852px] w-[393px] overflow-hidden font-sans text-foreground",
         casing,
         leaving && "radio-power-off",
         className,
@@ -430,8 +453,13 @@ export function RadioScreen({
           fallback={<PlaceholderMap travellers={travellers} drops={drop.drops} />}
         />
         {/* A message playing: their voice comes down from the top; your reply (or a drop) rises from the bottom in your colour. */}
+        {/* Night mode's rest area takes over the map: the road can wait. */}
+        {nightDrive.resting && <RestSign />}
         {dropRecording ? (
           <MessageGlow mode="reply" color={youColor} level={drop.level} />
+        ) : nightDrive.phase === "listening" && !radioOn ? (
+          // Answering the check-in: your voice rises from the bottom, like a reply.
+          <MessageGlow mode="reply" color={youColor} level={nightDrive.level} />
         ) : (
           <MessageGlow
             mode={!messageOn ? "off" : message.phase === "recording" ? "reply" : message.phase === "sent" || message.phase === "noMic" ? "off" : "voice"}
@@ -501,7 +529,7 @@ export function RadioScreen({
 
         {/* The screen stays lit whether or not the radio is on; only the story stops. */}
         <LcdScreen className="absolute left-[156px] top-[18px] h-[130px] w-[221px]">
-          {drop.active && state !== "pick" ? <DropLcd controls={drop} /> : messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
+          {drop.active && state !== "pick" ? <DropLcd controls={drop} /> : !radioOn && NIGHT_LCD.includes(nightDrive.phase) ? <NightLcd phase={nightDrive.phase} level={nightDrive.level} character={meCharacter} routed={nightDrive.routed} /> : messageOn ? <MessageLcd controls={message} /> : <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} />}
           <CollectedTally counts={collected} flash={tallyFlash} />
         </LcdScreen>
 
@@ -517,6 +545,20 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
+        {/* At the rest area the key row is one wide key: route there. Lit once it's set. */}
+        {nightDrive.resting && !radioOn && !arrived && (
+          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+            <HardwareButton
+              className="flex-1"
+              pressed={nightDrive.routed}
+              onClick={nightDrive.routed ? undefined : nightDrive.route}
+              aria-label={nightDrive.routed ? "Route to the rest area set" : "Route to the rest area"}
+            >
+              <NavigationArrow size={24} className={nightDrive.routed ? undefined : "opacity-80"} aria-hidden />
+              <span className="text-[13px] font-bold opacity-80">{nightDrive.routed ? "ROUTE SET" : "ROUTE TO REST AREA"}</span>
+            </HardwareButton>
+          </div>
+        )}
         {/* What you're up for: the console keys become the four intents, a 2 x 2 grid of wide keys.
             A remembered pick sits pressed in and lit, and is kept after 3 seconds. */}
         {state === "pick" && !arrived && (
@@ -524,7 +566,7 @@ export function RadioScreen({
             <IntentKeys current={intentSet ? intent : undefined} onPick={pickIntent} />
           </div>
         )}
-        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", (arrived || state === "pick") && "hidden")}>
+        <div className={cn("absolute left-[26px] top-[166px] flex w-[351px] gap-2", (arrived || state === "pick" || (nightDrive.resting && !radioOn)) && "hidden")}>
           {radioOn ? (
             <>
               <HardwareButton
@@ -581,7 +623,8 @@ export function RadioScreen({
             className={messageOn ? CALL_KEY : "flex-1"}
             // Pressed in and lit while recording; tap again to drop it here. Waits while the last one is sorting.
             pressed={dropRecording}
-            disabled={drop.phase === "sorting" || messageOn}
+            // Waits while Night mode is listening to you, too: one voice at a time.
+            disabled={drop.phase === "sorting" || messageOn || nightTalking}
             onClick={toggleDrop}
             aria-label={dropRecording ? "Drop it here" : "Leave a drop"}
           >
@@ -612,6 +655,8 @@ export function RadioScreen({
         className="pointer-events-none absolute inset-0 mix-blend-soft-light"
         style={{ background: "radial-gradient(circle at 50% 22%, rgb(255 255 255 / 0.22), transparent 60%)" }}
       />
+
+      <Nightfall phase={nightDrive.phase} map={SCREEN} />
 
       {flights.map((f) => (
         <CollectFlight key={f.id} kind={f.kind} from={f.from} to={LCD_TALLY} onLanded={() => landed(f)} />

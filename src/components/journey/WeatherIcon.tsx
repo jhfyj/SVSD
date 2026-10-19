@@ -425,9 +425,13 @@ export function WeatherIcon({ pixel = 1.5, className }: { pixel?: number; classN
     const load = () => currentWeather().then((w) => live && setWeather(w));
     load();
     const id = setInterval(load, 15 * 60 * 1000);
+    // Sun or moon follows the theme, so it turns over the moment night falls (Night mode's sunset).
+    const theme = new MutationObserver(load);
+    theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => {
       live = false;
       clearInterval(id);
+      theme.disconnect();
     };
   }, []);
   if (!weather) return <span aria-hidden className={className} style={{ width: 16 * pixel, height: 16 * pixel }} />;

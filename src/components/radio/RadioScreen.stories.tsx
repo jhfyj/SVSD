@@ -119,3 +119,31 @@ export const LoadIn: Story = {
     </RadioIntro>
   ),
 };
+
+/** Night mode's sunset switches the page to the night theme, the way the app pins it. */
+const nightfall = () => (document.documentElement.dataset.theme = "dark");
+
+/**
+ * Night mode (Flow 6), from the top. Starts by day: the sun sinks across the map, the light goes
+ * amber, the radio flickers back on in amber with NIGHT MODE ON. Then it checks in, listens to a
+ * slow answer and sends you to the rest area. Nothing to tap. Reload the story to replay.
+ */
+export const NightFalls: Story = {
+  name: "Night mode · Night falls",
+  globals: { theme: "light" },
+  args: { night: "fall", onNightfall: nightfall, messages: [] },
+};
+
+/** "Still with me? Tell me one thing you can see." The radio asks out loud, then listens. */
+export const NightCheckIn: Story = {
+  name: "Night mode · Check-in",
+  globals: { theme: "dark" },
+  args: { night: "checkin", messages: [] },
+};
+
+/** Answers slowing down: REST AREA 9 MI takes over the map, stories pause, one key routes you there. */
+export const NightRestArea: Story = {
+  name: "Night mode · Rest area",
+  globals: { theme: "dark" },
+  args: { night: "rest", messages: [] },
+};
