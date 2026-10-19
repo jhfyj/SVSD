@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { AboutPanel } from "@/components/AboutPanel";
 import { DialKit } from "@/components/dialkit/DialKit";
 import { DeviceFrame } from "@/components/DeviceFrame";
 import { SoundProvider } from "@/components/sound";
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SVSD",
-  description: "SVSD hackathon project",
+  title: "Caravan",
+  description: "Stories told by everyone on the road tonight. A storytelling app for the road, by Jennifer, Emily and Angelina.",
 };
 
 // Filmed on a phone: no pinch-zoom (a two-finger hold opens the flow picker, it shouldn't zoom the
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col">
+        <AboutPanel />
         <DeviceFrame>{children}</DeviceFrame>
         <ThemeClock />
         <SoundProvider />

@@ -495,7 +495,7 @@ export function DialKit() {
     return (
       <>
         {picker}
-        <div className="fixed left-4 top-4 z-50 hidden lg:block">
+        <div className="fixed right-4 top-4 z-50 hidden lg:block">
           <Chip onClick={toggle}>Dial kit</Chip>
         </div>
       </>
@@ -507,7 +507,7 @@ export function DialKit() {
     {picker}
     <aside
       aria-label="Dial kit"
-      className="fixed left-4 top-4 z-50 hidden max-h-[calc(100dvh-2rem)] w-[260px] overflow-y-auto border border-border bg-surface p-3 font-mono text-foreground lg:block"
+      className="fixed right-4 top-4 z-50 hidden max-h-[calc(100dvh-2rem)] w-[260px] overflow-y-auto border border-border bg-surface p-3 font-mono text-foreground lg:block"
     >
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-bold text-label">DIAL KIT</span>

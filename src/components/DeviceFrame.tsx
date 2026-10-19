@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useState, type ReactNode } from "react";
+import { ABOUT_WIDTH } from "./AboutPanel";
 
 const FRAME_WIDTH = 430;
 const FRAME_HEIGHT = 880;
@@ -23,7 +24,9 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
       const wide = width >= WIDE;
-      setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (width - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
+      // On a wide screen the About column takes the left edge; the phone fits in what is left.
+      const room = wide ? width - ABOUT_WIDTH : width;
+      setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (room - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
     };
     fit();
     window.addEventListener("resize", fit);
