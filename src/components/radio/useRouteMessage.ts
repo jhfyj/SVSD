@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { REPLY_MAX_MS, RESPOND_WINDOW_MS, type RouteMessage } from "@/lib/radio/messages";
 import { playVoice, recordReply, tuneIn, type Level, type Recording, type Voice } from "@/lib/radio/voice";
-import { REPLY_PROMPT, REPLY_PROMPT_GRACE_MS, START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
+import { QUESTION_UNLOCK, REPLY_PROMPT, REPLY_PROMPT_GRACE_MS, START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
 import { cue } from "@/lib/sound";
 
 /**
@@ -91,17 +91,36 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     setRespond((r) => (r ? false : respondWindow !== "closed"));
   }, [respondWindow, phase]);
 
-  // Tuning in: static and a whistle, then their voice.
+  // Tuning in: the station locks (a silent pause), then their voice. A question unlocks out loud
+  // instead, in the radio's recorded voice: "You just unlocked a question... Would you like to respond?"
+  const kind = message?.kind;
   useEffect(() => {
     if (phase !== "tuning") return;
     let live = true;
+    const next = () => live && setPhase("playing");
+    if (kind === "question") {
+      const v = playVoice(QUESTION_UNLOCK, true);
+      voice.current = v;
+      level.current = v.level;
+      // If the browser holds it back, don't wait on it: the question still comes through.
+      const held = setTimeout(next, START_TIMEOUT_MS);
+      void v.started.then(() => clearTimeout(held));
+      v.done.then(next, next);
+      return () => {
+        live = false;
+        clearTimeout(held);
+        v.stop();
+        voice.current = null;
+        level.current = null;
+      };
+    }
     level.current = staticLevel;
-    void tuneIn().then(() => live && setPhase("playing"));
+    void tuneIn().then(next);
     return () => {
       live = false;
       level.current = null;
     };
-  }, [phase]);
+  }, [phase, kind]);
 
   // Their voice. The 5 seconds to respond start when it does.
   useEffect(() => {
@@ -138,6 +157,12 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     if (phase !== "asking") return;
     let live = true;
     let grace: ReturnType<typeof setTimeout> | undefined;
+    // A question already asked when it unlocked, so it isn't asked again: just the LCD's "Reply?"
+    // and the same few quiet seconds to say yes.
+    if (kind === "question") {
+      grace = setTimeout(() => setPhase("idle"), REPLY_PROMPT_GRACE_MS);
+      return () => clearTimeout(grace);
+    }
     const v = playVoice(REPLY_PROMPT, true);
     voice.current = v;
     level.current = v.level;
@@ -159,7 +184,7 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
       voice.current = null;
       level.current = null;
     };
-  }, [phase]);
+  }, [phase, kind]);
 
   // Your reply: a beep, then the mic is live for up to 60 seconds; it sends itself at the end.
   useEffect(() => {

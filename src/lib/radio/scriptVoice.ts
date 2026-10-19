@@ -92,6 +92,15 @@ export function sayIntro(
  */
 export const REPLY_PROMPT = "/voice/reply-prompt.mp3";
 
+/**
+ * A question unlocks (picked up on the road): "You just unlocked a question from NightOwl. Would
+ * you like to respond?" It plays where the station tunes in, before their voice, so it asks first.
+ */
+export const QUESTION_UNLOCK = "/voice/unlock-question.mp3";
+
+/** The journey's over (you've arrived): "Every journey tells a story. Thank you for sharing yours with us." */
+export const THANK_YOU = "/voice/thank-you.mp3";
+
 /** A recording that hasn't started by now (blocked, or a background tab) is skipped, so the radio never hangs. */
 export const START_TIMEOUT_MS = 2500;
 

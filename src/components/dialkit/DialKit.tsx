@@ -280,7 +280,7 @@ export function DialKit() {
           href: "/radio?message=question",
           radio: true,
           todo: "change",
-          note: "Built: plays a sample question (@urmom2424, favorite song). Script: “A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
+          note: "Built: opens with your recorded unlock line (public/voice/unlock-question.mp3: “You just unlocked a question from NightOwl. Would you like to respond?”), then plays a sample question (@urmom2424, favorite song). Script: “A question from @NightOwl, left right here: what got you through today?” Figma 123:441.",
         },
         {
           label: "Answering",
