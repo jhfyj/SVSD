@@ -21,7 +21,7 @@ const HINT: Partial<Record<PermissionState, Record<PermissionKind, string>>> = {
   },
   unsupported: {
     microphone: "This browser can't use the microphone. Try Safari or Chrome.",
-    notifications: "On iPhone, add SVSD to your Home Screen first (Share â€º Add to Home Screen), then turn notifications on.",
+    notifications: "On iPhone, add SVSD to your Home Screen first (Share › Add to Home Screen), then turn notifications on.",
     location: "This browser can't share your location.",
   },
 };

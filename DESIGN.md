@@ -25,7 +25,7 @@ SVSD is a pocket radio for a journey. Half of it is a **flat screen** like paper
 | 2 | **Two themes, one object** | Night is the default; day turns the paper and casing cream. At night the radio is amber (Night mode, [§3.8](#38-night-mode-amber)). Hardware keeps its physical parts in all of them: the rocker, the map bezel, the red end-call key and the LEDs don't change. |
 | 3 | **Square world** | Corner radius is 0. Only things that are physically round are round: dots, LEDs, bulbs. |
 | 4 | **One color, one meaning** | Lime is a story, magenta is a question, green means on, red is danger. A color never shows up just for decoration. |
-| 5 | **Readouts are digital, words are mono, pictures are pixels** | The segment font (DSEG14) is only for numbers a device would show. Every word is Geist Mono. Every picture (weather, characters, sign-in icons) is drawn on the same 16×16 one-ink pixel grid. |
+| 5 | **Readouts are digital, words are mono, pictures are pixels** | The segment font (DSEG14) is only for numbers a device would show. Every word is Geist Mono. Every picture (weather, characters) is drawn on the same 16×16 one-ink pixel grid; pixel icons come from Nucleo Pixel. |
 | 6 | **Stop-motion, not tweening** | Digital things step: LCD content, pixel sprites, the radio switching on and off. Only light and real travel get smooth curves. See [§9](#9-motion). |
 | 7 | **Everything on the radio makes a sound; little else does** | The radio clicks, latches and ratchets. Outside it, sound is kept for major moments. See [§9.6](#96-sound). |
 
@@ -195,7 +195,8 @@ At night the radio is **amber on near-black**. A bright screen lights up a dark 
 |---|---|---|---|
 | **Geist Mono** | `font-mono` (also `font-sans`) | Every word in the product | Weights 400 and 700 |
 | **DSEG14 Classic Mini** | `font-display` | Device readouts only: clock, frequency, counts, countdowns | Stands in for Digital-7, which is personal-use only. If a Digital-7 license is bought it slots in first; nothing else changes. |
-| **Pixel grid** | — | Pictures: weather, characters, sign-in and Allow access icons | 16×16, one ink, square pixels, one-pixel corner steps ([§10](#10-iconography)) |
+| **Pixel grid** | — | Pictures: weather, characters | 16×16, one ink, square pixels, one-pixel corner steps ([§10](#10-iconography)) |
+| **Nucleo Pixel** | — | Pixel icons: sign-in and Allow access | `nucleo-pixel-essential`, 24-unit grid, 2-unit strokes ([§10](#10-iconography)) |
 | ~~Geist Sans~~ | — | Not used | No longer loaded. |
 
 ### 4.2 Screen ramp
@@ -315,7 +316,7 @@ Each texture has one job and one home. One texture per surface; never stack them
 | **Panel grain** | `--panel-noise` (finer noise, 9% at night, 7% warm by day) | Radio casing and panels | Screens, the LCD |
 | **Dither** | Ordered Bayer 16×16, pixel 3, 5 levels, contrast 1.12, brightness 82%, image at 80%. Pre-baked (`public/radio/map-dithered.png`). | The placeholder map | Screens, text |
 | **Dot matrix** | Round dots on a grid: the earth (`land-dot`), the walking trail, the activity calendar | Data drawings on Screens | Backgrounds, decoration |
-| **Pixel art** | 16×16 one-ink grid, square pixels | Weather icon, characters, sign-in / Allow access icons, the LCD | Mixed with vector icons in one spot |
+| **Pixel art** | 16×16 one-ink grid, square pixels | Weather icon, characters, Nucleo pixel icons, the LCD | Mixed with vector icons in one spot |
 | **Hatching** | −45° lines, 1px every 7px, `--grid-ink` at 12% | Blueprint (the radio load-in) only | Anything at rest |
 | **Map tint / wash** | `--map-lcd-tint`; `mix-blend-color` washes | The map window | Screens |
 
@@ -548,7 +549,9 @@ Two families, never mixed in one spot:
 | `PartlyCloudyNight` (radio top bar) | The pixel weather icon, same as the Screen top bar |
 | Already Phosphor | `PhoneDisconnect`, `SpeakerHigh`, `FlagCheckered`, `Crosshair` |
 
-**2. Pictures: the pixel grid.** Weather icons, characters and the sign-in / Allow access icons are 16×16, one ink, square pixels with one-pixel corner steps, two frames that swap. Draw new pictures on this grid; don't use a Phosphor glyph where a picture belongs, and don't draw a pixel picture where a glyph belongs.
+**2. Pictures: the pixel grid.** Weather icons and characters are 16×16, one ink, square pixels with one-pixel corner steps, two frames that swap. Draw new pictures on this grid; don't use a Phosphor glyph where a picture belongs, and don't draw a pixel picture where a glyph belongs.
+
+**3. Pixel icons: Nucleo Pixel.** A pixel-style icon (an object or symbol, not a scene or a character) comes from [Nucleo Pixel](https://nucleoapp.com/app/?library=pixel) instead of being drawn by hand. Today that's the free `nucleo-pixel-essential` set (commercial use allowed, [license](https://nucleoapp.com/license)); the full `nucleo-pixel` library needs a paid license key. They go through `PixelIcon` / `LcdIcon` (`components/profile/LcdIcon.tsx`): one icon pixel is 2 of its 24 units, so render at `12 × pixel` with a whole-number `pixel` to keep edges crisp. Used for: sign-in phone (`Phone`), code (`MsgWriting`, its dots hop while typing), wrong code (`TriangleWarning`), Allow access (`Microphone`, `Bell`, `Location2`). Weather stays on the pixel grid until the set covers every sky (Essential only has `Cloud` and `MoonCloudFog`), so the top bar doesn't mix two styles.
 
 ---
 
@@ -585,7 +588,7 @@ Two families, never mixed in one spot:
 - [ ] One hero, one primary action, one signal color per screen
 - [ ] Text uses the three tiers; nothing you need to read is under `/70`
 - [ ] Every color means what [§3.3](#33-signal-colors-one-meaning-each) says
-- [ ] Glyphs are Phosphor regular 16 / 20 / 24; pictures are on the pixel grid
+- [ ] Glyphs are Phosphor regular 16 / 20 / 24; pictures are on the pixel grid; pixel icons are Nucleo Pixel
 - [ ] Tappable targets are at least 44×44; controls are 48
 - [ ] Hover, pressed, focus-visible and disabled states exist
 - [ ] Motion uses a curve and duration from [§9](#9-motion) (steps for anything digital), animates transform/opacity only, and has a reduced-motion path

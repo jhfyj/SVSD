@@ -93,15 +93,15 @@ export const Characters: StoryObj = {
   ),
 };
 
-/** Options for the sign-in phone icon; the telephone is the one on screen. */
-export const PhoneIconOptions: StoryObj = {
-  name: "Phone icon options",
+/** Every pixel icon (Nucleo Pixel) on the LCD panel. */
+export const PixelIcons: StoryObj = {
+  name: "Pixel icons",
   decorators: [(Story) => <div className="bg-background p-6 text-foreground"><Story /></div>],
   render: () => (
     <div className="flex flex-col gap-6">
-      {(["telephone", "handset", "mobile"] as const).map((icon) => (
+      {(["telephone", "message", "warning", "microphone", "notifications", "location"] as const).map((icon) => (
         <figure key={icon} className="flex flex-col items-center gap-2">
-          <LcdIcon icon={icon} label={icon} />
+          <LcdIcon icon={icon} label={icon} typing={icon === "message"} />
           <figcaption className="text-sm text-label">{icon}</figcaption>
         </figure>
       ))}
