@@ -493,7 +493,7 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
             </Pin>
           ))}
           {sparkles.map((pickup) => (
-            <Pin key={`sparkle-${pickup.id}`} lib={lib} map={map} at={pickup.at} z={7}>
+            <Pin key={`sparkle-${pickup.id}`} lib={lib} map={map} at={pickup.at} z={12}>
               <DropSparkle kind={pickup.kind} onDone={() => setSparkles((s) => s.filter((x) => x.id !== pickup.id))} />
             </Pin>
           ))}

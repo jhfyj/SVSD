@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .device-stage {
   display: flex;
   min-height: 100dvh;
@@ -40,17 +55,110 @@
   position: absolute;
   z-index: 1;
   overflow: hidden;
-  border-radius: 32px / 34px;
+  border-radius: 52px / 54px;
   background: var(--background);
+  background-image: var(--grain);
+  background-repeat: repeat;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.device-screen,
+.device-screen * {
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.device-screen::-webkit-scrollbar,
+.device-screen *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .device-screen-content {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   overflow: auto;
-  overscroll-behavior: contain;
+  padding-top: 64px;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.device-screen-content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Match the textured screen fill on flat in-app panels as well as the page canvas. */
+.device-screen-content [class~="bg-background"]:not(.grain) {
+  background-image: var(--grain);
+  background-repeat: repeat;
+}
+
+.device-status-bar {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  height: 64px;
+  color: var(--foreground);
+  pointer-events: none;
+}
+
+.device-status-notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 106px;
+  height: 28px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #050506;
+}
+
+.device-status-lens {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 9px;
+  height: 9px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #766b97 0 12%, #393149 38%, #17141e 72%);
+  box-shadow: 0 0 0 2px #111;
+}
+
+.device-status-items {
+  position: absolute;
+  top: 14px;
+  right: 52px;
+  left: 64px;
+  display: flex;
+  height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 2px;
+}
+
+.device-status-time {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.device-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /*
@@ -64,7 +172,7 @@
   color-scheme: dark;
   /* Behind the 393px phone column on wide screens. */
   --backdrop: #000000;
-  --background: #1e1e1e;
+  --background: #2a2a2a;
   --foreground: #ffffff;
   --muted: #696969;
   --label: #bababa;
@@ -438,6 +546,18 @@ textarea,
   filter: var(--map-lcd-tint);
 }
 
+/* The overview uses the real navigation canvas against the same green LCD as the radio display. */
+.overview-lcd-map canvas,
+.overview-lcd-map img {
+  filter: grayscale(1) invert(1) contrast(1.15);
+  mix-blend-mode: multiply;
+}
+
+/* The overview's map shows the pickups without the navigation instruction banner. */
+.overview-story-map > [role="status"] {
+  display: none !important;
+}
+
 /* The map data's credit (OpenStreetMap), folded into a small (i), in the radio's type and greys. */
 .nav-map .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact {
   min-height: 20px;
@@ -724,6 +844,36 @@ Amber is a switch, off by default for now: it only applies with data-amber="on" 
 }
 .drop-pop {
   animation: drop-pop 240ms var(--motion-ease-out);
+}
+.pickup-pop-ring {
+  opacity: 0;
+}
+.pickup-pop-core {
+  opacity: 0;
+}
+@keyframes pickup-pop-ring {
+  0% { opacity: 0; transform: scale(0.35); }
+  28% { opacity: 1; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+@keyframes pickup-pop-core {
+  0% { opacity: 0; transform: scale(0.3); }
+  25% { opacity: 1; transform: scale(1.25); }
+  65% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.35); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pickup-pop-ring {
+    animation: pickup-pop-ring 520ms var(--motion-ease-out) both;
+  }
+  .pickup-pop-core {
+    animation: pickup-pop-core 520ms var(--motion-ease-out) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pickup-pop-core {
+    opacity: 1;
+  }
 }
 .drop-left-behind {
   animation: drop-fade 4s var(--motion-ease-out) forwards;

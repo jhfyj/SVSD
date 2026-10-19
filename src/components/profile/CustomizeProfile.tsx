@@ -6,7 +6,6 @@ import { CHARACTERS, DEFAULT_CHARACTER, getCharacter, type CharacterId } from "@
 import { cleanHandle, HANDLE_MAX, handleError, randomHandle } from "@/lib/profile/handle";
 import { cn } from "../ui/cn";
 import { CharacterSprite } from "./CharacterSprite";
-import { ScrambleText } from "@/components/ui/ScrambleText";
 
 export type CustomizeProfileProps = {
   /** The character picked so far; Freddie for a new account. */
@@ -16,6 +15,8 @@ export type CustomizeProfileProps = {
   onSave: (character: CharacterId, handle: string) => void;
   onBack?: () => void;
   saving?: boolean;
+  /** Compact arrangement for the same working profile controls inside an overview LCD. */
+  compact?: boolean;
 };
 
 /**
@@ -23,7 +24,7 @@ export type CustomizeProfileProps = {
  * pet lights up green and bobs in the grid and in the avatar up top; the others stay unlit pixels.
  * The handle starts as a random one (shuffle for another) and can be typed over.
  */
-export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, onSave, onBack, saving }: CustomizeProfileProps) {
+export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, onSave, onBack, saving, compact = false }: CustomizeProfileProps) {
   const [picked, setPicked] = useState<CharacterId>(initial);
   const [handle, setHandle] = useState(() => initialHandle ?? randomHandle());
   const error = handleError(handle);
@@ -36,8 +37,8 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
   };
 
   return (
-    <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
-      <header className="relative flex h-[26px] items-center justify-center mt-[59px]">
+    <div className={cn("grain flex w-full flex-col bg-background text-foreground", compact ? "h-full" : "min-h-dvh max-w-[393px]")}>
+      <header className={cn("relative flex h-[26px] items-center justify-center", compact ? "mt-2" : "mt-[59px]")}>
         {onBack && (
           <button
             type="button"
@@ -48,20 +49,20 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
             <ArrowLeft size={16} aria-hidden />
           </button>
         )}
-        <h1 className="text-xl"><ScrambleText>CUSTOMIZE PROFILE</ScrambleText></h1>
+        <h1 className="text-xl">CUSTOMIZE PROFILE</h1>
       </header>
 
-      <div className="mt-[29px] flex justify-center">
-        <div className="flex size-[106px] items-center justify-center overflow-hidden rounded-full bg-lcd-green text-lcd-green-ink shadow-[var(--lcd-inset)]">
-          <CharacterSprite key={picked} character={picked} pixel={4.4} className="opacity-80" />
+      <div className={cn("flex justify-center", compact ? "mt-2" : "mt-[29px]")}>
+        <div className={cn("flex items-center justify-center overflow-hidden rounded-full bg-lcd-green text-lcd-green-ink shadow-[var(--lcd-inset)]", compact ? "size-[80px]" : "size-[106px]")}>
+          <CharacterSprite key={picked} character={picked} pixel={compact ? 3.3 : 4.4} className="opacity-80" />
         </div>
       </div>
-      <p aria-live="polite" className="mt-3 text-center text-base text-foreground/70">
+      <p aria-live="polite" className={cn("text-center text-foreground/70", compact ? "mt-1 text-sm" : "mt-3 text-base")}>
         {getCharacter(picked).name}
       </p>
 
       {/* Your @handle: what other drivers see. Starts random; type over it or shuffle. */}
-      <div className="mx-auto mt-6 w-[315px]">
+      <div className={cn("mx-auto w-[315px] max-w-[calc(100%-24px)]", compact ? "mt-2" : "mt-6")}>
         <label htmlFor="handle" className="text-[11px] font-bold uppercase text-label/80">
           Username
         </label>
@@ -113,7 +114,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
             move(by);
           }
         }}
-        className="mx-auto mt-[22px] flex w-[315px] flex-wrap justify-center gap-x-[33px] gap-y-[20px]"
+        className={cn("mx-auto flex w-[315px] max-w-[calc(100%-24px)] flex-wrap justify-center", compact ? "mt-3 gap-x-2 gap-y-2" : "mt-[22px] gap-x-[33px] gap-y-[20px]")}
       >
         {CHARACTERS.map((c) => {
           const on = c.id === picked;
@@ -126,31 +127,32 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               onClick={() => setPicked(c.id)}
-              className="group flex w-[83px] flex-col items-center gap-[5px] focus-visible:outline-none"
+              className={cn("group flex flex-col items-center focus-visible:outline-none", compact ? "w-[70px] gap-1" : "w-[83px] gap-[5px]")}
             >
               <span
                 className={cn(
-                  "flex h-[75px] w-[79px] items-center justify-center transition-colors duration-150 ease-out group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-foreground",
+                  "flex items-center justify-center transition-colors duration-150 ease-out group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-foreground",
+                  compact ? "h-[56px] w-[64px]" : "h-[75px] w-[79px]",
                   on
                     ? "text-character-lit drop-shadow-[0_0_6px_var(--character-lit)]"
                     : "text-character group-hover:text-foreground/40",
                 )}
               >
-                <CharacterSprite character={c.id} pixel={4} playing={on} />
+                <CharacterSprite character={c.id} pixel={compact ? 3 : 4} playing={on} />
               </span>
-              <span className={cn("text-sm leading-[18px]", on ? "text-foreground" : "text-label")}>{c.name}</span>
+              <span className={cn(compact ? "text-xs leading-4" : "text-sm leading-[18px]", on ? "text-foreground" : "text-label")}>{c.name}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-auto flex justify-center pb-14 pt-8">
+      <div className={cn("mt-auto flex justify-center", compact ? "pb-2 pt-2" : "pb-14 pt-8")}>
         <button
           type="button"
           onClick={() => onSave(picked, handle)}
           data-cuelume-tap="success"
           disabled={saving || !!error}
-          className="inline-flex min-h-[45px] w-[332px] items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40"
+          className={cn("inline-flex items-center justify-center bg-foreground px-6 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-40", compact ? "min-h-10 w-[315px] max-w-[calc(100%-24px)]" : "min-h-[45px] w-[332px]")}
         >
           {saving ? "SAVING…" : "SAVE"}
         </button>

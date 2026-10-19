@@ -58,6 +58,10 @@ export function DropSparkle({ kind, onDone }: { kind: DropKind; onDone: () => vo
   }, [onDone]);
   return (
     <div aria-hidden className="relative size-16" style={{ "--drop": DROP_COLOR[kind] } as CSSProperties}>
+      <span className="pickup-pop-anchor absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2">
+        <span className="pickup-pop-ring absolute -inset-2 border-2 [border-color:var(--drop)]" />
+        <span className="pickup-pop-core absolute inset-1 border border-white bg-[var(--drop)]" />
+      </span>
       {STARS.map(([x, y, delay, big], i) => (
         <span
           key={i}
