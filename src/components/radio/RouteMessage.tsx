@@ -88,13 +88,23 @@ export function MessageGlow({
   mode,
   color,
   level,
+  rest = 0.3,
   className,
 }: {
   mode: GlowMode;
   color: MarkerColor;
   level: RefObject<Level | null>;
+  /**
+   * How far up it sits while nobody's talking (half-widths of the screen). It still reaches the
+   * same height at full voice. A call keeps this low so the quiet stretches don't cover the map.
+   */
+  rest?: number;
   className?: string;
 }) {
+  const restRef = useRef(rest);
+  useEffect(() => {
+    restRef.current = rest;
+  }, [rest]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const tint = useRef<HTMLDivElement>(null);
   const modeRef = useRef(mode);
@@ -161,7 +171,8 @@ export function MessageGlow({
       const dist = reply ? field.bottom : field.top;
       // Both reach about a third of the screen at their loudest, then rings carry on and fade
       // before the middle, so the road and you always stay clear.
-      const reach = 0.3 + 0.7 * env;
+      const floor = restRef.current;
+      const reach = floor + (1 - floor) * env;
       const life = 1500;
       const travel = 1.3;
       ripples = ripples.filter((r) => now - r.born < life);
@@ -189,7 +200,8 @@ export function MessageGlow({
         }
       }
       g.putImageData(img, 0, 0);
-      if (tint.current) tint.current.style.opacity = String(presence * (0.25 + 0.35 * env));
+      // The colour wash rests lower too when the glow rests low (same 0.25 at the usual rest).
+      if (tint.current) tint.current.style.opacity = String(presence * ((0.25 * floor) / 0.3 + 0.35 * env));
       frame = requestAnimationFrame(tick);
     };
 

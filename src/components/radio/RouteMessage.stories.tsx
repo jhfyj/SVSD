@@ -51,6 +51,15 @@ export const Glow: Story = {
   ),
 };
 
+/**
+ * Your mic on a call (Flow 3): it rises from the bottom like any reply, but between your turns it
+ * rests right down at the edge so it doesn't cover the map. It still climbs as high when you talk.
+ */
+export const CallMic: Story = {
+  ...Glow,
+  args: { mode: "reply", color: "lime", rest: 0.07 },
+};
+
 const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => ({
   message: SAMPLE_MESSAGES[0],
   phase: "playing",
