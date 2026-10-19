@@ -103,58 +103,58 @@ const ICONS = {
   /** Solid rounded capsule in a U cradle, on a stem and base. */
   microphone: [
     "................",
-    "......####......",
-    ".....######.....",
-    ".....######.....",
-    ".....######.....",
-    ".....######.....",
-    "..#..######..#..",
-    "..#..######..#..",
-    "..#...####...#..",
-    "...#........#...",
-    "....##....##....",
-    "......####......",
-    ".......##.......",
-    ".......##.......",
-    ".....######.....",
+    "......###.......",
+    ".....#####......",
+    ".....#####......",
+    ".....#####......",
+    ".....#####......",
+    "..#..#####..#...",
+    "..#..#####..#...",
+    "..#...###...#...",
+    "...#.......#....",
+    "....##...##.....",
+    "......###.......",
+    ".......#........",
+    ".......#........",
+    ".....#####......",
     "................",
   ],
   /** Bell with a round dome stepping out to a flared lip, and a pointed clapper. */
   notifications: [
     "................",
-    ".......##.......",
-    "......####......",
-    "....##....##....",
-    "...#........#...",
-    "...#........#...",
-    "...#........#...",
-    "...#........#...",
-    "...#........#...",
-    "..#..........#..",
-    ".#............#.",
-    ".##############.",
+    ".......#........",
+    "......###.......",
+    "....##...##.....",
+    "...#.......#....",
+    "...#.......#....",
+    "...#.......#....",
+    "...#.......#....",
+    "...#.......#....",
+    "..#.........#...",
+    ".#...........#..",
+    ".#############..",
     "................",
-    "......####......",
-    ".......##.......",
+    "......###.......",
+    ".......#........",
     "................",
   ],
   /** Map pin with a round hole, tapering to a point over a short ground line. */
   location: [
     "................",
-    ".....######.....",
-    "....#......#....",
-    "...#...##...#...",
-    "...#..#..#..#...",
-    "...#..#..#..#...",
-    "...#...##...#...",
-    "...#........#...",
-    "....#......#....",
-    "....#......#....",
-    ".....#....#.....",
-    "......#..#......",
-    ".......##.......",
+    ".....#####......",
+    "....#.....#.....",
+    "...#..###..#....",
+    "...#..#.#..#....",
+    "...#..###..#....",
+    "...#.......#....",
+    "....#.....#.....",
+    "....#.....#.....",
+    ".....#...#......",
+    "......#.#.......",
+    ".......#........",
     "................",
-    "....########....",
+    "....#######.....",
+    "................",
     "................",
   ],
 } as const;
@@ -190,8 +190,11 @@ function runs(rows: readonly string[], mark: string) {
   });
 }
 
-/** Whole-pixel shift that puts the drawing's inked area in the middle of the 16 × 16 box. */
-function centering(rows: readonly string[]) {
+/**
+ * Shift that puts the drawing's inked area in the middle of the 16 × 16 box. Odd sizes need half
+ * an icon pixel, so the shift snaps to whole screen pixels (exact when `pixel` is even).
+ */
+function centering(rows: readonly string[], pixel: number) {
   let minX = 16, maxX = -1, minY = 16, maxY = -1;
   rows.forEach((row, y) =>
     [...row].forEach((c, x) => {
@@ -202,13 +205,14 @@ function centering(rows: readonly string[]) {
       maxY = Math.max(maxY, y);
     }),
   );
-  return { x: Math.round((minX + maxX + 1 - 16) / 2), y: Math.round((minY + maxY + 1 - 16) / 2) };
+  const snap = (units: number) => Math.round(units * pixel) / pixel;
+  return { x: snap((minX + maxX + 1 - 16) / 2), y: snap((minY + maxY + 1 - 16) / 2) };
 }
 
 /** One pixel icon in the current text color, centered on its inked area. */
 export function PixelIcon({ icon, pixel = 4, floating = true, delay = 0, typing = false, label, className }: PixelIconProps) {
   const rows = ICONS[icon];
-  const shift = centering(rows);
+  const shift = centering(rows, pixel);
   return (
     <svg
       role={label ? "img" : undefined}

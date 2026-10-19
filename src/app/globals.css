@@ -296,18 +296,18 @@ body {
 }
 
 /* Pixel icons on the sign-in and Allow access screens float up and down, one icon pixel
-   (--pixel, set by PixelIcon) at a time. */
+   (--pixel, set by PixelIcon) at a time, an even step either side of center so they sit centered. */
 @keyframes pixel-float {
   0%,
+  50%,
   100% {
     transform: translateY(0);
   }
-  25%,
-  75% {
+  25% {
     transform: translateY(calc(var(--pixel, 2px) * -1));
   }
-  50% {
-    transform: translateY(calc(var(--pixel, 2px) * -2));
+  75% {
+    transform: translateY(var(--pixel, 2px));
   }
 }
 @media (prefers-reduced-motion: no-preference) {
