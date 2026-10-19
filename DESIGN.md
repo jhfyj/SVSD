@@ -513,6 +513,7 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 | `HardwareButton`, `PowerButton` | Press 75ms `ease-out` | ✅ |
 | `RockerSwitch` | `quick` (150ms) `ease-mechanical` tilt + mech sounds | ✅ |
 | `usePressTilt` (`TabBar`) | Tilt in at `press` `ease-out`, back at `quick` `ease-mechanical` | ✅ |
+| `TuningIn` (flow 1 loading) | LCD opens in `steps(4)`, dial steps, dots one per frame (35ms), pickups pop in `steps(3)`, caravan hops in `steps(16)`; tagline and exit fade `ease-out` | ✅ |
 | `RadioIntro` | Blueprint edges 140ms linear, parts flash `step-end` 360ms, casing flickers out | ✅ |
 | `RadioLcd`, sprites, pixel icons | Stepped loops | ✅ |
 | `.radio-power-off` | 480ms `steps(8)` | ✅ |
@@ -583,7 +584,7 @@ Two families, never mixed in one spot:
 
 **Figma map** (file `aDzc2bXm7lrwe8ewApmlxe`, section `123:130`): Getting set up `123:533`, `125:807`, `123:131`–`123:207` · Splash `123:728` · Sync calling `123:287` connecting, `123:246` connected, `123:319` off · Receive `123:352` message, `123:441` question · Respond `123:471`, `123:502`, `123:727` · Profile `123:647` sign in, `123:541` profile. Day theme reference: Connecting `154:1263`.
 
-**Flows in code:** `/` start: destination (address or coordinates) + recent journeys as shapes (`/journey` and `/intents` redirect here) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived; `?night=fall|checkin|rest` plays Night mode) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
+**Flows in code:** flow 1 opens on `/welcome` (Tuning in: the radio finds the station, a dotted road draws itself, a story, a question and a tip pop up along it, a caravan of characters hops in, CARAVAN scrambles in; about 4 s, tap to skip) → `/overview`. `/` start: destination (address or coordinates) + recent journeys as shapes (`/journey` and `/intents` redirect here) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived; `?night=fall|checkin|rest` plays Night mode) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
 
 ---
 

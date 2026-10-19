@@ -183,12 +183,18 @@ export function DialKit() {
       n: "1",
       title: "Intro to Caravan",
       time: "0:50",
-      // Jen's order: the three overview cards, sign in with your number, pick an avatar, then home.
+      // Jen's order: the radio tunes in (loading), the three overview cards, sign in with your
+      // number, pick an avatar, then home.
       start: () => {
         signOut();
-        router.push("/overview?step=1");
+        router.push("/welcome");
       },
       steps: [
+        {
+          label: "Tuning in · loading",
+          href: "/welcome",
+          note: "The radio tunes in to Caravan, then hands over to Overview 1. Tap to skip.",
+        },
         {
           label: "Overview 1 · Stories",
           href: "/overview?step=1",
