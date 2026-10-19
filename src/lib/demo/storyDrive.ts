@@ -1,6 +1,6 @@
 import type { DropKind } from "@/components/drops/glyphs";
 import type { LatLng, Route } from "@/lib/journey/geo";
-import { headingAt, measure, offset, pointAt } from "@/lib/nav/path";
+import { headingAt, measure, offset, pointAt, slice } from "@/lib/nav/path";
 import { I10_EAST } from "./i10";
 
 /** Something someone else left at a spot on the road, waiting for you to collect it (what you leave is a drop). */
@@ -46,4 +46,28 @@ export const QUESTION_DRIVE: DemoDrive = {
   ...STORY_DRIVE,
   name: "NightOwl's question route",
   pickups: [{ id: "nightowl-road-question", kind: "question", at: offset(pointAt(path, 88), (headingAt(path, 88) ?? heading) + 90, STORY_OFF) }],
+};
+
+/** Flow 5 · Your drive becomes a story: how far out the drive picks up, and the pause before it sets off. */
+const ARRIVE_LAST_M = 330;
+const ARRIVE_DELAY_MS = 1500;
+const arrivePoints = slice(path, Math.max(0, path.length - ARRIVE_LAST_M), path.length);
+const arrivePath = measure(arrivePoints);
+
+/**
+ * Flow 5 opens on the last stretch of the drive: about fifteen seconds of road, then you pull up
+ * at the destination pin. Reaching it is the arrival (the map tells the radio), so the radio
+ * switches on and the recorded "Thank you so much for riding with us" plays only once you're there.
+ */
+export const ARRIVE_DRIVE: DemoDrive = {
+  name: "Downtown LA",
+  speed: SPEED,
+  startDelayMs: ARRIVE_DELAY_MS,
+  route: {
+    points: arrivePoints,
+    distance: arrivePath.length,
+    duration: arrivePath.length / SPEED,
+    steps: [{ maneuver: "STRAIGHT", instruction: "Continue on I-10 E toward Los Angeles", distance: arrivePath.length }],
+  },
+  pickups: [],
 };

@@ -1,17 +1,19 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { INTRO_MS, RadioIntro, RadioScreen } from "@/components/radio";
 import type { CallState } from "@/components/radio/RadioLcd";
 import { useSession } from "@/lib/auth/session";
 import { useJourney } from "@/lib/journey/session";
 import { DEMO_HANG_UP_RULE } from "@/lib/radio/hangups";
 import { SAMPLE_MESSAGES } from "@/lib/radio/messages";
-import { COMPANY_DRIVE, QUESTION_DRIVE, STORY_DRIVE } from "@/lib/demo/storyDrive";
+import { ARRIVE_DRIVE, COMPANY_DRIVE, QUESTION_DRIVE, STORY_DRIVE } from "@/lib/demo/storyDrive";
 import { useCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { NIGHT_CLOCK, NIGHT_STARTS, type NightStart } from "@/lib/radio/nightDrive";
 import { setThemeChoice } from "@/lib/theme";
+import { onArrival } from "@/lib/trip/arrival";
 
 const CALL_STATES: CallState[] = ["off", "pick", "connecting", "connected", "lost"];
 
@@ -35,6 +37,8 @@ const handle = (text: string | null) => (text ? (text.startsWith("@") ? text : `
  * `?night=fall|checkin|rest` plays Night mode (Flow 6) from sunset, the check-in or the rest area
  * (no load-in, nothing else on the road); a new `?t=` starts it over. Sunset ends by pinning the
  * night theme, as the dial kit's theme switch would.
+ * `?demo=arrive` (Flow 5) drives the last stretch into the destination; arriving there switches
+ * the radio on to thank you. A new `?t=` starts it over.
  * Plain `/radio` or `/radio?sim` (a new journey, the dial kit's load-in, Tracking the road) opens on
  * Start journey; the others above open mid-drive, already started.
  */
@@ -49,6 +53,8 @@ export function Radio() {
   const companyDemo = params.get("demo") === "company";
   const questionDemo = params.get("demo") === "question";
   const storyDemo = params.get("demo") === "story";
+  // Flow 5: the last stretch of the drive, arriving when the map pulls up at the destination.
+  const arriveDemo = params.get("demo") === "arrive";
   const message = SAMPLE_MESSAGES.find((m) => m.kind === kind);
   // ?messages=off: nothing on the road comes in (the dial kit's Planting your answer, where you leave your own).
   const quiet = params.get("messages") === "off";
@@ -68,13 +74,23 @@ export function Radio() {
       ? QUESTION_DRIVE
       : storyDemo
       ? { ...STORY_DRIVE, startDelayMs: (params.has("load") ? INTRO_MS : 0) + 3000 }
+      : arriveDemo
+      ? ARRIVE_DRIVE
       : undefined;
   const nightParam = params.get("night") as NightStart | null;
   const night = nightParam && NIGHT_STARTS.includes(nightParam) ? nightParam : undefined;
   const meCharacter = useCharacter(session?.phone) ?? DEFAULT_CHARACTER;
+  // Flow 5 arrives only when the map pulls up at the destination (or the dial kit's Arrive now),
+  // never off a trip timer saved earlier, so the thank-you can't play before you're there.
+  const arriveRun = arriveDemo ? params.get("t") ?? "" : null;
+  const [arrivedRun, setArrivedRun] = useState<string | null>(null);
+  useEffect(() => {
+    if (arriveRun === null) return;
+    return onArrival((now) => setArrivedRun(now ? arriveRun : null));
+  }, [arriveRun]);
   // ?demo=story is Flow 2, a new journey: it waits on Start journey like any new journey. The other
   // demos (company, question) are mid-drive moments.
-  const midDrive = ["call", "message", "messages", "timeout", "arrived", "night"].some((k) => params.has(k)) || ((companyDemo || questionDemo) && !storyDemo);
+  const midDrive = ["call", "message", "messages", "timeout", "arrived", "night"].some((k) => params.has(k)) || ((companyDemo || questionDemo || arriveDemo) && !storyDemo);
   return (
     <RadioIntro key={params.get("load") ?? "radio"} skip={!!night || (!!demo && !params.has("load"))}>
       <RadioScreen
@@ -99,6 +115,7 @@ export function Radio() {
         peer={peer}
         peerCharacter={companyDemo ? "rabbit" : undefined}
         sharedMiles={miles}
+        arrived={arriveRun === null ? undefined : arrivedRun === arriveRun}
         // A new journey opens on Start journey (plain ?sim too: press it and the demo drive sets off).
         // Every other dial kit moment (a call state, a message, the demo, Night mode) is mid-drive.
         started={midDrive}

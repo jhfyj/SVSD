@@ -78,6 +78,8 @@ const storyDrive = () => {
 };
 
 /** Night mode from one of its moments, from the start each time, driving the demo route. */
+/** Flow 5: the last stretch into the destination (a new t= starts it over). */
+const arriveDrive = () => `/radio?demo=arrive&t=${Date.now()}`;
 const nightDrive = (start: "fall" | "checkin" | "rest") => `/radio?night=${start}&sim&t=${Date.now()}`;
 
 /** The stand-in for a screen that isn't built yet. */
@@ -314,6 +316,12 @@ export function DialKit() {
       title: "Your drive becomes a story",
       time: "3:20",
       steps: [
+        {
+          label: "Arriving",
+          go: () => openRadio(arriveDrive()),
+          radio: true,
+          note: "The last stretch of the drive: the map pulls up at the destination pin, then the radio switches on and says Thank you so much for riding with us.",
+        },
         { label: "Arrive now", go: arrive },
         {
           label: "Trip recap",
