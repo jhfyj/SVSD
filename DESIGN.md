@@ -344,6 +344,7 @@ Pressables **sink, they don't shrink.** A press is a key traveling into the body
 | **Top bar** | `h-14`, `pl-4 pr-1.5`. Pixel weather icon (two-frame sprite) + `clock`. Nothing on the right; Profile is in the tab bar. |
 | **Screen title** | `title` uppercase in `ScrambleText`: letters settle left to right from random glyphs once, on load. One per screen. |
 | **Text field** | `h-12 border` (input edge) `bg-transparent px-3`. Value `title` for the one hero field on a screen, `body` in forms. Placeholder `foreground/40`. Focus `border-foreground`. Error: `border-danger` + a `small text-danger` line. Typing sounds (`data-cuelume-type`). |
+| **Username field** (Customize profile) | Under the pet's name: `engraved` USERNAME label, then a 48px bordered field with a dim `@` prefix and a `ShuffleSimple` key on the right that rerolls it. A new account starts with a random road-trip handle (adjective + noun + 2 digits, e.g. SleepyComet42). Letters, numbers and `_`, 3-16 long; anything else is dropped as you type. Too short: `border-danger` + a `small text-danger` line, and Save is disabled. |
 | **Code boxes** (verification) | One bordered box per digit, blinking caret (`caret-blink`, `steps(1)`). Wrong code: a `text-danger` alert under the boxes, the error cue, and a warning on the pixel icon above. |
 | **Primary button** | `h-12 w-full bg-accent text-accent-foreground`, `body` uppercase, trailing 10px dot (`size-2.5 rounded-full bg-current`). One per screen. If it moves to the next screen it plays a mechanical tap. |
 | **Secondary button** | `h-12 border border-border text-foreground`, `body` uppercase. |
@@ -519,6 +520,7 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 | `Nightfall` (Night falls) | A **moment**: the pixel sun sinks 560px in `steps(112)` (one sprite pixel at a time) over 2400ms while the map's amber wash and the casing's dimming fade in `ease-out`; then the radio dips and flickers back on in amber, 480ms `step-end`, and the theme switches on the black frame. Reduced motion: straight to NIGHT MODE ON | ✅ |
 | `RestSign` | Rows switch on 100ms apart (`step-end`), scroll 4px at a time (`steps(102)` over 6s, alternate rows reversed), letters bob in a 4-frame wave (`steps(1)`, offset 70ms per letter). Still for reduced motion | ✅ |
 | `NightLcd` | NIGHT MODE ON flashes in (`lcd-flash`), the meter steps every 100ms, the z's reuse the LCD dots' 1.6s steps | ✅ |
+| `CollectedTally` | A pickup flashes in (`lcd-flash`). Once you've sent a reply to that story, it goes back out with `lcd-leave`: flicker, shrink to 60%, flicker, gone at 30% in 360ms `steps(1)`, so no book stays in the LCD's corner (skipping keeps it). Reduced motion: it just goes | ✅ |
 | `Button`, `MenuRow`, `SegmentedTabs`, options | `transition-colors` / `transition-opacity` `duration-150 ease-out` | ✅ |
 
 ---

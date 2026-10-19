@@ -10,6 +10,7 @@ import { DEMO_HANG_UP_RULE } from "@/lib/radio/hangups";
 import { SAMPLE_MESSAGES } from "@/lib/radio/messages";
 import { ARRIVE_DRIVE, COMPANY_DRIVE, QUESTION_DRIVE, STORY_DRIVE } from "@/lib/demo/storyDrive";
 import { useCharacter } from "@/lib/profile/avatar";
+import { fallbackHandle, useHandle } from "@/lib/profile/handle";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { NIGHT_CLOCK, NIGHT_STARTS, type NightStart } from "@/lib/radio/nightDrive";
 import { setThemeChoice } from "@/lib/theme";
@@ -61,7 +62,9 @@ export function Radio() {
   // You: as on your profile. Shared road: your whole drive until matching knows the other route.
   const session = useSession();
   const journey = useJourney();
-  const me = companyDemo || storyDemo ? "@NightOwl" : handle(params.get("me")) ?? (session ? `@traveller${session.phone.slice(-4)}` : undefined);
+  // Your own @handle from Customize profile (or @traveller + last 4 digits from before handles).
+  const myHandle = useHandle(session?.phone);
+  const me = companyDemo || storyDemo ? "@NightOwl" : handle(params.get("me")) ?? (session ? `@${myHandle ?? fallbackHandle(session.phone)}` : undefined);
   const peer = companyDemo ? "@Mothlight" : handle(params.get("peer")) ?? undefined;
   const tripMiles = journey?.route ? Math.max(1, Math.round(journey.route.distance / METRES_PER_MILE)) : undefined;
   // The Company demo is the script's 84 miles, the number spoken in the recorded intro
