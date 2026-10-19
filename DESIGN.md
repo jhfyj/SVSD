@@ -164,6 +164,8 @@ The day theme is new, and a few of its values fell below the minimums. They now 
 
 ### 3.8 Night mode (amber)
 
+> **Off for now.** Amber is behind a switch (Dial Kit → Night amber, or `?amber=on`) and is off by default; see *When it's on* below.
+
 At night the radio is **amber on near-black**. A bright screen lights up a dark car, and amber is easiest on night vision. It's only tokens: `.radio-night` sits on `RadioScreen`, and `:root:not([data-theme="light"]) .radio-night` in `globals.css` reassigns the semantic tokens inside it, so every radio state (off, connecting, a call, a message, a drop, the load-in) turns amber with no code. **Screens keep the normal night theme**; only the radio, the thing you see while driving, goes amber.
 
 | Token in Night mode | Value | Note |
@@ -179,7 +181,7 @@ At night the radio is **amber on near-black**. A bright screen lights up a dark 
 
 **Unchanged in Night mode:** the LEDs (green / amber / red keep their meaning and are 8px), the red power key, the red End call and the rocker's black body. They're physical parts.
 
-**When it's on:** whenever the theme is night and you're on the radio. Sunset during a drive plays the Night falls moment ([§9.8](#98-current-motion-inventory)); opening the radio after dark starts amber.
+**When it's on:** amber is a switch, **off by default for now** (Jen, Oct 18 2026): at night the radio keeps the normal night theme (green), and Night mode's moments below play in those colours. Turn it on in the Dial Kit (Night amber) or with `?amber=on` (`?amber=off` to turn it off; kept in localStorage, `data-amber` on `<html>`, `lib/theme.ts`). With it on: whenever the theme is night and you're on the radio. Sunset during a drive plays the Night falls moment ([§9.8](#98-current-motion-inventory)); opening the radio after dark starts amber. With it off the sunset still sinks the sun, but the map dims to `nightfall` instead of washing amber.
 
 **What Night mode does** (Flow 6, `useNightDrive`): after dark it checks in with a question to answer out loud (“Still with me? Tell me one thing you can see.”), because answering keeps your mind awake. Nothing to tap: the LCD shows the question and LISTENING with a stepped meter, and your voice rises from the bottom of the map like a reply. When the answers slow down, the **rest-area sign** takes over the map, stories pause until you're back, and the key row becomes one wide ROUTE TO REST AREA key (lit once it's set). Once the route's set the sign **folds to a strip** along the bottom of the map, so the way there shows. Pulled in, the sign clears, the LCD says “Take 15 min · stories wait”, and the key becomes **BACK ON THE ROAD**: stories come back, and the radio doesn't check in again straight away. Flipping Company on mid check-in stops it asking. We don't keep you awake; we tell you to stop.
 

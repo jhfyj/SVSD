@@ -59,18 +59,48 @@ export function pickTheme(now: Date = new Date()): Theme {
   return hour >= 7 && hour < 19 ? "light" : "dark";
 }
 
+/*
+  Night mode's amber radio (DESIGN.md §3.8) is a switch, OFF by default for now (Jen, Oct 18 2026):
+  at night the radio keeps the normal dark theme. Turned on, `data-amber="on"` on <html> lets the
+  .radio-night tokens in globals.css take over. `?amber=on` / `?amber=off` sets it for demos (kept in
+  localStorage); the Dial Kit has the same switch. Night mode's moments (sunset, check-in, rest
+  area) play either way.
+*/
+export const AMBER_KEY = "svsd-night-amber";
+
 /** Pins or unpins a theme from `?theme=`, then applies the theme for now to <html>. */
 export function applyTheme() {
   try {
-    const choice = new URLSearchParams(location.search).get("theme");
+    const params = new URLSearchParams(location.search);
+    const choice = params.get("theme");
     if (choice === "light" || choice === "dark") localStorage.setItem(THEME_KEY, choice);
     if (choice === "auto") localStorage.removeItem(THEME_KEY);
+    const amber = params.get("amber");
+    if (amber === "on" || amber === "off") localStorage.setItem(AMBER_KEY, amber);
   } catch {}
   document.documentElement.dataset.theme = pickTheme();
+  document.documentElement.dataset.amber = amberOn() ? "on" : "off";
 }
 
 /** applyTheme as an inline <head> script, so the first paint is already in the right theme. */
-export const themeScript = `(function(){try{var c=new URLSearchParams(location.search).get("theme");if(c==="light"||c==="dark")localStorage.setItem("${THEME_KEY}",c);if(c==="auto")localStorage.removeItem("${THEME_KEY}")}catch(e){}document.documentElement.dataset.theme=(${pickTheme.toString()})()})()`;
+export const themeScript = `(function(){var a="off";try{var p=new URLSearchParams(location.search),c=p.get("theme");if(c==="light"||c==="dark")localStorage.setItem("${THEME_KEY}",c);if(c==="auto")localStorage.removeItem("${THEME_KEY}");var m=p.get("amber");if(m==="on"||m==="off")localStorage.setItem("${AMBER_KEY}",m);if(localStorage.getItem("${AMBER_KEY}")==="on")a="on"}catch(e){}document.documentElement.dataset.amber=a;document.documentElement.dataset.theme=(${pickTheme.toString()})()})()`;
+
+/** Whether Night mode's amber radio is switched on. Off unless someone turned it on. */
+export function amberOn(): boolean {
+  try {
+    return localStorage.getItem(AMBER_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+/** Switches the amber radio on or off and applies it now, like `?amber=` does. */
+export function setAmber(on: boolean) {
+  try {
+    localStorage.setItem(AMBER_KEY, on ? "on" : "off");
+  } catch {}
+  document.documentElement.dataset.amber = on ? "on" : "off";
+}
 
 /** Remembers roughly where you are (about 10 km) so the theme can follow your sunrise and sunset. */
 export function rememberPlace(lat: number, lng: number) {

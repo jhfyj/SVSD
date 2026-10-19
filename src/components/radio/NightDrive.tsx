@@ -10,7 +10,7 @@ import { cn } from "../ui/cn";
 
 /*
   What Night mode looks like on the radio (Flow 6). The amber itself is only tokens
-  (.radio-night in globals.css), so every radio state turns amber at night without code here.
+  (.radio-night in globals.css), so every radio state turns amber at night without code here, when the Night amber switch is on (off by default, lib/theme).
   This file is the moments: the sun setting, the radio relighting, the check-in on the LCD and
   the rest-area sign that takes over the map.
 */

@@ -7,7 +7,7 @@ import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { markOnboarded } from "@/lib/profile/onboarding";
 import { clearHangUps } from "@/lib/radio/hangups";
-import { setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
+import { AMBER_KEY, amberOn, setAmber, setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
 import { cn } from "../ui/cn";
 
@@ -52,7 +52,7 @@ const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  const onStorage = (e: StorageEvent) => (e.key === OPEN_KEY || e.key === TODOS_KEY || e.key === THEME_KEY) && listener();
+  const onStorage = (e: StorageEvent) => (e.key === OPEN_KEY || e.key === TODOS_KEY || e.key === THEME_KEY || e.key === AMBER_KEY) && listener();
   window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(listener);
@@ -99,6 +99,7 @@ export function DialKit() {
   const open = useSyncExternalStore(subscribe, () => read(OPEN_KEY) !== "closed", () => false);
   const showTodos = useSyncExternalStore(subscribe, () => read(TODOS_KEY) !== "hidden", () => true);
   const theme = useSyncExternalStore(subscribe, themeChoice, () => "auto" as ThemeChoice);
+  const amber = useSyncExternalStore(subscribe, amberOn, () => false);
 
   const toggle = () => write(OPEN_KEY, open ? "closed" : "open");
   const toggleTodos = () => write(TODOS_KEY, showTodos ? "hidden" : "shown");
@@ -111,6 +112,17 @@ export function DialKit() {
       router.replace(next.size ? `${path}?${next}` : path);
     }
     setThemeChoice(choice);
+    listeners.forEach((l) => l());
+  };
+
+  /** Night mode's amber radio, off by default (see lib/theme). */
+  const pickAmber = (on: boolean) => {
+    if (params.has("amber")) {
+      const next = new URLSearchParams(params);
+      next.delete("amber");
+      router.replace(next.size ? `${path}?${next}` : path);
+    }
+    setAmber(on);
     listeners.forEach((l) => l());
   };
 
@@ -318,14 +330,14 @@ export function DialKit() {
       steps: [
         {
           label: "Night falls",
-          // Starts by day: the sunset turns the radio amber and pins the night theme.
+          // Starts by day: the sunset pins the night theme (and turns the radio amber if Night amber is on).
           go: () => {
             pickTheme("light");
             openRadio(nightDrive("fall"));
           },
           radio: true,
           active: path === "/radio" && params.get("night") === "fall",
-          note: "The sun sinks across the map, the light goes amber, the radio flickers back on in amber: NIGHT MODE ON, then 214 driving tonight.",
+          note: "The sun sinks across the map, the light dims, the radio flickers back on: NIGHT MODE ON, then 214 driving tonight. Amber only if Night amber is on.",
         },
         {
           label: "Check-in",
@@ -347,7 +359,7 @@ export function DialKit() {
           active: path === "/radio" && params.get("night") === "rest",
           note: "REST AREA 9 MI takes over the map; stories paused until you're back. Route to rest area folds the sign to a strip; 7 s later you're parked: Back on the road brings stories back.",
         },
-        { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => pickTheme("dark"), note: "Any radio state at night is amber." },
+        { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => { pickTheme("dark"); pickAmber(true); }, note: "Turns the Night amber switch on: any radio state at night goes amber. Switch it off under Night amber." },
       ],
     },
     {
@@ -417,6 +429,16 @@ export function DialKit() {
               {t}
             </Chip>
           ))}
+        </div>
+      </Group>
+      <Group title="Night amber">
+        <div className="grid grid-cols-2 gap-1">
+          <Chip active={!amber} onClick={() => pickAmber(false)}>
+            off
+          </Chip>
+          <Chip active={amber} onClick={() => pickAmber(true)}>
+            on
+          </Chip>
         </div>
       </Group>
 
