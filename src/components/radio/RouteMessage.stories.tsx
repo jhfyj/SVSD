@@ -60,6 +60,7 @@ const controls = (over: Partial<RouteMessageControls>): RouteMessageControls => 
   replyLeft: 42_000,
   level: { current: null },
   play: () => {},
+  reply: () => {},
   toggleRespond: () => {},
   send: () => {},
   skip: () => {},

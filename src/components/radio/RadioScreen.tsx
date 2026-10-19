@@ -167,6 +167,12 @@ const ANSWER_WAIT_MS = 10_000;
 /** The longest an answer can run. */
 const ANSWER_MAX_MS = 45_000;
 
+/** Flow 2, after "Reply with yes or no": any voice this loud for this long is taken as yes. */
+const STORY_YES_LEVEL = 0.25;
+const STORY_YES_MS = 300;
+/** How long the mic waits for that yes before the radio goes quiet again. */
+const STORY_LISTEN_MS = 10_000;
+
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
 
@@ -178,6 +184,7 @@ type QuestionStage = "driving" | "unlocking" | "reply-ready" | "answering" | "an
 type StoryStage = "driving" | "story" | "prompt" | "reply-ready";
 
 const BURRITO_TRANSCRIPT = "Whoever’s hearing this, there’s a gas station there that sells the best breakfast burrito in California. I’m serious. I’ve been driving for twenty-six years and I plan my whole week around this burrito.";
+const BURRITO_MESSAGE: RouteMessage = { id: "nightowl-burrito", kind: "message", from: "@Hufflepuff23", character: "squirrel", src: "/messages/nightowl-burrito.mp3", transcript: BURRITO_TRANSCRIPT, at: 0.5 };
 
 /** One continuous casing: the top bar, the frame around the map and the console are the same piece. */
 const casing =
@@ -307,6 +314,9 @@ export function RadioScreen({
   const [questionMicLive, setQuestionMicLive] = useState(false);
   const questionMic = useRef<Recording | null>(null);
   const [storyStage, setStoryStage] = useState<StoryStage>("driving");
+  // Flow 2: the mic that opens after "Reply with yes or no" (your voice glows up from the bottom).
+  const [storyMicLive, setStoryMicLive] = useState(false);
+  const storyMicLevel = useRef<Level | null>(null);
   const onCollect = (pickup: Pickup, at: { x: number; y: number }) => {
     const box = root.current?.getBoundingClientRect();
     if (!box) return;
@@ -320,7 +330,7 @@ export function RadioScreen({
     setTallyFlash((n) => n + 1);
     if (flight.pickup.id === "nightowl-burrito") {
       if (storyDemo) setStoryStage("story");
-      else message.play({ id: "nightowl-burrito", kind: "message", from: "@Hufflepuff23", character: "squirrel", src: "/messages/nightowl-burrito.mp3", transcript: BURRITO_TRANSCRIPT, at: 0.5 });
+      else message.play(BURRITO_MESSAGE);
     }
     if (flight.pickup.id === "nightowl-road-question") setQuestionStage("unlocking");
   };
@@ -664,6 +674,61 @@ export function RadioScreen({
     };
   }, [storyDemo, storyStage]);
 
+  // Flow 2: once the radio has asked, the mic opens by itself and your voice glows up from the
+  // bottom, so you know you can answer. Anything you say counts as yes: then it's the same as a
+  // message on the road (Angelina's flow): the beep, the YOUR REPLY screen, SEND or X, REPLY SENT.
+  // The keys don't change while it listens. Nothing said for 10 seconds and the radio goes quiet.
+  const replyToMessage = message.reply;
+  useEffect(() => {
+    if (!storyDemo || storyStage !== "reply-ready") return;
+    let live = true;
+    let mic: Recording | null = null;
+    let poll: ReturnType<typeof setInterval> | undefined;
+    const close = () => {
+      clearInterval(poll);
+      mic?.cancel();
+      mic = null;
+      storyMicLevel.current = null;
+      setStoryMicLive(false);
+    };
+    const giveUp = setTimeout(() => {
+      if (!live) return;
+      close();
+      setStoryStage("driving");
+    }, STORY_LISTEN_MS);
+    recordReply().then(
+      (rec) => {
+        if (!live) return rec.cancel();
+        mic = rec;
+        storyMicLevel.current = rec.level;
+        setStoryMicLive(true);
+        let loudSince: number | null = null;
+        poll = setInterval(() => {
+          const now = Date.now();
+          if (rec.level() < STORY_YES_LEVEL) loudSince = null;
+          else if (loudSince === null) loudSince = now;
+          else if (now - loudSince >= STORY_YES_MS) {
+            clearTimeout(giveUp);
+            close();
+            setStoryStage("driving");
+            replyToMessage(BURRITO_MESSAGE);
+          }
+        }, 50);
+      },
+      // Mic blocked: nothing to listen with, so the radio goes quiet.
+      () => {
+        if (!live) return;
+        clearTimeout(giveUp);
+        setStoryStage("driving");
+      },
+    );
+    return () => {
+      live = false;
+      clearTimeout(giveUp);
+      close();
+    };
+  }, [storyDemo, storyStage, replyToMessage]);
+
   // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
   const [talking, setTalking] = useState(false);
   const inCall = state === "connected" && !greeting;
@@ -744,6 +809,10 @@ export function RadioScreen({
                 <>
                   <MessageGlow mode="voice" color={storyStage === "prompt" ? "sky" : "magenta"} level={callVoiceLevel} className="inset-x-0 top-0 h-[245px]" />
                 </>
+              )}
+              {/* Flow 2: the mic is open for your yes. Your voice rises from the bottom in your colour. */}
+              {storyDemo && storyStage === "reply-ready" && storyMicLive && (
+                <MessageGlow mode="reply" color={youColor} level={storyMicLevel} />
               )}
               {dropRecording ? (
                 <MessageGlow mode="reply" color={youColor} level={drop.level} />

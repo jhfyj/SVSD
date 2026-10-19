@@ -43,6 +43,8 @@ export type RouteMessageControls = {
   /** The voice playing right now (theirs, the static, or yours), for the glow. */
   level: RefObject<Level | null>;
   play: (message: RouteMessage) => void;
+  /** Straight to recording your reply to this message (a beep once the mic is live), e.g. after a spoken yes. */
+  reply: (message: RouteMessage) => void;
   toggleRespond: () => void;
   send: () => void;
   /** Stop listening, or throw away the reply you're recording. */
@@ -75,6 +77,13 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     setRespond(false);
     setWindow("waiting");
     setPhase("tuning");
+  }, []);
+
+  const reply = useCallback((to: RouteMessage) => {
+    setMessage(to);
+    setRespond(true);
+    setWindow("closed");
+    setPhase("recording");
   }, []);
 
   const send = useCallback(async () => {
@@ -277,5 +286,5 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     return () => clearTimeout(t);
   }, [phase]);
 
-  return { message, phase, respond, respondWindow, listening, replyLeft, level, play, toggleRespond, send, skip };
+  return { message, phase, respond, respondWindow, listening, replyLeft, level, play, reply, toggleRespond, send, skip };
 }
