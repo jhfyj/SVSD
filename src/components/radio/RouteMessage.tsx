@@ -89,6 +89,7 @@ export function MessageGlow({
   color,
   level,
   rest = 0.3,
+  peak = 1,
   className,
 }: {
   mode: GlowMode;
@@ -99,12 +100,20 @@ export function MessageGlow({
    * same height at full voice. A call keeps this low so the quiet stretches don't cover the map.
    */
   rest?: number;
+  /**
+   * How far up it reaches at full voice, and how far its rings roll, as a share of the usual
+   * (1 = the usual third of the screen). A call keeps this lower so a loud turn doesn't climb
+   * over the road.
+   */
+  peak?: number;
   className?: string;
 }) {
   const restRef = useRef(rest);
+  const peakRef = useRef(peak);
   useEffect(() => {
     restRef.current = rest;
-  }, [rest]);
+    peakRef.current = peak;
+  }, [rest, peak]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const tint = useRef<HTMLDivElement>(null);
   const modeRef = useRef(mode);
@@ -172,9 +181,10 @@ export function MessageGlow({
       // Both reach about a third of the screen at their loudest, then rings carry on and fade
       // before the middle, so the road and you always stay clear.
       const floor = restRef.current;
-      const reach = floor + (1 - floor) * env;
+      const top = Math.max(floor, peakRef.current);
+      const reach = floor + (top - floor) * env;
       const life = 1500;
-      const travel = 1.3;
+      const travel = 1.3 * top;
       ripples = ripples.filter((r) => now - r.born < life);
       const rings = ripples.map((r) => {
         const p = (now - r.born) / life;

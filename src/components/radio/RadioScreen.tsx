@@ -718,7 +718,7 @@ export function RadioScreen({
               {/* Your real mic, rising from the bottom over the whole map like every reply glow. On a
                   call it rests much lower while you're quiet, so the map stays clear between turns. */}
               {companyDemo && state === "connected" && (
-                <MessageGlow mode={nightOwlTurn ? "reply" : "off"} color={youColor} level={callVoiceLevel} rest={0.07} />
+                <MessageGlow mode={nightOwlTurn ? "reply" : "off"} color={youColor} level={callVoiceLevel} rest={0.07} peak={0.6} />
               )}
               {/* A pickup (story or question) and the AI are only their colour glowing down from the top:
                   no banner, no words over the map. */}
