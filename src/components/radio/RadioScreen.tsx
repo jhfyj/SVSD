@@ -583,6 +583,7 @@ export function RadioScreen({
           // Arrived: End trip is the whole key row. No Drop key, there's no road left to leave one on.
           <div className="absolute left-[26px] top-[166px] flex w-[351px]">
             <HardwareButton
+              tone="end"
               className="flex-1"
               onClick={onEndTrip}
               data-cuelume-emphasis="strong"
