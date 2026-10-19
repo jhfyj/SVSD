@@ -405,17 +405,19 @@ export function RadioScreen({
         .map((m) => ({ id: m.id, at: m.at, color: MESSAGE_COLOR[m.kind], label: `${m.kind === "question" ? "Question" : "Message"} from ${m.from}` })),
     [messages, passed],
   );
-  // Stories wait while Night mode talks to you, and stay paused at the rest area until you're back.
+  // Stories keep coming in Night mode, rest area included (Jen: especially when you're tired). One
+  // you pass while Night mode is speaking waits in the queue and plays as soon as it's done.
   // Nothing on the road plays before Start journey.
-  const listening = started && state === "off" && !arrived && !leaving && !nightDrive.busy;
+  const collecting = started && state === "off" && !arrived && !leaving;
+  const listening = collecting && !nightDrive.busy;
   const reach = useCallback(
     (id: string) => {
       const m = messages.find((x) => x.id === id);
       if (!m || passed.includes(id)) return;
       setPassed((p) => [...p, id]);
-      if (listening) setQueue((q) => [...q, m]);
+      if (collecting) setQueue((q) => [...q, m]);
     },
-    [messages, passed, listening],
+    [messages, passed, collecting],
   );
   // No route to drive past them on (Storybook, no trip set up): pass the next one every so often instead.
   const onRoute = Boolean(useJourney()?.route);

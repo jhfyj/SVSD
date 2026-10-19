@@ -406,7 +406,7 @@ export function DialKit() {
           },
           radio: true,
           active: path === "/radio" && params.get("night") === "rest",
-          note: "Rerouting to the rest area by itself (nothing to tap); stories paused. 7 s later you're parked: the dot stops on the map until Back on the road, then stories and the drive pick up again.",
+          note: "Rerouting to the rest area by itself (nothing to tap); stories keep coming. 7 s later you're parked: the dot stops on the map until Back on the road, then the drive picks up again.",
         },
         { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => { pickTheme("dark"); pickAmber(true); }, note: "Turns the Night amber switch on: any radio state at night goes amber. Switch it off under Night amber." },
       ],
