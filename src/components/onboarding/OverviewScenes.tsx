@@ -76,7 +76,7 @@ export function CompanyScene() {
   }, [manualOn]);
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center gap-[clamp(16px,5vw,36px)] overflow-hidden bg-background px-5 text-foreground">
+    <div className="overview-company-scene relative flex h-full w-full items-center justify-center gap-[clamp(16px,5vw,36px)] overflow-hidden bg-background px-5 text-foreground">
       <div className="flex shrink-0 flex-col items-center gap-3">
         <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-foreground/60">Company</span>
         <RockerSwitch on={on} onChange={setManualOn} label="Company radio power" />

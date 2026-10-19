@@ -103,6 +103,11 @@ body::-webkit-scrollbar {
   background-repeat: repeat;
 }
 
+/* Give the Company illustration a darker ground so its physical switch and LCD read clearly. */
+.overview-company-scene {
+  background-color: #181818;
+}
+
 .device-status-bar {
   position: absolute;
   z-index: 2;
