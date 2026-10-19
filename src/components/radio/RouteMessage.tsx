@@ -78,7 +78,7 @@ function rgbOf(el: Element, color: MarkerColor): [number, number, number] {
 type Ripple = { born: number; strength: number };
 
 /** Your voice's glow (rising from the bottom) tops out at this share of the usual reach. */
-const REPLY_PEAK = 0.6;
+const REPLY_PEAK = 0.5;
 
 /**
  * A dithered glow over the map that moves with a voice. Its reach follows how loud they are, and
