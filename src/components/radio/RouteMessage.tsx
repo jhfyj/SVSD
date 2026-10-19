@@ -77,6 +77,9 @@ function rgbOf(el: Element, color: MarkerColor): [number, number, number] {
 
 type Ripple = { born: number; strength: number };
 
+/** Your voice's glow (rising from the bottom) tops out at this share of the usual reach. */
+const REPLY_PEAK = 0.6;
+
 /**
  * A dithered glow over the map that moves with a voice. Its reach follows how loud they are, and
  * each syllable sends a wave of pixels rolling out from where the voice comes in: down from the
@@ -89,7 +92,7 @@ export function MessageGlow({
   color,
   level,
   rest = 0.3,
-  peak = 1,
+  peak,
   className,
 }: {
   mode: GlowMode;
@@ -102,8 +105,9 @@ export function MessageGlow({
   rest?: number;
   /**
    * How far up it reaches at full voice, and how far its rings roll, as a share of the usual
-   * (1 = the usual third of the screen). A call keeps this lower so a loud turn doesn't climb
-   * over the road.
+   * (1 = the usual third of the screen). Your own voice (a reply, a drop, a call, the night
+   * check-in) stops at REPLY_PEAK everywhere so a loud take doesn't climb over the road; theirs,
+   * from the top, keeps the full reach. Pass a number to override either.
    */
   peak?: number;
   className?: string;
@@ -181,7 +185,7 @@ export function MessageGlow({
       // Both reach about a third of the screen at their loudest, then rings carry on and fade
       // before the middle, so the road and you always stay clear.
       const floor = restRef.current;
-      const top = Math.max(floor, peakRef.current);
+      const top = Math.max(floor, peakRef.current ?? (reply ? REPLY_PEAK : 1));
       const reach = floor + (top - floor) * env;
       const life = 1500;
       const travel = 1.3 * top;

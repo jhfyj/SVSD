@@ -568,6 +568,14 @@ export function RadioScreen({
     );
   }, [companyDemo, companyTurn, conversationIndex]);
   const nightOwlTurn = companyTurn?.speaker === "NightOwl";
+  // Your side of the Flow 3 call: the glow at the bottom stays up for the whole call while your
+  // mic is on, and only moves on your (NightOwl's) turns. On Mothlight's turns it reads silence,
+  // so her voice never lifts your glow.
+  const nightOwlTurnRef = useRef(false);
+  useEffect(() => {
+    nightOwlTurnRef.current = nightOwlTurn;
+  }, [nightOwlTurn]);
+  const yourCallLevel = useRef<Level | null>(() => (nightOwlTurnRef.current ? (callVoiceLevel.current?.() ?? 0) : 0));
 
   // "You just unlocked a question from NightOwl." → NightOwl: "What got you through today?" →
   // "Would you like to respond?", each one after the last, then the mic opens for your yes.
@@ -715,10 +723,10 @@ export function RadioScreen({
                   className="inset-x-0 top-0 h-[132px]"
                 />
               )}
-              {/* Your real mic, rising from the bottom over the whole map like every reply glow. On a
-                  call it rests much lower while you're quiet, so the map stays clear between turns. */}
+              {/* Your mic, as a green strip along the bottom for the whole call while it's on. It only
+                  rises and moves on your turns; muted or on a break, it goes away. */}
               {companyDemo && state === "connected" && (
-                <MessageGlow mode={nightOwlTurn ? "reply" : "off"} color={youColor} level={callVoiceLevel} rest={0.07} peak={0.6} />
+                <MessageGlow mode={!micMuted && !onBreak ? "reply" : "off"} color={youColor} level={yourCallLevel} rest={0.07} />
               )}
               {/* A pickup (story or question) and the AI are only their colour glowing down from the top:
                   no banner, no words over the map. */}
