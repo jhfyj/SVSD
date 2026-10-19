@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { REPLY_MAX_MS, RESPOND_WINDOW_MS, type RouteMessage } from "@/lib/radio/messages";
 import { playVoice, recordReply, tuneIn, type Level, type Recording, type Voice } from "@/lib/radio/voice";
-import { QUESTION_UNLOCK, REPLY_PROMPT, REPLY_PROMPT_GRACE_MS, START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
+import { QUESTION_UNLOCK, REPLY_PROMPT, START_TIMEOUT_MS } from "@/lib/radio/scriptVoice";
 import { cue } from "@/lib/sound";
+import { canRecognise, listenYesNo } from "@/lib/radio/yesNo";
 
 /**
  * Where a message on the road is up to:
@@ -20,6 +21,12 @@ export type RespondWindow = "waiting" | "open" | "closed";
 /** How long "Sent" or "Mic is off" stays on the LCD. */
 const NOTICE_MS = 1800;
 
+/** After the radio asks, how long the mic stays open for a yes or no before it takes silence as no. */
+const ANSWER_LISTEN_MS = 7000;
+/** Without speech recognition, any voice this loud for this long counts as yes. */
+const VOICE_LEVEL = 0.25;
+const VOICE_MS = 300;
+
 /** Static crackle while tuning in, so the glow flickers before the voice arrives. */
 const staticLevel: Level = () => 0.2 + Math.random() * 0.3;
 
@@ -29,6 +36,8 @@ export type RouteMessageControls = {
   /** You've chosen to respond: the radio records your reply when they finish. */
   respond: boolean;
   respondWindow: RespondWindow;
+  /** Asking: the radio has asked and the mic is open for a spoken yes or no. */
+  listening: boolean;
   /** While recording: how long you have left, in ms; null until the mic is live (e.g. at the browser's prompt). */
   replyLeft: number | null;
   /** The voice playing right now (theirs, the static, or yours), for the glow. */
@@ -46,6 +55,7 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
   const [respond, setRespond] = useState(false);
   const [respondWindow, setWindow] = useState<RespondWindow>("waiting");
   const [replyLeft, setReplyLeft] = useState<number | null>(null);
+  const [listening, setListening] = useState(false);
   const level = useRef<Level | null>(null);
   const voice = useRef<Voice | null>(null);
   const recording = useRef<Recording | null>(null);
@@ -151,38 +161,76 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
   }, [phase, message]);
 
   // The radio asks, in its recorded voice: "Would you like to reply to this message? Reply with
-  // yes or no." RESPOND is yes (your reply records as soon as you press it); the skip key or
-  // a few quiet seconds after the question is no.
+  // yes or no." Then the mic opens and listens: say yes and your reply starts recording (after the
+  // beep), say no and the radio goes quiet. RESPOND still means yes and the skip key no. Nothing
+  // said for a few seconds is a no. If the mic is blocked, RESPOND works as before.
   useEffect(() => {
     if (phase !== "asking") return;
     let live = true;
     let grace: ReturnType<typeof setTimeout> | undefined;
-    // A question already asked when it unlocked, so it isn't asked again: just the LCD's "Reply?"
-    // and the same few quiet seconds to say yes.
-    if (kind === "question") {
-      grace = setTimeout(() => setPhase("idle"), REPLY_PROMPT_GRACE_MS);
-      return () => clearTimeout(grace);
-    }
-    const v = playVoice(REPLY_PROMPT, true);
-    voice.current = v;
-    level.current = v.level;
-    const wait = () => {
+    let held: ReturnType<typeof setTimeout> | undefined;
+    let poll: ReturnType<typeof setInterval> | undefined;
+    let stopListening = () => {};
+    let mic: Recording | null = null;
+    const yes = () => {
+      if (!live) return;
+      setRespond(true);
+      setPhase("recording");
+    };
+    const no = () => live && setPhase("idle");
+    const open = () => {
       clearTimeout(held);
       if (!live || grace) return;
       level.current = null;
-      grace = setTimeout(() => setPhase("idle"), REPLY_PROMPT_GRACE_MS);
+      grace = setTimeout(no, ANSWER_LISTEN_MS);
+      recordReply().then(
+        (rec) => {
+          if (!live) return rec.cancel();
+          mic = rec;
+          // Your voice rises from the bottom while it listens, like a reply.
+          level.current = rec.level;
+          setListening(true);
+          if (canRecognise()) {
+            stopListening = listenYesNo((a) => (a === "yes" ? yes() : no()));
+          } else {
+            // No speech recognition here: speaking up at all is a yes.
+            let loudSince: number | null = null;
+            poll = setInterval(() => {
+              const now = Date.now();
+              if (rec.level() < VOICE_LEVEL) loudSince = null;
+              else if (loudSince === null) loudSince = now;
+              else if (now - loudSince >= VOICE_MS) yes();
+            }, 50);
+          }
+        },
+        // Mic blocked: RESPOND still works, the same few seconds as before.
+        () => {},
+      );
     };
-    // If the browser holds the prompt back, don't wait on it: the "Reply?" on the LCD still asks.
-    const held = setTimeout(wait, START_TIMEOUT_MS);
-    void v.started.then(() => clearTimeout(held));
-    v.done.then(wait, wait);
+    if (kind === "question") {
+      // A question already asked out loud when it unlocked ("…Would you like to respond?"), so
+      // the mic opens straight away.
+      open();
+    } else {
+      const v = playVoice(REPLY_PROMPT, true);
+      voice.current = v;
+      level.current = v.level;
+      // If the browser holds the prompt back, don't wait on it: the mic still opens.
+      held = setTimeout(open, START_TIMEOUT_MS);
+      void v.started.then(() => clearTimeout(held));
+      v.done.then(open, open);
+    }
     return () => {
       live = false;
       clearTimeout(held);
       clearTimeout(grace);
-      v.stop();
+      clearInterval(poll);
+      stopListening();
+      mic?.cancel();
+      voice.current?.stop();
       voice.current = null;
       level.current = null;
+      setListening(false);
     };
   }, [phase, kind]);
 
@@ -229,5 +277,5 @@ export function useRouteMessage({ speaker }: { speaker: boolean }): RouteMessage
     return () => clearTimeout(t);
   }, [phase]);
 
-  return { message, phase, respond, respondWindow, replyLeft, level, play, toggleRespond, send, skip };
+  return { message, phase, respond, respondWindow, listening, replyLeft, level, play, toggleRespond, send, skip };
 }

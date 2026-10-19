@@ -256,7 +256,9 @@ export function MessageLcd({ controls }: { controls: RouteMessageControls }) {
     return (
       <Lcd>
         <span className="block text-[20px] font-medium leading-[1.2]">REPLY?</span>
-        <span className="mt-1 block text-[11px] normal-case">Tap respond to answer {message.from}</span>
+        <span className="mt-1 block text-[11px] normal-case">
+          {controls.listening ? "Say yes or no" : `Tap respond to answer ${message.from}`}
+        </span>
       </Lcd>
     );
   }
