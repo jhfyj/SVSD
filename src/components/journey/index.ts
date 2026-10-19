@@ -1,4 +1,5 @@
-export * from "./JourneySetup";
+export * from "./PastJourneys";
+export * from "./JourneyShape";
 export * from "./RouteTrail";
 export * from "./StartJourney";
 export * from "./RecentJourneys";

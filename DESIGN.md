@@ -67,7 +67,7 @@ Recipes             components built only from semantic tokens: HardwareButton, 
 | `accent-hover` | `#ffffff` | `#000000` | Primary button hover |
 | `label` | `#bababa` | `#645f58` | Engraved hardware labels |
 | `muted` | `#696969` | `#6f6b64` | Blueprint lines, Dial Kit chrome. **Not for text on Screens.** |
-| `land-dot` | white 25% | ink 40% | Dots of the earth on Destination |
+| `land-dot` | white 25% | ink 40% | Dots of the earth on the start screen's map |
 
 Night primitives (every gray in the dark theme snaps to one): `#050505` · `#111111` · `#1e1e1e` · `#2b2b2b` · `#393939` · `#404040` · `#6c6c6c` · `#bababa` · `#dedede` · `#ffffff`. The day theme uses warm grays and cream instead of neutral grays.
 
@@ -336,7 +336,7 @@ States for every component:
 | Selected / on | White (ink) border + filled dot, or raised fill | Latched down + `.key-lit` icon |
 | Disabled | `opacity-40 pointer-events-none` | Same |
 
-Pressables **sink, they don't shrink.** A press is a key traveling into the body, so there's no `scale(0.97)`. The Start your journey square and the tab bar keys go further: they **tip back toward your finger** ([press tilt](#95-3d-and-physical-motion)) on top of their pressed fill or material.
+Pressables **sink, they don't shrink.** A press is a key traveling into the body, so there's no `scale(0.97)`. The tab bar keys go further: they **tip back toward your finger** ([press tilt](#95-3d-and-physical-motion)) on top of their pressed fill or material.
 
 ### 8.1 Screen components
 
@@ -351,7 +351,9 @@ Pressables **sink, they don't shrink.** A press is a key traveling into the body
 | **Option row** (intents) | `h-12 border px-5 gap-3`, `small` uppercase, 10px dot left. Unselected `border-foreground/40`, hollow dot; selected `border-foreground`, filled dot. Select sound. |
 | **Character grid** | 8 pixel characters, unlit (`character`) with the picked one lit (`character-lit`) and animating; preview on the `lcd-green` screen. No background tile behind the pick. |
 | **Permission block** (Allow access) | Pixel icon on top, status light (green granted, red blocked), a `small` note under the block. |
-| **Recent journey row** | Place `body`, date `micro foreground/70`, distance · time `micro`, VIEW JOURNEY (secondary) + START AGAIN (primary). |
+| **Start screen** (`StartJourney`) | Where to and where you've been, on one Screen. Top: WHERE TO? (scrambled `title`), the destination field (`body`), the dotted earth full-bleed, then a reserved two-line summary (stories and questions `small` in their colors, time · miles `micro foreground/70`) and START JOURNEY (primary, disabled at 40% until there's a route). Picking a place zooms the earth into the trail. Below, Recent journeys. |
+| **Journey shape** (`JourneyShape`, `PastJourneys`) | The last four drives in a 2-up grid, 12 apart, rows 24 apart. Each: its trail in a 1px `border` square (finer than setup: path dots `foreground/20`, stories `story`, questions `question`, ends `foreground`), the story worth repeating ringed in `story`; place `body` + date `micro`; “N stories” `micro story` with a drive-again key (`ArrowCounterClockwise` 16 in a 44 target); the story's opening line quoted, `small foreground/70`, up to 3 lines. The tile opens the recap; drive again puts it back in the destination field with its own route (no location needed) and scrolls up. The shapes light dot by dot once (`trail-in`, `enter`, 14ms apart, each shape 90ms after the last). Samples show until you've driven. |
+| **Recent journey row** (`RecentJourneys`, History) | Place `body`, date `micro foreground/70`, distance · time `micro`, VIEW JOURNEY (secondary) + START AGAIN (primary). |
 | **Stat card** | `bg-surface p-3`, value as a readout + unit `small foreground/70`, baseline-aligned. |
 | **List panel** (history) | `border px-5 py-4`; groups 24 apart, rows 12 apart with 1px dividers; time `small`, duration `micro foreground/70`. Fade the bottom into `background` when it scrolls. |
 | **Trip recap** | Lines appear one per frame; story and question counts count up frame by frame; the route drawn with its dots. |
@@ -365,7 +367,7 @@ Clock, frequency, counts and countdowns use the segment font with `tabular-nums`
 | Component | Spec |
 |---|---|
 | **Console key** (`HardwareButton`) | 70 tall, key material up/down. Label `key` at 80%; icons 24 at 60%. Latched keys stay down and light their icon (`.key-lit`): **lit = on** (mic lit = mic on). End call is icon-only and stays down until the next person connects. `tone="end"` uses the red material. |
-| **Tab bar** (`TabBar`) | A strip of hardware along the bottom of Screens (Figma `179:339`): three icon-only console keys, 70 tall, flush in a recessed housing (pressed material). New journey `PaperPlaneTilt` → `/`, History `ClockCounterClockwise` → `/history`, Profile `User` → `/profile`, glyphs 24, each with an `aria-label`. **Selected:** latched down like a radio preset (pressed material), icon at 100%, no green (being on a tab isn't “on”). **Not selected:** up, icon at 40% (3.4:1 at night, 2.3:1 by day: under the 3:1 icon minimum by day). Pressing tips the key back ([press tilt](#95-3d-and-physical-motion)) with a mech tap. **Shown** on Start, the journey setup steps (intents, destination), History and the signed-in profile. **Hidden** on the radio, the splash, the trip recap (it ends the trip: Done is the only way on), and sign-in / onboarding (verify, Customize profile, Allow access and the Settings it reopens). |
+| **Tab bar** (`TabBar`) | A strip of hardware along the bottom of Screens (Figma `179:339`): three icon-only console keys, 70 tall, flush in a recessed housing (pressed material). New journey `PaperPlaneTilt` → `/`, History `ClockCounterClockwise` → `/history`, Profile `User` → `/profile`, glyphs 24, each with an `aria-label`. **Selected:** latched down like a radio preset (pressed material), icon at 100%, no green (being on a tab isn't “on”). **Not selected:** up, icon at 40% (3.4:1 at night, 2.3:1 by day: under the 3:1 icon minimum by day). Pressing tips the key back ([press tilt](#95-3d-and-physical-motion)) with a mech tap. **Shown** on Start (which holds the destination search), History and the signed-in profile. **Hidden** on the radio, the splash, the trip recap (it ends the trip: Done is the only way on), and sign-in / onboarding (verify, Customize profile, Allow access and the Settings it reopens). |
 | **Power key** | Phosphor `Power` 20 in a 44 button, `text-power` with a three-layer glow. Pressed: glow drops to 1px, `translate-y-px`, 80%. |
 | **Rocker switch** | 46×98 housing; the paddle tilts on its center hinge ([§9.5](#95-3d-and-physical-motion)). `O` / `|` glyphs, engraved OFF / ON. |
 | **LED** | 8px bulb in a 1px ring. Off: dark bulb. Connecting: amber. On a call: green. Lost: red. Each lit state glows in its own color. |
@@ -452,19 +454,18 @@ Rocker paddle — press either half
   reduced: tilt snaps with no transition; light and shadow still show which side is down
 ```
 
-**Press tilt** (`usePressTilt`: the Start your journey square and the tab bar keys)
+**Press tilt** (`usePressTilt`: the tab bar keys)
 
 ```
-Press tilt — pointer down on the square or a tab key
+Press tilt — pointer down on a tab key
   pivot:   the edge opposite your finger: the face tips toward where you press and sinks by
            however far its near edge would have come forward, so nothing comes toward you
-  view:    perspective 600px on the square, 320px on a key; straight on
-  travel:  up to 8° (square) / 6° (key) toward the press point, plus 6px / 2px straight back;
+  view:    perspective 320px; straight on
+  travel:  up to 6° toward the press point, plus 2px straight back;
            a corner tips as far as an edge; it follows your finger while held
   curve:   in ease-out, out ease-mechanical (a small overshoot back past rest)
   time:    press in, quick out
-  light:   keys: a shade darkens the side that went back, by how far it tipped; the square is a
-           Screen, so no shading, just its surface fill
+  light:   a shade darkens the side that went back, by how far it tipped
   sound:   tap (mech) on click
   reduced: no tilt; the pressed fill or material still shows it's down. Keyboard presses never tilt.
 ```
@@ -507,13 +508,14 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 |---|---|---|
 | `HardwareButton`, `PowerButton` | Press 75ms `ease-out` | ✅ |
 | `RockerSwitch` | `quick` (150ms) `ease-mechanical` tilt + mech sounds | ✅ |
-| `usePressTilt` (`StartButton`, `TabBar`) | Tilt in at `press` `ease-out`, back at `quick` `ease-mechanical` | ✅ |
+| `usePressTilt` (`TabBar`) | Tilt in at `press` `ease-out`, back at `quick` `ease-mechanical` | ✅ |
 | `RadioIntro` | Blueprint edges 140ms linear, parts flash `step-end` 360ms, casing flickers out | ✅ |
 | `RadioLcd`, sprites, pixel icons | Stepped loops | ✅ |
 | `.radio-power-off` | 480ms `steps(8)` | ✅ |
 | `TripSummary`, `TripMap` | Lines and dots per frame, `steps` | ✅ |
 | `JourneyMap` | Zoom 1600ms ease-in-out cubic | ✅ |
 | `RouteTrail` | `trail-in` `enter` (240ms) `var(--motion-ease-out)` | ✅ |
+| `JourneyShape` | Same `trail-in`, 14ms per dot, each shape 90ms after the last; the story ring lights once the trail reaches the end. Still for reduced motion | ✅ |
 | `StartingRadio` | Splash `fade-out` 400ms `ease-out` | ✅ |
 | `RadioSettings` | Panel is revealed bottom-up by a `clip-path` transition in `steps(4)` | ✅ |
 | `ToggleSwitch` | Knob slides with `transform`, `quick` `ease-mechanical` | ✅ |
@@ -576,7 +578,7 @@ Two families, never mixed in one spot:
 
 **Figma map** (file `aDzc2bXm7lrwe8ewApmlxe`, section `123:130`): Getting set up `123:533`, `125:807`, `123:131`–`123:207` · Splash `123:728` · Sync calling `123:287` connecting, `123:246` connected, `123:319` off · Receive `123:352` message, `123:441` question · Respond `123:471`, `123:502`, `123:727` · Profile `123:647` sign in, `123:541` profile. Day theme reference: Connecting `154:1263`.
 
-**Flows in code:** `/` start + recent journeys → `/intents` → `/journey` (destination: address or coordinates) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived; `?night=fall|checkin|rest` plays Night mode) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
+**Flows in code:** `/` start: destination (address or coordinates) + recent journeys as shapes (`/journey` and `/intents` redirect here) → `/journey/starting` (splash) → `/radio` (off · connecting · connected · lost · break · arrived; `?night=fall|checkin|rest` plays Night mode) → `/trip` (recap). `/history`: stats (total calls, minutes on the radio, longest session, days active), the activities calendar (arrows step back up to 11 months, never past this month), then every journey on this device. `/profile`: sign in → verify → customize profile → allow access → profile (avatar, Settings, Report, Sound, sign out, delete). The tab bar joins `/`, `/history` and `/profile`.
 
 ---
 
