@@ -11,7 +11,9 @@ import {
   NIGHT_HOLD_MS,
   NIGHT_ON_MS,
   RELIGHT_MS,
+  REST_ARRIVE_MS,
   REST_LINE,
+  STOPPED_LINE,
   sleepyAnswer,
   type NightPhase,
   type NightStart,
@@ -24,11 +26,15 @@ export type NightDriveControls = {
   level: React.RefObject<Level | null>;
   /** Talking to you or waiting on you: stories on the road hold off, and Drop and Music wait. */
   busy: boolean;
-  /** At the rest area: stories are paused until you're back on the road. */
+  /** Told to stop, or stopped: stories are paused until you're back on the road. */
   resting: boolean;
   /** You asked for the route to the rest area. */
   routed: boolean;
   route: () => void;
+  /** Leaving the rest area: stories come back, and the radio doesn't check in again straight away. */
+  backOnTheRoad: () => void;
+  /** You went live (Company on) mid check-in: the radio stops asking and leaves you to your call. */
+  interrupt: () => void;
 };
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -45,6 +51,8 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
   );
   const [routed, setRouted] = useState(false);
   const level = useRef<Level | null>(null);
+  // After a rest (or a check-in you cut short), the quiet night radio doesn't check in again on its own.
+  const calm = useRef(false);
   const nightfall = useRef(onNightfall);
   useEffect(() => {
     nightfall.current = onNightfall;
@@ -71,7 +79,7 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
       after(RELIGHT_MS, "nightOn");
     }
     if (phase === "nightOn") after(NIGHT_ON_MS, "night");
-    if (phase === "night") after(NIGHT_HOLD_MS, "checkin");
+    if (phase === "night" && !calm.current) after(NIGHT_HOLD_MS, "checkin");
     if (phase === "checkin") {
       // Asked out loud, like a person would: a soft blip to get your attention, then the question.
       cue("ready", { theme: "mech", emphasis: "subtle" });
@@ -87,6 +95,10 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
       cue("attention", { theme: "mech" });
       line = announce(REST_LINE);
     }
+    if (phase === "stopped") {
+      cue("ready", { theme: "mech", emphasis: "subtle" });
+      line = announce(STOPPED_LINE);
+    }
     return () => {
       live = false;
       clearTimeout(t);
@@ -94,15 +106,34 @@ export function useNightDrive({ start, onNightfall }: { start?: NightStart; onNi
     };
   }, [phase]);
 
+  // Route set: pulling in at the rest area (mocked; on the road it's the car parking there).
+  // Its own effect, so pressing Route doesn't cut the radio off mid-sentence.
+  useEffect(() => {
+    if (phase !== "rest" || !routed) return;
+    const t = setTimeout(() => setPhase("stopped"), REST_ARRIVE_MS);
+    return () => clearTimeout(t);
+  }, [phase, routed]);
+
   return {
     phase,
     level,
-    busy: phase === "checkin" || phase === "listening" || phase === "rest",
-    resting: phase === "rest",
+    busy: phase === "checkin" || phase === "listening" || phase === "rest" || phase === "stopped",
+    resting: phase === "rest" || phase === "stopped",
     routed,
     route: () => {
       setRouted(true);
       cue("success", { theme: "mech", emphasis: "subtle" });
+    },
+    backOnTheRoad: () => {
+      calm.current = true;
+      setRouted(false);
+      setPhase("night");
+    },
+    interrupt: () => {
+      if (phase !== "checkin" && phase !== "listening") return;
+      calm.current = true;
+      level.current = null;
+      setPhase("night");
     },
   };
 }

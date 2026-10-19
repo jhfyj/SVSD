@@ -18,9 +18,10 @@ export const NIGHT_STARTS: NightStart[] = ["fall", "checkin", "rest"];
  * relight: the radio dips and flickers back on in amber (the theme switches under the flicker).
  * nightOn: NIGHT MODE ON on the LCD. night: the quiet amber radio, before it checks in.
  * checkin: the radio asks its question out loud. listening: your answer, slow.
- * rest: the rest area takes over the map; stories pause.
+ * rest: the rest area takes over the map; stories pause. stopped: you're at the rest area, and
+ * stories wait until you say you're back on the road.
  */
-export type NightPhase = "off" | "day" | "dusk" | "relight" | "nightOn" | "night" | "checkin" | "listening" | "rest";
+export type NightPhase = "off" | "day" | "dusk" | "relight" | "nightOn" | "night" | "checkin" | "listening" | "rest" | "stopped";
 
 /** The day radio holds this long before sunset, so the day cockpit reads first (and the map has loaded). */
 export const DAY_MS = 3000;
@@ -41,10 +42,16 @@ export const CHECK_IN = { title: "Still with me?", ask: "Tell me one thing you c
 /** How many drivers the LCD says are out tonight (mocked). */
 export const DRIVING_TONIGHT = 214;
 
-export const REST_AREA = { miles: 9 };
+export const REST_AREA = { miles: 9, breakMinutes: 15 };
+
+/** From Route set to pulling in at the rest area, in the demo (really: 9 miles, then parked). */
+export const REST_ARRIVE_MS = 7000;
 
 /** The radio's clock for each take: the sun going down, and the small hours for the check-in. */
 export const NIGHT_CLOCK: Record<NightStart, string> = { fall: "7:48 PM", checkin: "1:14 AM", rest: "1:16 AM" };
+
+/** What the radio says when you pull in. */
+export const STOPPED_LINE = `You made it. Take ${REST_AREA.breakMinutes} minutes. Your stories will wait.`;
 
 /** What the radio says when it tells you to stop, while the rest area takes over. */
 export const REST_LINE = `Your answers are slowing down. There's a rest area in ${REST_AREA.miles} miles. Let's stop there.`;

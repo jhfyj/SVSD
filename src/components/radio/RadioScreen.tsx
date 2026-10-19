@@ -1,6 +1,6 @@
 "use client";
 
-import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, MusicNotes, NavigationArrow, PaperPlaneRight, PhoneDisconnect } from "@phosphor-icons/react";
+import { FlagCheckered, GearSix, MapPinPlus, Microphone, MicrophoneSlash, MusicNotes, NavigationArrow, PaperPlaneRight, PhoneDisconnect, RoadHorizon } from "@phosphor-icons/react";
 import { WeatherIcon } from "../journey/WeatherIcon";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -130,7 +130,7 @@ export type RadioScreenProps = {
 };
 
 /** Night mode phases that put something on the LCD (the sunset itself keeps the usual LCD). */
-const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "rest"];
+const NIGHT_LCD = ["nightOn", "night", "checkin", "listening", "rest", "stopped"];
 
 /** A beat of quiet between one message ending and the next one tuning in. */
 const MESSAGE_GAP_MS = 2500;
@@ -455,7 +455,7 @@ export function RadioScreen({
         {/* A message playing: their voice comes down from the top; your reply (or a drop) rises from the bottom in your colour. */}
         {/* Night mode's rest area takes over the map: the road can wait. Once the route's set it
             folds to a strip, so you can see the way there. */}
-        {nightDrive.resting && <RestSign folded={nightDrive.routed} />}
+        {nightDrive.phase === "rest" && <RestSign folded={nightDrive.routed} />}
         {dropRecording ? (
           <MessageGlow mode="reply" color={youColor} level={drop.level} />
         ) : nightDrive.phase === "listening" && !radioOn ? (
@@ -514,6 +514,8 @@ export function RadioScreen({
             // Flipping the switch mid-drop drops what you've said so far, right here.
             if (dropRecording) toggleDrop();
             if (on) {
+              // Company on mid check-in: the radio stops asking, you've got someone to talk to.
+              nightDrive.interrupt();
               setMusicOn(false);
               // Going live ends whatever message was playing, and drops any waiting.
               message.skip();
@@ -546,8 +548,17 @@ export function RadioScreen({
             </HardwareButton>
           </div>
         )}
-        {/* At the rest area the key row is one wide key: route there. Lit once it's set. */}
-        {nightDrive.resting && !radioOn && !arrived && (
+        {/* Told to stop, the key row is one wide key: route there (lit once it's set). Parked at the
+            rest area, it's the way back: stories come back on. */}
+        {nightDrive.phase === "stopped" && !radioOn && !arrived && (
+          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
+            <HardwareButton className="flex-1" onClick={nightDrive.backOnTheRoad} aria-label="Back on the road">
+              <RoadHorizon size={24} className="opacity-80" aria-hidden />
+              <span className="text-[13px] font-bold opacity-80">BACK ON THE ROAD</span>
+            </HardwareButton>
+          </div>
+        )}
+        {nightDrive.phase === "rest" && !radioOn && !arrived && (
           <div className="absolute left-[26px] top-[166px] flex w-[351px]">
             <HardwareButton
               className="flex-1"

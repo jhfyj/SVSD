@@ -104,12 +104,16 @@ export function NightLcd({
       </Lcd>
     );
   }
-  if (phase === "rest") {
+  if (phase === "rest" || phase === "stopped") {
     return (
       <figure role="status" className="flex flex-col items-center gap-1.5 text-lcd-ink">
         <Dozing character={character} />
         <figcaption className="font-mono text-[11px] leading-none">
-          {routed ? `Route set · rest area ${REST_AREA.miles} mi` : "Stories paused until you're back"}
+          {phase === "stopped"
+            ? `Take ${REST_AREA.breakMinutes} min · stories wait`
+            : routed
+              ? `Route set · rest area ${REST_AREA.miles} mi`
+              : "Stories paused until you're back"}
         </figcaption>
       </figure>
     );
