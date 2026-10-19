@@ -1057,16 +1057,10 @@ export function RadioScreen({
           ) : (
             <>
               {/* Where Music used to be: Start journey, then End journey (straight to the recap; no pause).
-                  Flow 4 has no End journey: the drive just keeps going (only Flow 5 ends it). */}
+                  It works the same in every flow. Flows 2 to 4 just never arrive by themselves, so the
+                  drive keeps going until you press it; only Flow 5 ends at the destination. */}
               {started ? (
-                // Flow 4 keeps the key on the console but greyed out: the drive just keeps going (only Flow 5 ends it).
-                <HardwareButton
-                  tone="end"
-                  className="flex-1"
-                  onClick={questionDemo ? undefined : endJourney}
-                  disabled={questionDemo}
-                  data-cuelume-emphasis="strong"
-                >
+                <HardwareButton tone="end" className="flex-1" onClick={endJourney} data-cuelume-emphasis="strong">
                   <FlagCheckered size={24} className="opacity-80" aria-hidden />
                   <span className="text-base font-bold opacity-80">END JOURNEY</span>
                 </HardwareButton>
