@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
+import { useSession } from "@/lib/auth/session";
 import { formatDuration } from "@/lib/journey/duration";
 import {
   historyRaw,
   loadHistory,
   repeatJourney,
-  sampleHistory,
   subscribeHistory,
   viewJourney,
   type PastJourney,
@@ -15,29 +15,54 @@ import {
 import { cn } from "../ui/cn";
 
 export type RecentJourneysProps = {
-  /** The journeys to list. Leave unset to read this device's history (or a sample when it's empty). */
+  /** The journeys to list. Leave unset to read the signed-in account's history on this device. */
   journeys?: PastJourney[];
   /** How many to show. */
   limit?: number;
   /** The list's heading. */
   title?: string;
+  /** Under "No journeys yet" when there are none: where to start your first one. */
+  emptyHint?: string;
   className?: string;
 };
 
 const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 /** Under Start your journey: the last few drives, each with View (its recap) and Start again (same route). */
-export function RecentJourneys({ journeys: given, limit = 3, title = "Recent journeys", className }: RecentJourneysProps) {
-  // Read after hydration (undefined on the server) so the list never mismatches.
-  const raw = useSyncExternalStore(subscribeHistory, historyRaw, () => undefined);
+export function RecentJourneys({
+  journeys: given,
+  limit = 3,
+  title = "Recent journeys",
+  emptyHint = "Start your first one above. It'll show up here.",
+  className,
+}: RecentJourneysProps) {
+  // This account's list, read after hydration (undefined on the server) so it never mismatches.
+  const session = useSession();
+  const phone = session?.phone ?? null;
+  const raw = useSyncExternalStore(subscribeHistory, () => historyRaw(phone), () => undefined);
   const journeys = useMemo(() => {
     if (given) return given;
-    if (raw === undefined) return [];
-    const saved = loadHistory(raw);
-    return saved.length ? saved : sampleHistory();
-  }, [given, raw]);
+    if (raw === undefined || session === undefined) return undefined;
+    return loadHistory(raw);
+  }, [given, raw, session]);
 
-  if (!journeys.length) return null;
+  // Still reading this device's storage: nothing yet, so the empty state doesn't flash first.
+  if (!journeys) return null;
+
+  // A new account: no drives yet.
+  if (!journeys.length) {
+    return (
+      <section aria-labelledby="recent-journeys" className={cn("w-full px-11 uppercase", className)}>
+        <h2 id="recent-journeys" className="text-sm text-foreground/70">
+          {title}
+        </h2>
+        <div className="mt-3 border-y border-border py-6 text-center">
+          <p className="text-base">Nothing here yet</p>
+          <p className="mt-1 text-xs normal-case text-foreground/70">{emptyHint}</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="recent-journeys" className={cn("w-full px-11 uppercase", className)}>

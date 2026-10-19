@@ -7,7 +7,7 @@ import { RecentJourneys } from "./RecentJourneys";
 import { TopBar } from "./TopBar";
 
 export type HistoryProps = {
-  /** The journeys to list. Leave unset to read this device's history (or a sample when it's empty). */
+  /** The journeys to list. Leave unset to read the signed-in account's history on this device. */
   journeys?: PastJourney[];
   /** Calls on the radio, all time. Placeholder numbers until calls are recorded. */
   totalCalls?: number;
@@ -78,7 +78,13 @@ export function History({ journeys, ...given }: HistoryProps) {
           </div>
         </section>
 
-        <RecentJourneys journeys={journeys} limit={Infinity} title="All journeys" className="mt-[37px]" />
+        <RecentJourneys
+          journeys={journeys}
+          limit={Infinity}
+          title="All journeys"
+          emptyHint="Start your first one from the Journey tab. It'll show up here."
+          className="mt-[37px]"
+        />
       </div>
       <TabBar current="history" />
     </div>
