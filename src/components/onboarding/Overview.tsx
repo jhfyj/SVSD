@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ArrowRight } from "@phosphor-icons/react";
 import { ScrambleText } from "@/components/ui/ScrambleText";
 import { cn } from "@/components/ui/cn";
+import { signOut } from "@/lib/auth/session";
 import { AvatarsScene, CompanyScene, StoriesScene } from "./OverviewScenes";
 
 /*
@@ -41,6 +42,9 @@ export type OverviewProps = {
 export function Overview({ step, doneHref = "/profile?welcome=1" }: OverviewProps) {
   const card = CARDS[step];
   const next = step < 3 ? `/overview?step=${step + 1}` : doneHref;
+  // The last card starts sign-up, so it always opens on the phone number: a session left over
+  // from an earlier run would otherwise skip straight to the avatar.
+  const startsSignUp = step === 3;
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col pt-[98px]">
@@ -64,6 +68,7 @@ export function Overview({ step, doneHref = "/profile?welcome=1" }: OverviewProp
           </div>
           <Link
             href={next}
+            onClick={startsSignUp ? signOut : undefined}
             data-cuelume-tap=""
             className="inline-flex min-h-11 min-w-[125px] items-center justify-center bg-foreground px-6 py-3 text-base text-accent-foreground transition-opacity duration-150 ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
           >
