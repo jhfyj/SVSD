@@ -568,7 +568,8 @@ export function RadioScreen({
         </LcdScreen>
 
         {arrived && (
-          <div className="absolute left-[26px] top-[166px] flex w-[351px] gap-2">
+          // Arrived: End trip is the whole key row. No Drop key, there's no road left to leave one on.
+          <div className="absolute left-[26px] top-[166px] flex w-[351px]">
             <HardwareButton
               className="flex-1"
               onClick={onEndTrip}
@@ -576,10 +577,6 @@ export function RadioScreen({
             >
               <FlagCheckered size={24} className="opacity-80" aria-hidden />
               <span className="text-base font-bold opacity-80">END TRIP</span>
-            </HardwareButton>
-            {/* No road left to leave a drop on: the key stays where it was, greyed out. */}
-            <HardwareButton className={CALL_KEY} disabled aria-label="Leave a drop (you've arrived)">
-              <MapPinPlus size={24} className="opacity-60" aria-hidden />
             </HardwareButton>
           </div>
         )}
