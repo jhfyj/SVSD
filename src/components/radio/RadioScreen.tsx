@@ -359,8 +359,16 @@ export function RadioScreen({
     const k = box.width / 393;
     setFlights((f) => [...f, { id: pickup.id, kind: pickup.kind, pickup, from: { x: (at.x - box.left) / k, y: (at.y - box.top) / k } }]);
   };
-  // Which pickups are in the tally, so replying to one can take its icon back out.
+  // Which pickups are in the tally, so its icon can come back out once you've heard it.
   const tallied = useRef(new Map<string, DropKind>());
+  // The LCD's count is what's still playing: a pickup leaves it as soon as you've finished hearing it
+  // (Jen, Oct 20 2026: the icon used to stay after the story was over unless you replied).
+  const untally = useCallback((id: string) => {
+    const kind = tallied.current.get(id);
+    if (!kind) return;
+    tallied.current.delete(id);
+    setCollected((c) => ({ ...c, [kind]: Math.max(0, (c[kind] ?? 1) - 1) }));
+  }, []);
   const landed = (flight: Flight) => {
     setFlights((f) => f.filter((x) => x.id !== flight.id));
     tallied.current.set(flight.pickup.id, flight.kind);
@@ -399,16 +407,12 @@ export function RadioScreen({
   const messageOn = message.phase !== "idle" && !radioOn;
   // Your reply glows in your own marker's colour.
   const youColor = travellers.find((t) => t.ahead === 0)?.color ?? "lime";
-  // Reply sent to something you picked up (Flow 2's book, Flow 4's question): it's answered, so it
-  // comes out of the LCD's count. The count is hidden while you record, so at REPLY SENT the corner
-  // simply comes back without it. Skipping or saying no keeps it.
-  const repliedTo = message.phase === "sent" ? message.message?.id : undefined;
+  // Something you picked up has finished: you replied (REPLY SENT), said no, skipped, or it simply
+  // ended. Either way you've heard it, so it comes out of the LCD's count.
+  const heard = message.phase === "sent" || message.phase === "idle" ? message.message?.id : undefined;
   useEffect(() => {
-    const kind = repliedTo ? tallied.current.get(repliedTo) : undefined;
-    if (!repliedTo || !kind) return;
-    tallied.current.delete(repliedTo);
-    setCollected((c) => ({ ...c, [kind]: Math.max(0, (c[kind] ?? 1) - 1) }));
-  }, [repliedTo]);
+    if (heard) untally(heard);
+  }, [heard, untally]);
   const [passed, setPassed] = useState<string[]>(() => (defaultMessage ? [defaultMessage.id] : []));
   const [queue, setQueue] = useState<RouteMessage[]>(() => (defaultMessage ? [defaultMessage] : []));
   const ahead = useMemo(
@@ -630,17 +634,13 @@ export function RadioScreen({
       const t = Math.min(1, (performance.now() - sentAt) / SENT_BURST_MS);
       return t < 0.15 ? t / 0.15 : (1 - t) ** 2 / 0.72;
     };
-    const kind = tallied.current.get(ROAD_QUESTION_MESSAGE.id);
-    if (kind) {
-      tallied.current.delete(ROAD_QUESTION_MESSAGE.id);
-      setCollected((c) => ({ ...c, [kind]: Math.max(0, (c[kind] ?? 1) - 1) }));
-    }
+    untally(ROAD_QUESTION_MESSAGE.id);
     const back = setTimeout(() => setQuestionStage("driving"), ANSWER_SENT_MS);
     return () => {
       clearTimeout(back);
       callVoiceLevel.current = null;
     };
-  }, [questionDemo, questionStage]);
+  }, [questionDemo, questionStage, untally]);
 
   // The story unlocks and NightOwl tells it, in his own recorded voice, with the glow following it.
   // When it ends the radio asks to reply.
@@ -672,6 +672,10 @@ export function RadioScreen({
     const on = setTimeout(() => setStoryStage("driving"), STORY_PROMPT_HOLD_MS);
     return () => clearTimeout(on);
   }, [storyDemo, storyStage]);
+  // Back to driving: NightOwl's story has been heard, so its book comes out of the LCD's count.
+  useEffect(() => {
+    if (storyDemo && storyStage === "driving") untally("nightowl-burrito");
+  }, [storyDemo, storyStage, untally]);
 
   // Mock talking until there's real audio: they talk for a few seconds, pause, talk again.
   const [talking, setTalking] = useState(false);
@@ -853,9 +857,9 @@ export function RadioScreen({
           ) : (
             <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} companion={meCharacter} />
           )}
-          {/* The pickup count steps aside while you record (YOUR REPLY / YOUR DROP): their heading
-              sits in the same top-left corner. It comes back once you've sent. */}
-          {!((messageOn && message.phase === "recording") || (drop.active && dropRecording) || (questionDemo && questionStage === "answering")) && <CollectedTally counts={collected} flash={tallyFlash} />}
+          {/* The count steps aside whenever the LCD is about your own voice: recording a reply, or any of
+              the drop's screens (YOUR DROP, SORTING, STORY DROPPED), so its icon never sits on that text. */}
+          {!((messageOn && message.phase === "recording") || drop.active || (questionDemo && questionStage === "answering")) && <CollectedTally counts={collected} flash={tallyFlash} />}
         </LcdScreen>
 
         {arrived && (
