@@ -113,6 +113,13 @@ body::-webkit-scrollbar {
   height: 0;
 }
 
+/* Inside the phone, a page's own backdrop fill (bg-backdrop: black in dark mode) isn't needed: the
+   screen is already painted. Left on, its top edge lands on a fractional pixel once the phone is scaled
+   and shows as a thin black line under the status bar. */
+.device-screen-content > main {
+  background-color: transparent;
+}
+
 /* Match the textured screen fill on flat in-app panels as well as the page canvas. */
 .device-screen-content [class~="bg-background"]:not(.grain) {
   background-image: var(--grain);
