@@ -7,6 +7,8 @@ import { plural } from "@/lib/plural";
 const WIDTH = 300;
 const HEIGHT = 200;
 const PAD = 10;
+/** Shortest the cropped picture gets, in trail units, so a straight road still has some air. */
+const MIN_HEIGHT = 60;
 
 /**
  * The drive as the dotted trail from setup, with what happened along it:
@@ -27,9 +29,17 @@ export function TripMap({ trip, className }: { trip: TripSummary; className?: st
     }));
   }, [trip]);
 
+  // The trail is laid out in a 300×200 box, but a mostly flat drive only fills a strip of it. Crop
+  // the picture to the dots so the summary and the questions sit right under the route (Jen, Oct 20
+  // 2026: the questions were too far down the page), keeping a little height for a near-straight road.
+  const ys = dots.length ? dots.map((d) => d.y) : [0, HEIGHT];
+  const top = Math.min(...ys) - PAD;
+  const height = Math.max(MIN_HEIGHT, Math.max(...ys) + PAD - top);
+  const y0 = top - (height - (Math.max(...ys) + PAD - top)) / 2;
+
   return (
     <svg
-      viewBox={`${-PAD} ${-PAD} ${WIDTH + PAD * 2} ${HEIGHT + PAD * 2}`}
+      viewBox={`${-PAD} ${y0} ${WIDTH + PAD * 2} ${height}`}
       className={cn("block w-full overflow-visible", className)}
       role="img"
       aria-label={`Your route from ${trip.from} to ${trip.to}, with ${plural(trip.questions.length, "question")} and ${plural(trip.calls.length, "call")} along it`}
