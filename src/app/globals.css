@@ -47,13 +47,13 @@ body::-webkit-scrollbar {
   .device-stage::before { animation: backdrop-twinkle 7s steps(1) infinite; }
 }
 
-/* Wide screens: the About column (components/AboutPanel, 360px) sits on the left, so the phone
-   centres in the rest. Same breakpoint as lg. */
+/* Wide screens: the About column (components/AboutPanel, 360px) sits on the left; the phone stays
+   in the middle of the whole screen, with the same room kept clear on both sides. Same breakpoint as lg. */
 .about-panel {
   width: 360px;
 }
 @media (min-width: 1024px) {
-  .device-stage { padding-left: calc(360px + 16px); }
+  .device-stage { padding-inline: calc(360px + 16px); }
 }
 
 .device-frame-scale {

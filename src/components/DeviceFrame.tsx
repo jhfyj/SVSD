@@ -24,8 +24,9 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
       const wide = width >= WIDE;
-      // On a wide screen the About column takes the left edge; the phone fits in what is left.
-      const room = wide ? width - ABOUT_WIDTH : width;
+      // On a wide screen the About column takes the left edge and the phone stays centred on the screen,
+      // so it fits between equal margins of the column's width on both sides.
+      const room = wide ? width - 2 * ABOUT_WIDTH : width;
       setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (room - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
     };
     fit();
