@@ -99,8 +99,9 @@ body::-webkit-scrollbar {
   display: flex;
   flex-direction: column;
   overflow: auto;
-  /* Room for the phone's status bar. A screen built to sit under it (the radio) pulls up by this. */
-  --status-bar-height: 64px;
+  /* Room for the phone's status bar: its time and icons end 44px down (the bar's last 20px are
+     empty), so content starts there. A screen built to sit under it (the radio) pulls up by this. */
+  --status-bar-height: 44px;
   padding-top: var(--status-bar-height);
   overscroll-behavior: none;
   scrollbar-width: none;
