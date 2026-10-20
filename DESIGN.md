@@ -45,7 +45,7 @@ Semantic tokens     what a value is for: --background, --surface, --story, --key
 Recipes             components built only from semantic tokens: HardwareButton, RadioLcd, IntentPicker…
 ```
 
-`src/lib/theme.ts` sets `data-theme` on `<html>` before first paint: **night by default**, until someone picks a theme. `auto` follows the clock: day between sunrise and sunset where you are (7am–7pm if the place is unknown), night otherwise. `?theme=light|dark|auto` sets the choice for demos; the Dial Kit has the same switch.
+`src/lib/theme.ts` sets `data-theme` on `<html>` before first paint: **night by default**, until someone picks a theme. `auto` follows the clock: day between sunrise and sunset where you are (7am–7pm if the place is unknown), night otherwise. The prototype has no theme switch on screen: every flow starts dark except Night mode, which starts by day and turns dark at sunset. `?theme=light|dark|auto` still sets the choice for testing.
 
 ---
 
@@ -164,7 +164,7 @@ The day theme is new, and a few of its values fell below the minimums. They now 
 
 ### 3.8 Night mode (amber)
 
-> **Off for now.** Amber is behind a switch (Dial Kit → Night amber, or `?amber=on`) and is off by default; see *When it's on* below.
+> **Off for now.** Amber is behind a switch (`?amber=on`) and is off by default; see *When it's on* below.
 
 At night the radio is **amber on near-black**. A bright screen lights up a dark car, and amber is easiest on night vision. It's only tokens: `.radio-night` sits on `RadioScreen`, and `:root:not([data-theme="light"]) .radio-night` in `globals.css` reassigns the semantic tokens inside it, so every radio state (off, connecting, a call, a message, a drop, the load-in) turns amber with no code. **Screens keep the normal night theme**; only the radio, the thing you see while driving, goes amber.
 
@@ -181,7 +181,7 @@ At night the radio is **amber on near-black**. A bright screen lights up a dark 
 
 **Unchanged in Night mode:** the LEDs (green / amber / red keep their meaning and are 8px), the red power key, the red End call and the rocker's black body. They're physical parts.
 
-**When it's on:** amber is a switch, **off by default for now** (Jen, Oct 18 2026): at night the radio keeps the normal night theme (green), and Night mode's moments below play in those colours. Turn it on in the Dial Kit (Night amber) or with `?amber=on` (`?amber=off` to turn it off; kept in localStorage, `data-amber` on `<html>`, `lib/theme.ts`). With it on: whenever the theme is night and you're on the radio. Sunset during a drive plays the Night falls moment ([§9.8](#98-current-motion-inventory)); opening the radio after dark starts amber. With it off the sunset still sinks the sun, but the map dims to `nightfall` instead of washing amber.
+**When it's on:** amber is a switch, **off by default for now** (Jen, Oct 18 2026): at night the radio keeps the normal night theme (green), and Night mode's moments below play in those colours. Turn it on with `?amber=on` (`?amber=off` to turn it off; kept in localStorage, `data-amber` on `<html>`, `lib/theme.ts`). With it on: whenever the theme is night and you're on the radio. Sunset during a drive plays the Night falls moment ([§9.8](#98-current-motion-inventory)); opening the radio after dark starts amber. With it off the sunset still sinks the sun, but the map dims to `nightfall` instead of washing amber.
 
 **What Night mode does** (Flow 6, `useNightDrive`): after dark it checks in with a question to answer out loud (“Still with me? Tell me one thing you can see.”), because answering keeps your mind awake. Nothing to tap: the LCD shows the question and LISTENING with a stepped meter. When no answer comes, the LCD says **NOTHING HEARD**, then **REROUTING** (“Rest area in 9 mi · stories paused”): it routes you to the rest area by itself, stories pause, and the key row is one wide TO REST AREA key, pressed in and lit, nothing to tap. Nothing takes over the map; the road stays in view. Pulled in, the LCD says “Take 15 min · stories wait”, **the drive holds still on the map** (you're parked), and the key becomes **BACK ON THE ROAD**: the dot moves again, stories come back, and it doesn't check in again straight away. Flipping Company on mid check-in stops it asking. We don't keep you awake; we tell you to stop.
 
@@ -273,7 +273,7 @@ The unit is 4px. Use only these steps:
 - **Gutter: 44px (`px-11` / `mx-11`) on every Screen.** That gives a 305px column at 393 wide, matching Figma's buttons, sign-in and profile. Wider and narrower gutters (31, 33, 19) snap to 44.
 - **Top:** most Screens open with the top bar (`h-14`): pixel weather icon + clock, nothing else. Sign-in and verification have no top bar. Titles sit below it and scramble in.
 - **Bottom:** one primary action pinned to the bottom of the column, `pb-edge-bottom` (56) from the edge. On Screens with the [tab bar](#83-hardware-components), the tab bar is that edge: it comes last in the column and sticks to the bottom while the Screen scrolls.
-- **Dial Kit:** a prototype panel beside the column on wide screens (theme, every flow, every radio state, arrive now). It's hidden at phone width and is never part of the product UI.
+- **About card:** the only panel beside the phone on wide screens: what Caravan is, Play a flow (the six guided flows, then All flows, where every key works) and the team. It's hidden at phone width, where a two-finger hold opens the flow picker instead, and is never part of the product UI.
 
 ### 5.3 Console geometry
 
@@ -587,7 +587,7 @@ Two families, never mixed in one spot:
 
 ## 12. Ship checklist
 
-- [ ] Looked right in **both themes** (Dial Kit → Light / Dark)
+- [ ] Looked right in **both themes** (`?theme=light` / `?theme=dark`)
 - [ ] Screens use only tokens and scale classes: no hex values, no `text-[Npx]`, no radius, no off-scale spacing
 - [ ] Each surface is clearly Screen **or** Hardware
 - [ ] One hero, one primary action, one signal color per screen

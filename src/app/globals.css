@@ -30,20 +30,14 @@ body::-webkit-scrollbar {
   background: var(--backdrop);
 }
 
-/* Wide screens: the About card (components/AboutPanel, 24px in, 312px wide) sits on the left and
-   the Dial Kit card (24px in, 264px wide) on the right. The phone centres in the space between
-   them, 40px clear of each card. Hide the kit and the phone slides right to the middle of the
-   space between the About card and the screen's right edge. Same breakpoint as lg (1024px). */
+/* Wide screens: the About card (components/AboutPanel, 24px in, 312px wide) is the only panel, on
+   the left. The phone centres in the space between it and the screen's right edge, 40px clear of
+   the card. Same breakpoint as lg (1024px). */
 .about-panel {
   width: 360px;
 }
 @media (min-width: 1024px) {
   .device-stage { padding-left: calc(24px + 312px + 40px); padding-right: 40px; }
-  :root[data-dialkit="open"] .device-stage { padding-right: calc(24px + 264px + 40px); }
-  :root[data-dialkit-slide] .device-stage { transition: padding-right 520ms cubic-bezier(0.2, 0, 0, 1); }
-}
-@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
-  :root[data-dialkit-slide] .device-stage { transition: none; }
 }
 
 .device-frame-scale {

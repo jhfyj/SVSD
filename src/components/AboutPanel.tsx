@@ -1,15 +1,17 @@
 "use client";
 
 import { Radio_Canada_Big } from "next/font/google";
+import { useSyncExternalStore } from "react";
+import { currentFlow, PANEL_FLOWS, requestFlow, subscribeGuide } from "@/lib/guide";
 import "./about-panel.css";
 
 /*
-  The submission view on a wide screen: what Caravan is, who made it, and the six flows to play.
-  Hidden below lg (1024px), so a real phone only ever shows the app (and keeps the two-finger hold
-  for switching flows). The phone stage leaves room for it (.device-stage in globals.css, and
-  DeviceFrame's fit). Picking a flow here starts it on the phone (the Dial Kit does the starting).
-  Look: about-panel.css (a floating white card, grey-value hierarchy, after naheeljawaid.com
-  and rachelchen.tech).
+  The submission view on a wide screen, and the only panel there: what Caravan is, the flows to
+  play (the six guided ones, then All flows to explore freely), and who made it. Hidden below lg
+  (1024px), so a real phone only ever shows the app (and keeps the two-finger hold for switching
+  flows). The phone stage leaves room for it (.device-stage in globals.css, and DeviceFrame's fit).
+  Picking a flow here starts it on the phone (DialKit does the starting). Look: about-panel.css
+  (a floating card, grey-value hierarchy, after naheeljawaid.com and rachelchen.tech).
 */
 
 /** Width of the column, in px. DeviceFrame and globals.css use the same number. */
@@ -31,6 +33,8 @@ const TEAM = [
 const radioCanadaBig = Radio_Canada_Big({ subsets: ["latin"], weight: ["400", "500"] });
 
 export function AboutPanel() {
+  // The flow playing now, for the green square.
+  const playing = useSyncExternalStore(subscribeGuide, currentFlow, () => null);
   return (
     <aside aria-label="About Caravan" className={`about-panel ap-panel ${radioCanadaBig.className}`}>
       <header>
@@ -52,6 +56,26 @@ export function AboutPanel() {
       </header>
 
       <div className="ap-spacer" />
+
+      {/* data-guide-flow is where the guide's bubble points when a flow ends (Flow 6 → All flows). */}
+      <section aria-label="Play a flow" className="ap-section">
+        <span className="ap-heading">Play a flow</span>
+        <ol className="ap-list">
+          {PANEL_FLOWS.map((f) => (
+            <li key={f.n}>
+              <button
+                type="button"
+                data-guide-flow={f.n}
+                aria-current={f.n === playing || undefined}
+                onClick={() => requestFlow(f.n)}
+                className="ap-item"
+              >
+                {f.title}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <section aria-label="Team" className="ap-section">
         <span className="ap-heading">Team</span>

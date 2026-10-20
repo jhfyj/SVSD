@@ -9,7 +9,9 @@
   permission switches). Nothing returned = nothing to tap: the flow is talking or driving.
 */
 
-export type FlowNumber = 1 | 2 | 3 | 4 | 5 | 6;
+/** 1 to 6 are the guided flows; 7 is All flows, the free play-through with every key working. */
+export type FlowNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export const ALL_FLOWS = 7;
 
 export type GuideStep = {
   /** What gets the bubble. */
@@ -154,6 +156,16 @@ export const GUIDE_FLOWS: GuideFlow[] = [
   },
 ];
 
+/**
+ * The list in the About card: the six guided flows, then All flows. All flows has no guide entry,
+ * so nothing is locked and no bubble shows: a visitor signed in with the demo account, on the
+ * home screen, free to tap through everything we made. Flow 6's end points its bubble here.
+ */
+export const PANEL_FLOWS: { n: FlowNumber; title: string }[] = [
+  ...GUIDE_FLOWS.map(({ n, title }) => ({ n, title })),
+  { n: ALL_FLOWS, title: "All flows" },
+];
+
 const FLOW_KEY = "svsd-guide-flow";
 const FORCE_KEY = "svsd-guide";
 export const GUIDE_WIDE = "(min-width: 1024px)";
@@ -182,7 +194,7 @@ export function subscribeGuide(l: () => void) {
 export function currentFlow(): FlowNumber | null {
   try {
     const n = Number(sessionStorage.getItem(FLOW_KEY));
-    return n >= 1 && n <= 6 ? (n as FlowNumber) : null;
+    return n >= 1 && n <= ALL_FLOWS ? (n as FlowNumber) : null;
   } catch {
     return null;
   }

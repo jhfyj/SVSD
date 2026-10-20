@@ -1,39 +1,32 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { currentFlow, FLOW_EVENT, GUIDE_FLOWS, guideActive, setCurrentFlow, subscribeGuide, type FlowNumber } from "@/lib/guide";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ALL_FLOWS, currentFlow, FLOW_EVENT, guideActive, setCurrentFlow, type FlowNumber } from "@/lib/guide";
 import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { markOnboarded } from "@/lib/profile/onboarding";
 import { clearHangUps } from "@/lib/radio/hangups";
-import { setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
+import { setThemeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
-import { setSoundOn, useSoundOn } from "@/lib/sound";
-import { Radio_Canada_Big } from "next/font/google";
+import { setSoundOn } from "@/lib/sound";
 import { cn } from "../ui/cn";
 import { useTwoFingerHold } from "./useTwoFingerHold";
-import "./dial-kit.css";
-
-// The About card's typeface, so both cards beside the phone read as one set (look: dial-kit.css).
-const panelFont = Radio_Canada_Big({ subsets: ["latin"], weight: ["400", "500"] });
 
 /*
-  The card right of the phone on wide screens (the submission site and locally alike): sound, theme,
-  and Play a flow, the six flows of the demo video. Picking one starts it from its first screen and
-  the app's own keys carry you on from there. Hidden on phone-sized screens, so a real phone never
-  shows it: there the only control is the flow picker, six keys along the bottom that appear when
-  you hold two fingers on the screen (or press ` on a keyboard).
+  How the flows start. There's no card for it any more (Jen, Oct 19 2026): on a wide screen the
+  only panel is the About card on the left, whose Play a flow list asks for a flow (requestFlow in
+  lib/guide) and this starts it. No Sound or Theme switches: sound is always on, and the app is
+  always dark (only Night mode's sunset starts by day). On a phone the only control is the flow
+  picker, six keys along the bottom that appear when you hold two fingers on the screen (or press `
+  on a keyboard).
 
   `flows` below still keeps every flow's steps and notes (and the groups outside the script): the
   first step is how a flow starts, and the rest are the build notes, no longer shown.
 */
 
-const OPEN_KEY = "svsd-dialkit";
 const DEMO_PHONE = "5550100100";
-
-const THEMES: ThemeChoice[] = ["auto", "light", "dark"];
 
 /** The Hang-up timeout flow: a call in progress, with hang-ups counting. */
 const TIMEOUT_HREF = "/radio?call=connected&timeout=on";
@@ -67,18 +60,6 @@ type Flow = {
   steps: Step[];
 };
 
-const listeners = new Set<() => void>();
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  const onStorage = (e: StorageEvent) => (e.key === OPEN_KEY || e.key === THEME_KEY) && listener();
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener("storage", onStorage);
-  };
-}
-
 /** The radio with a fresh ?load=, so its load-in plays again. */
 const loadIn = () => `/radio?load=${Date.now()}`;
 /** The scripted story drive, from the start each time. */
@@ -100,28 +81,11 @@ async function newAccount() {
   await verifyCode(`555${Math.floor(1_000_000 + Math.random() * 8_999_999)}`, "123456");
 }
 
-function read(key: string) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function write(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {}
-  listeners.forEach((l) => l());
-}
-
 export function DialKit() {
   const router = useRouter();
   const path = usePathname();
   const params = useSearchParams();
   const session = useSession();
-  const open = useSyncExternalStore(subscribe, () => read(OPEN_KEY) !== "closed", () => false);
-  const theme = useSyncExternalStore(subscribe, themeChoice, () => "auto" as ThemeChoice);
 
   // The flow picker: two fingers held on the screen (or ` on a keyboard) shows it, again hides it.
   const [picking, setPicking] = useState(false);
@@ -137,19 +101,6 @@ export function DialKit() {
     return () => window.removeEventListener("keydown", onKey);
   }, [togglePicker]);
 
-  // The phone centres in the room the kit leaves (globals.css .device-stage): between the two cards
-  // while the kit is open, and slides right to the middle of the free space when it's hidden. The
-  // slide only animates on Hide/Show, not on page load.
-  useEffect(() => {
-    document.documentElement.dataset.dialkit = open ? "open" : "closed";
-  }, [open]);
-  const toggle = () => {
-    document.documentElement.dataset.dialkitSlide = "";
-    write(OPEN_KEY, open ? "closed" : "open");
-  };
-  // The flow playing now (set whenever a flow starts), for the list's green square.
-  const playing = useSyncExternalStore(subscribeGuide, currentFlow, () => null);
-
   const pickTheme = (choice: ThemeChoice) => {
     // Drop ?theme= so the clock doesn't re-pin the old choice on its next tick.
     if (params.has("theme")) {
@@ -158,7 +109,6 @@ export function DialKit() {
       router.replace(next.size ? `${path}?${next}` : path);
     }
     setThemeChoice(choice);
-    listeners.forEach((l) => l());
   };
 
   const here = params.size ? `${path}?${params}` : path;
@@ -449,25 +399,35 @@ export function DialKit() {
   // the app itself carries you through the rest (NEXT, Save, Start journey...): nothing plays on a
   // timer. Flow 1 signs out first so it runs as a new person would see it.
   const numbered = flows.filter((f) => f.n);
+  // All flows (About card only, not the phone's picker): the demo account on the home screen, with
+  // the guide off so every key works and you can wander through everything.
+  const allFlows: Flow = {
+    n: String(ALL_FLOWS),
+    title: "All flows",
+    start: () => router.push("/"),
+    steps: [],
+  };
   // Every flow is for filming, so starting one always turns the sound back on (the mute is
-  // remembered per device, and a phone has no panel to see it on).
-  const soundOn = useSoundOn();
+  // remembered per device, and there's no switch for it on screen).
   const startFlow = async (f: Flow) => {
     setSoundOn(true);
+    // Always dark: there's no theme switch any more. Night mode (Flow 6) starts by day itself and
+    // its sunset turns it dark again.
+    if (f.n !== "6") setThemeChoice("dark");
     // The guided demo (submission site) follows whichever flow was started last.
     setCurrentFlow(Number(f.n) as FlowNumber);
     // Flows 2 to 6 are for someone already signed up; a visitor who skipped Flow 1 gets the demo account.
     if (f.n !== "1" && !session) await signedIn();
     return f.start ? f.start() : void run(f.steps[0]);
   };
-  // The About column's flow list asks through an event (it doesn't know how flows start). On the
+  // The About card's flow list asks through an event (it doesn't know how flows start). On the
   // submission site a first visit starts Flow 1 by itself.
   const startRef = useRef(startFlow);
   useEffect(() => {
     startRef.current = startFlow;
   });
   useEffect(() => {
-    const byNumber = (n: number) => numbered.find((f) => f.n === String(n));
+    const byNumber = (n: number) => (n === ALL_FLOWS ? allFlows : numbered.find((f) => f.n === String(n)));
     const onFlow = (e: Event) => {
       const f = byNumber((e as CustomEvent<FlowNumber>).detail);
       if (f) void startRef.current(f);
@@ -481,7 +441,8 @@ export function DialKit() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once; the flows' start functions are read through startRef
   }, []);
 
-  const picker = picking && (
+  if (!picking) return null;
+  return (
     <FlowPicker
       flows={numbered}
       onPick={(f) => {
@@ -490,79 +451,6 @@ export function DialKit() {
       }}
       onClose={() => setPicking(false)}
     />
-  );
-
-  if (!open) {
-    return (
-      <>
-        {picker}
-        <div className={`dk-closed hidden lg:block ${panelFont.className}`}>
-          <Chip onClick={toggle}>Dial kit</Chip>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-    {picker}
-    <aside
-      aria-label="Dial kit"
-      className={`dk-panel hidden lg:block ${panelFont.className}`}
-    >
-      <div className="dk-head">
-        <span className="dk-label">Dial kit</span>
-        <button type="button" onClick={toggle} className="dk-link">
-          Hide
-        </button>
-      </div>
-
-      <Group title="Sound">
-        <div className="dk-seg grid-cols-2">
-          <Chip active={!soundOn} onClick={() => setSoundOn(false)}>
-            off
-          </Chip>
-          <Chip active={soundOn} onClick={() => setSoundOn(true)}>
-            on
-          </Chip>
-        </div>
-      </Group>
-      <Group title="Theme">
-        <div className="dk-seg grid-cols-3">
-          {THEMES.map((t) => (
-            <Chip key={t} active={theme === t} onClick={() => pickTheme(t)}>
-              {t}
-            </Chip>
-          ))}
-        </div>
-      </Group>
-
-      {/* The six flows. Picking one starts it from its first screen; the one playing goes to ink
-          with the green square. data-guide-flow is where the guide's bubble points when a flow ends. */}
-      <section aria-label="Flows" className="dk-group dk-flows">
-        <h2 className="dk-group-title dk-label">Play a flow</h2>
-        <ol className="dk-steps">
-          {GUIDE_FLOWS.map((g) => {
-            const f = numbered.find((x) => x.n === String(g.n));
-            if (!f) return null;
-            return (
-              <li key={g.n}>
-                <button
-                  type="button"
-                  data-guide-flow={g.n}
-                  aria-pressed={g.n === playing}
-                  onClick={() => void startFlow(f)}
-                  className="dk-chip dk-step"
-                >
-                  {g.title}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-      </section>
-    </aside>
-    </>
   );
 }
 
@@ -597,15 +485,6 @@ export function FlowPicker<F extends Pick<Flow, "n" | "title">>({
   );
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="dk-group">
-      <h2 className="dk-group-title dk-label">{title}</h2>
-      <div className="dk-steps">{children}</div>
-    </section>
-  );
-}
-
 function Chip({
   active,
   onClick,
@@ -629,8 +508,7 @@ function Chip({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        // dk-chip: restyled only inside the Dial Kit card (dial-kit.css); the flow picker keeps this look.
-        "dk-chip rounded-token border px-2 py-1 text-left text-xs uppercase transition-colors duration-150 ease-out",
+        "rounded-token border px-2 py-1 text-left text-xs uppercase transition-colors duration-150 ease-out",
         active ? "border-foreground bg-foreground text-background" : "border-border text-foreground hover:bg-surface-raised",
         "disabled:pointer-events-none disabled:opacity-40",
         className,

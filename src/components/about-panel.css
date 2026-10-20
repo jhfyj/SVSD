@@ -103,29 +103,30 @@
   list-style: none;
 }
 
+/* Play a flow: a plain list, rows 28px apart (as in the old Dial Kit card). */
 .ap-item {
   position: relative;
   display: flex;
   width: 100%;
-  flex-direction: column;
-  padding: 2.5px 0;
+  padding: 4px 0;
   border: 0;
   background: none;
   color: var(--text);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: color 150ms ease-out;
+  transition: color 150ms ease-out, padding-left 0.2s ease;
 }
 .ap-item:hover { color: var(--hover); }
 .ap-item:focus-visible { outline: none; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
-.ap-item[aria-current] { color: var(--ink); }
+/* The flow playing: full ink, a small green square inside the card's padding, text stepped in 12px. */
+.ap-item[aria-current] { color: var(--ink); padding-left: 12px; }
 .ap-item[aria-current]::before {
   content: "";
   position: absolute;
-  top: 10px;
-  left: -14px;
+  top: 12px;
+  left: 0;
   width: 5px;
   height: 5px;
   background: var(--on);
