@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import { Radio } from "./Radio";
 
-export const metadata = { title: "Radio · SVSD" };
-
 export default function RadioPage() {
   return (
     // The radio is exactly the phone screen (393 x 852) and is built to sit under the status bar: its

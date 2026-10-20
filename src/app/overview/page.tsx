@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import { Overview, type OverviewStep } from "@/components/onboarding/Overview";
 
-export const metadata = { title: "Overview · SVSD" };
-
 type Params = Promise<{ step?: string }>;
 
 // The step comes from the address, so it's read inside Suspense (like /profile): the rest of the

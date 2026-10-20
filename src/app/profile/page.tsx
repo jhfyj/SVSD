@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import { ProfileScreen } from "@/components/profile";
 
-export const metadata = { title: "Profile · SVSD" };
-
 type Params = Promise<{ settings?: string; welcome?: string }>;
 
 export default function ProfilePage({ searchParams }: { searchParams: Params }) {

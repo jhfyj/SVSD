@@ -1,7 +1,5 @@
 import { TuningIn } from "@/components/onboarding/TuningIn";
 
-export const metadata = { title: "Caravan · SVSD" };
-
 /** Flow 1 opens here: the radio tunes in to Caravan, then hands over to the first overview card. */
 export default function WelcomePage() {
   return (

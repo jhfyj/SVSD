@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Every page is titled just Caravan (no per-page titles). The tab icon is the camel: app/icon.svg,
+// app/favicon.ico and app/apple-icon.png, all made from public/caravan-logo.svg.
 export const metadata: Metadata = {
   title: "Caravan",
   description: "Stories told by everyone on the road tonight. A storytelling app for the road, by Jennifer, Emily and Angelina.",
