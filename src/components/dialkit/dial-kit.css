@@ -1,0 +1,229 @@
+/*
+  The Dial Kit (local only; the hosted site never shows it), in the same look as the About card
+  (components/about-panel.css): a floating white card, Radio Canada Big, hierarchy from grey value,
+  section labels in small grey Geist Mono caps. Every class here starts with dk- and only applies
+  inside .dk-panel / .dk-closed, so the phone's own flow picker (FlowPicker, same Chip) keeps the
+  app's look. Plain CSS, outside Tailwind's layers, so it wins over the utility classes on Chip.
+*/
+
+.dk-panel,
+.dk-closed {
+  --card: #ffffff;
+  --ink: #1d1e1f;
+  --title: #7e7e7e;
+  --text: #a9a9a9;
+  --faint: #c4c4c4;
+  --hover: #6f6f6f;
+  --on: #2fd11a;
+  --seg: #f3f3f2;
+  --seg-on: #ffffff;
+  --rule: #ececeb;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px rgb(32 33 36 / 0.09);
+  --seg-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 0.5px rgb(0 0 0 / 0.04);
+}
+:root:not([data-theme="light"]) :is(.dk-panel, .dk-closed) {
+  --card: #1b1b1b;
+  --ink: #f2f2f2;
+  --title: #a3a3a3;
+  --text: #6b6b6b;
+  --faint: #545454;
+  --hover: #bdbdbd;
+  --on: #6dff5c;
+  --seg: #242424;
+  --seg-on: #3a3a3a;
+  --rule: #2a2a2a;
+  --shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px rgb(0 0 0 / 0.35);
+  --seg-shadow: none;
+}
+
+.dk-panel {
+  position: fixed;
+  /* Full height, top and bottom 24px in, like the About card on the left. */
+  top: 24px;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  width: 264px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 24px 22px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  line-height: 19px;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+.dk-panel::-webkit-scrollbar { display: none; }
+
+.dk-closed {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 50;
+}
+
+/* Labels: the About card's "Play a flow" / "Team" style. */
+.dk-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.dk-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.dk-head .dk-label { color: var(--title); }
+.dk-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+.dk-link:hover { color: var(--ink); }
+
+.dk-group { margin-bottom: 18px; }
+/* Play a flow sits at the bottom of the full-height panel (the panel is a flex column). */
+@media (min-width: 1024px) {
+  .dk-panel { display: flex; flex-direction: column; }
+}
+.dk-flows { margin-top: auto; margin-bottom: 0; }
+.dk-group-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.dk-steps { display: flex; flex-direction: column; }
+
+/* Every Chip inside the card drops the app's boxed caps key. */
+.dk-panel .dk-chip,
+.dk-closed .dk-chip {
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 13px;
+  line-height: 19px;
+  text-transform: none;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  transition: color 150ms ease-out, background-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.dk-panel .dk-chip:hover { color: var(--hover); background: none; }
+
+/* Sound / Theme: one soft grey track, the picked one lifted white. */
+.dk-panel .dk-seg {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--seg);
+}
+.dk-panel .dk-seg .dk-chip {
+  padding: 4px 0;
+  text-align: center;
+}
+.dk-panel .dk-seg .dk-chip:hover { color: var(--ink); background: none; }
+.dk-panel .dk-seg .dk-chip[aria-pressed="true"] {
+  background: var(--seg-on);
+  color: var(--ink);
+  box-shadow: var(--seg-shadow);
+}
+.dk-panel .dk-seg .dk-chip::first-letter { text-transform: uppercase; }
+
+/* Play a flow: a plain list. The flow playing goes to ink with the small green square. */
+.dk-panel .dk-step {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4.5px 0;
+  transition: padding-left 0.2s ease;
+}
+/* The square sits inside the card's padding: the playing flow's text steps in 12px to make room. */
+.dk-panel .dk-step[aria-pressed="true"] { color: var(--ink); background: none; padding-left: 12px; }
+.dk-panel .dk-step[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  background: var(--on);
+}
+.dk-panel .dk-step-off {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2.5px 0;
+  color: var(--faint);
+}
+
+.dk-tag {
+  flex-shrink: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.dk-note {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--faint);
+}
+
+.dk-todos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0 18px;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.dk-panel .dk-todos .dk-chip { padding: 0; }
+.dk-panel .dk-todos .dk-chip[aria-pressed="true"] { color: var(--ink); }
+
+/* Start a flow: pinned to the bottom of the card. */
+.dk-play {
+  position: sticky;
+  bottom: 0;
+  margin: 8px -22px 0;
+  padding: 14px 22px 20px;
+  border-top: 1px solid var(--rule);
+  background: var(--card);
+}
+.dk-play .dk-label { display: block; margin-bottom: 8px; }
+
+/* The closed state: a small white pill. */
+.dk-closed .dk-chip {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--title);
+}
+.dk-closed .dk-chip:hover { color: var(--ink); background: var(--card); }

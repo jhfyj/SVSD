@@ -2,35 +2,35 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { currentFlow, FLOW_EVENT, guideActive, setCurrentFlow, type FlowNumber } from "@/lib/guide";
+import { currentFlow, FLOW_EVENT, GUIDE_FLOWS, guideActive, setCurrentFlow, subscribeGuide, type FlowNumber } from "@/lib/guide";
 import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
 import { markOnboarded } from "@/lib/profile/onboarding";
 import { clearHangUps } from "@/lib/radio/hangups";
-import { AMBER_KEY, amberOn, setAmber, setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
+import { setThemeChoice, THEME_KEY, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { arrival } from "@/lib/trip/arrival";
 import { setSoundOn, useSoundOn } from "@/lib/sound";
+import { Radio_Canada_Big } from "next/font/google";
 import { cn } from "../ui/cn";
 import { useTwoFingerHold } from "./useTwoFingerHold";
+import "./dial-kit.css";
+
+// The About card's typeface, so both cards beside the phone read as one set (look: dial-kit.css).
+const panelFont = Radio_Canada_Big({ subsets: ["latin"], weight: ["400", "500"] });
 
 /*
-  Prototype controls beside the phone column on wide screens: pin the theme and jump to any moment
-  of the demo video. Flows follow the video script in order, so each prototype shot is one click
-  away. Screens that aren't built yet (NEW) open a blank stand-in; ones that differ from the script
-  (CHANGE) carry a note, so the kit doubles as the build list. TO-DOS hides the notes for recording.
-  Hidden on phone-sized screens, so it never shows on a real phone.
+  The card right of the phone on wide screens (the submission site and locally alike): sound, theme,
+  and Play a flow, the six flows of the demo video. Picking one starts it from its first screen and
+  the app's own keys carry you on from there. Hidden on phone-sized screens, so a real phone never
+  shows it: there the only control is the flow picker, six keys along the bottom that appear when
+  you hold two fingers on the screen (or press ` on a keyboard).
 
-  The hosted site (the production build on Vercel, filmed on a phone) never shows the panel at all:
-  the only control is the flow picker, six keys along the bottom that appear when you hold two
-  fingers on the screen (or press ` on a keyboard). Locally (next dev) the panel stays as it was.
+  `flows` below still keeps every flow's steps and notes (and the groups outside the script): the
+  first step is how a flow starts, and the rest are the build notes, no longer shown.
 */
 
-/** The side panel: only while working locally. The hosted site shows nothing but the hidden picker. */
-const PANEL = process.env.NODE_ENV !== "production";
-
 const OPEN_KEY = "svsd-dialkit";
-const TODOS_KEY = "svsd-dialkit-todos";
 const DEMO_PHONE = "5550100100";
 
 const THEMES: ThemeChoice[] = ["auto", "light", "dark"];
@@ -71,7 +71,7 @@ const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  const onStorage = (e: StorageEvent) => (e.key === OPEN_KEY || e.key === TODOS_KEY || e.key === THEME_KEY || e.key === AMBER_KEY) && listener();
+  const onStorage = (e: StorageEvent) => (e.key === OPEN_KEY || e.key === THEME_KEY) && listener();
   window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(listener);
@@ -121,9 +121,7 @@ export function DialKit() {
   const params = useSearchParams();
   const session = useSession();
   const open = useSyncExternalStore(subscribe, () => read(OPEN_KEY) !== "closed", () => false);
-  const showTodos = useSyncExternalStore(subscribe, () => read(TODOS_KEY) !== "hidden", () => true);
   const theme = useSyncExternalStore(subscribe, themeChoice, () => "auto" as ThemeChoice);
-  const amber = useSyncExternalStore(subscribe, amberOn, () => false);
 
   // The flow picker: two fingers held on the screen (or ` on a keyboard) shows it, again hides it.
   const [picking, setPicking] = useState(false);
@@ -139,8 +137,18 @@ export function DialKit() {
     return () => window.removeEventListener("keydown", onKey);
   }, [togglePicker]);
 
-  const toggle = () => write(OPEN_KEY, open ? "closed" : "open");
-  const toggleTodos = () => write(TODOS_KEY, showTodos ? "hidden" : "shown");
+  // The phone centres in the room the kit leaves (globals.css .device-stage): between the two cards
+  // while the kit is open, and slides right to the middle of the free space when it's hidden. The
+  // slide only animates on Hide/Show, not on page load.
+  useEffect(() => {
+    document.documentElement.dataset.dialkit = open ? "open" : "closed";
+  }, [open]);
+  const toggle = () => {
+    document.documentElement.dataset.dialkitSlide = "";
+    write(OPEN_KEY, open ? "closed" : "open");
+  };
+  // The flow playing now (set whenever a flow starts), for the list's green square.
+  const playing = useSyncExternalStore(subscribeGuide, currentFlow, () => null);
 
   const pickTheme = (choice: ThemeChoice) => {
     // Drop ?theme= so the clock doesn't re-pin the old choice on its next tick.
@@ -150,17 +158,6 @@ export function DialKit() {
       router.replace(next.size ? `${path}?${next}` : path);
     }
     setThemeChoice(choice);
-    listeners.forEach((l) => l());
-  };
-
-  /** Night mode's amber radio, off by default (see lib/theme). */
-  const pickAmber = (on: boolean) => {
-    if (params.has("amber")) {
-      const next = new URLSearchParams(params);
-      next.delete("amber");
-      router.replace(next.size ? `${path}?${next}` : path);
-    }
-    setAmber(on);
     listeners.forEach((l) => l());
   };
 
@@ -381,14 +378,14 @@ export function DialKit() {
       steps: [
         {
           label: "Night falls",
-          // Starts by day: the sunset pins the night theme (and turns the radio amber if Night amber is on).
+          // Starts by day: the sunset pins the night theme.
           go: () => {
             pickTheme("light");
             openRadio(nightDrive("fall"));
           },
           radio: true,
           active: path === "/radio" && params.get("night") === "fall",
-          note: "The sun sinks across the map, the light dims, the radio flickers back on: NIGHT MODE ON, then 214 driving tonight. Amber only if Night amber is on.",
+          note: "The sun sinks across the map, the light dims, the radio flickers back on: NIGHT MODE ON, then 214 driving tonight.",
         },
         {
           label: "Check-in",
@@ -410,7 +407,6 @@ export function DialKit() {
           active: path === "/radio" && params.get("night") === "rest",
           note: "Rerouting to the rest area by itself; stories keep coming. Exit (the X key, where Drop sits) drops the reroute and carries on along your route; Settings stays. 7 s later you're parked: the dot stops on the map until Back on the road, then the drive picks up again.",
         },
-        { label: "Amber cockpit", href: "/radio?sim", radio: true, go: () => { pickTheme("dark"); pickAmber(true); }, note: "Turns the Night amber switch on: any radio state at night goes amber. Switch it off under Night amber." },
       ],
     },
     {
@@ -443,10 +439,6 @@ export function DialKit() {
     },
   ];
 
-  const counted = flows.flatMap((f) => f.steps).filter((s) => !s.repeat);
-  const newCount = counted.filter((s) => s.todo === "new").length;
-  const changeCount = counted.filter((s) => s.todo === "change").length;
-
   const run = async (step: Step) => {
     if (step.radio) arrival.reset();
     await step.go?.();
@@ -458,7 +450,7 @@ export function DialKit() {
   // timer. Flow 1 signs out first so it runs as a new person would see it.
   const numbered = flows.filter((f) => f.n);
   // Every flow is for filming, so starting one always turns the sound back on (the mute is
-  // remembered per device, and the hosted site has no panel to see it on).
+  // remembered per device, and a phone has no panel to see it on).
   const soundOn = useSoundOn();
   const startFlow = async (f: Flow) => {
     setSoundOn(true);
@@ -489,19 +481,6 @@ export function DialKit() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once; the flows' start functions are read through startRef
   }, []);
 
-  const playBar = (
-    <div className="sticky bottom-0 -mx-3 -mb-3 mt-4 border-t border-border bg-surface p-3">
-      <h2 className="mb-1 text-xs uppercase text-foreground/70">Start a flow</h2>
-      <div className="grid grid-cols-6 gap-1">
-        {numbered.map((f) => (
-          <Chip key={f.n} onClick={() => startFlow(f)} className="text-center" title={`${f.n} · ${f.title}`}>
-            {f.n}
-          </Chip>
-        ))}
-      </div>
-    </div>
-  );
-
   const picker = picking && (
     <FlowPicker
       flows={numbered}
@@ -512,9 +491,6 @@ export function DialKit() {
       onClose={() => setPicking(false)}
     />
   );
-
-  // The hosted site: nothing on screen until two fingers are held down.
-  if (!PANEL) return picker;
 
   if (!open) {
     return (
@@ -560,46 +536,31 @@ export function DialKit() {
           ))}
         </div>
       </Group>
-      <Group title="Night amber">
-        <div className="dk-seg grid-cols-2">
-          <Chip active={!amber} onClick={() => pickAmber(false)}>
-            off
-          </Chip>
-          <Chip active={amber} onClick={() => pickAmber(true)}>
-            on
-          </Chip>
-        </div>
-      </Group>
 
-      <div className="dk-todos">
-        <span className="dk-label">
-          {newCount} NEW · {changeCount} CHANGE
-        </span>
-        <Chip active={showTodos} onClick={toggleTodos}>
-          To-dos
-        </Chip>
-      </div>
-
-      {flows.map((flow) => {
-        const steps = showTodos ? flow.steps : flow.steps.filter((s) => s.href || s.go);
-        if (!steps.length) return null;
-        return (
-          <Group key={`${flow.n}-${flow.title}`} title={flow.n ? `${flow.n} · ${flow.title}` : flow.title} time={flow.time}>
-            {showTodos && flow.note && <p className="dk-note">{flow.note}</p>}
-            {steps.map((step) => (
-              <StepRow
-                key={step.label}
-                step={step}
-                showTodos={showTodos}
-                active={step.active ?? (!!step.href && !step.go && here === step.href)}
-                onClick={() => run(step)}
-              />
-            ))}
-          </Group>
-        );
-      })}
-
-      {playBar}
+      {/* The six flows. Picking one starts it from its first screen; the one playing goes to ink
+          with the green square. data-guide-flow is where the guide's bubble points when a flow ends. */}
+      <section aria-label="Flows" className="dk-group dk-flows">
+        <h2 className="dk-group-title dk-label">Play a flow</h2>
+        <ol className="dk-steps">
+          {GUIDE_FLOWS.map((g) => {
+            const f = numbered.find((x) => x.n === String(g.n));
+            if (!f) return null;
+            return (
+              <li key={g.n}>
+                <button
+                  type="button"
+                  data-guide-flow={g.n}
+                  aria-pressed={g.n === playing}
+                  onClick={() => void startFlow(f)}
+                  className="dk-chip dk-step"
+                >
+                  {g.title}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
     </aside>
     </>
   );
@@ -636,52 +597,13 @@ export function FlowPicker<F extends Pick<Flow, "n" | "title">>({
   );
 }
 
-function StepRow({ step, showTodos, active, onClick }: { step: Step; showTodos: boolean; active: boolean; onClick: () => void }) {
-  const clickable = !!(step.href || step.go);
-  const tag = showTodos && step.todo && <Tag>{step.todo}</Tag>;
-  return (
-    <div>
-      {clickable ? (
-        <Chip
-          active={active}
-          onClick={onClick}
-          // Unbuilt screens open the blank stand-in; the dashed edge says so at a glance.
-          className={cn("flex w-full items-center justify-between gap-2", step.todo === "new" && "border-dashed")}
-        >
-          <span>{step.label}</span>
-          {tag}
-        </Chip>
-      ) : (
-        <div className="flex items-center justify-between gap-2 border border-dashed border-border px-2 py-1 text-xs uppercase text-foreground/70">
-          <span>{step.label}</span>
-          {tag}
-        </div>
-      )}
-      {showTodos && step.note && <p className="mt-0.5 mb-1 text-xs leading-snug text-foreground/70">{step.note}</p>}
-    </div>
-  );
-}
-
-function Group({ title, time, children }: { title: string; time?: string; children: ReactNode }) {
+function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="dk-group">
-      <h2 className="dk-group-title dk-label">
-        <span>{title}</span>
-        {time && <span className="dk-time">{time}</span>}
-      </h2>
+      <h2 className="dk-group-title dk-label">{title}</h2>
       <div className="dk-steps">{children}</div>
     </section>
   );
-}
-
-function Tag({ children }: { children: ReactNode }) {
-  return <span className="dk-tag">{children}</span>;
-}
-
-/** Step labels are written in caps for the old boxed keys; the card reads them as a sentence. */
-function sentence(label: string) {
-  const lower = label.toLowerCase();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 function Chip({

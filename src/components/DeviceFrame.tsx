@@ -7,7 +7,7 @@ const FRAME_WIDTH = 430;
 const FRAME_HEIGHT = 880;
 const SCREEN_WIDTH = 393;
 const SCREEN_HEIGHT = 852;
-/** On a wide screen (a laptop), zoomed out a little so more of the starry backdrop shows round the phone. */
+/** On a wide screen (a laptop), zoomed out a little so more of the backdrop shows round the phone. */
 const WIDE = 1024;
 const WIDE_MAX_SCALE = 0.86;
 /** Room kept above and below the phone, in px: more on a wide screen. */
@@ -24,8 +24,8 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
       const wide = width >= WIDE;
-      // On a wide screen the About column takes the left edge and the phone stays centred on the screen,
-      // so it fits between equal margins of the column's width on both sides.
+      // On a wide screen the About card takes the left edge and the Dial Kit the right (globals.css
+      // .device-stage). Sized for the room between the two, so the phone keeps its size when the kit hides.
       const room = wide ? width - 2 * ABOUT_WIDTH : width;
       setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (room - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
     };

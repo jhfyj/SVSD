@@ -1,50 +1,73 @@
+"use client";
+
+import { Radio_Canada_Big } from "next/font/google";
+import "./about-panel.css";
+
 /*
-  The submission view on a wide screen: what Caravan is and who made it, in a column left of the
-  phone. Hidden below lg (1024px), so a real phone only ever shows the app. The phone stage leaves
-  room for it (.device-stage in globals.css, and DeviceFrame's fit).
+  The submission view on a wide screen: what Caravan is, who made it, and the six flows to play.
+  Hidden below lg (1024px), so a real phone only ever shows the app (and keeps the two-finger hold
+  for switching flows). The phone stage leaves room for it (.device-stage in globals.css, and
+  DeviceFrame's fit). Picking a flow here starts it on the phone (the Dial Kit does the starting).
+  Look: about-panel.css (a floating white card, grey-value hierarchy, after naheeljawaid.com
+  and rachelchen.tech).
 */
 
 /** Width of the column, in px. DeviceFrame and globals.css use the same number. */
 export const ABOUT_WIDTH = 360;
 
-const TEAM = ["Jennifer", "Emily", "Angelina"];
+const TAGLINE = "Stories told by everyone on the road tonight.";
+/** The intro (about-panel.css, after naheeljawaid.com): when the tagline's words start, and the gap between them, in ms. */
+const WORDS_AT = 260;
+const WORD_STEP = 55;
+
+/** The team, each name linking to their own site. */
+const TEAM = [
+  { name: "Jennifer", href: "https://hfyj-art.com" },
+  { name: "Emily", href: "https://shenemily.com/" },
+  { name: "Angelina", href: "https://www.angelinawwu.com/" },
+];
+
+// Naheel's typeface. Loaded for this panel only; the app itself stays in Geist Mono.
+const radioCanadaBig = Radio_Canada_Big({ subsets: ["latin"], weight: ["400", "500"] });
 
 export function AboutPanel() {
   return (
-    <aside
-      aria-label="About Caravan"
-      className="about-panel fixed inset-y-0 left-0 z-40 hidden flex-col justify-center gap-8 overflow-y-auto border-r border-border px-10 py-12 font-mono text-foreground lg:flex"
-    >
-      <div className="flex flex-col gap-4">
+    <aside aria-label="About Caravan" className={`about-panel ap-panel ${radioCanadaBig.className}`}>
+      <header>
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG, nothing to optimise */}
-        <img src="/caravan-logo.svg" alt="" aria-hidden="true" className="h-14 w-auto self-start" />
-        <h1 className="text-2xl uppercase">Caravan</h1>
-        <p className="text-base">Stories told by everyone on the road tonight.</p>
-      </div>
-
-      <div className="flex flex-col gap-3 text-sm text-foreground/70">
-        <p>
-          A storytelling app for the road. Drivers hear stories that other drivers left at real spots along the
-          route, leave their own by voice, and answer questions waiting on the road.
+        <img src="/caravan-logo.svg" alt="" aria-hidden="true" className="ap-logo" />
+        <h1 className="ap-title">Caravan</h1>
+        {/* Word by word out of a blur, after naheeljawaid.com's "Select a project". */}
+        <p className="ap-lead" aria-label={TAGLINE}>
+          {TAGLINE.split(" ").map((w, i) => (
+            <span key={i} aria-hidden className="ap-word" style={{ animationDelay: `${WORDS_AT + i * WORD_STEP}ms` }}>
+              {w}{" "}
+            </span>
+          ))}
         </p>
-        <p>Late at night, it can match you with a stranger whose road overlaps yours.</p>
-        <p>Guided by voice, not by scrolling, so your eyes stay on the road.</p>
-      </div>
+        <p className="ap-about">
+          A storytelling app for the road, guided by voice so your eyes stay on it. Hear stories drivers left at real
+          spots on your route, leave your own, and late at night, talk to a stranger whose road overlaps yours.
+        </p>
+      </header>
 
-      <div className="flex flex-col gap-1">
-        <span className="text-xs uppercase text-foreground/70">Team</span>
-        <span className="text-sm">{TEAM.join(" · ")}</span>
-      </div>
+      <div className="ap-spacer" />
 
-      <div className="flex flex-col gap-1">
-        <span className="text-xs uppercase text-foreground/70">Try it</span>
-        <span className="text-sm text-foreground/70">
-          Tap through on the phone. Press <kbd className="border border-border px-1 text-foreground">`</kbd> to jump
-          to any of the six flows.
+      <section aria-label="Team" className="ap-section">
+        <span className="ap-heading">Team</span>
+        <span>
+          {TEAM.map((m, i) => (
+            <span key={m.name}>
+              {i > 0 && ", "}
+              <a href={m.href} target="_blank" rel="noopener noreferrer" className="ap-link">
+                {m.name}
+              </a>
+            </span>
+          ))}
         </span>
-      </div>
+      </section>
 
-      <span className="text-xs uppercase text-foreground/70">SVSD Design Competition · Fall 2026</span>
+      <p className="ap-footer">SVSD Design Competition, Fall 2026</p>
     </aside>
   );
 }

@@ -45,7 +45,7 @@ Semantic tokens     what a value is for: --background, --surface, --story, --key
 Recipes             components built only from semantic tokens: HardwareButton, RadioLcd, IntentPicker…
 ```
 
-`src/lib/theme.ts` sets `data-theme` on `<html>` before first paint: **day between sunrise and sunset** where you are (7am–7pm if the place is unknown), night otherwise. `?theme=light|dark|auto` pins or unpins a theme for demos; the Dial Kit has the same switch.
+`src/lib/theme.ts` sets `data-theme` on `<html>` before first paint: **night by default**, until someone picks a theme. `auto` follows the clock: day between sunrise and sunset where you are (7am–7pm if the place is unknown), night otherwise. `?theme=light|dark|auto` sets the choice for demos; the Dial Kit has the same switch.
 
 ---
 
@@ -57,7 +57,7 @@ Recipes             components built only from semantic tokens: HardwareButton, 
 
 | Token | Night | Day | Used for |
 |---|---|---|---|
-| `backdrop` | `#000000` | `#dcd7cf` | Behind the 393px phone column on wide screens |
+| `backdrop` | `#000000` | `#f3f3f2` | Behind the 393px phone column on wide screens. Flat colour, no texture |
 | `background` | `#1e1e1e` | `#f5f2ec` | Every Screen |
 | `surface` | `#2b2b2b` | `#e9e5dd` | Stat cards, hover fill, tracks |
 | `surface-raised` | `#404040` | `#fdfcf9` | Selected segment, raised tiles |

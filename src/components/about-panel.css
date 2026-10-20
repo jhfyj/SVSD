@@ -1,0 +1,184 @@
+/*
+  The submission column (AboutPanel.tsx; every class here starts with ap-), styled after naheeljawaid.com and rachelchen.tech: one quiet
+  white card floating on the page, a single sans at one size, and hierarchy from grey value alone
+  (Ramp's rule from design-to-code: no bold, no boxes, no caps). The flow list reads like a project
+  list; the playing flow goes to full ink with a small green "on" square beside it (Rachel's active
+  marker, in the app's ON green). This sits outside the product, so the product's Geist Mono rule
+  (DESIGN.md §5) doesn't apply here.
+*/
+
+.ap-panel {
+  --card: #ffffff;
+  --ink: #1d1e1f;
+  --title: #7e7e7e;
+  --text: #a9a9a9;
+  --faint: #c4c4c4;
+  --hover: #6f6f6f;
+  --on: #2fd11a;
+
+  position: fixed;
+  top: 24px;
+  bottom: 24px;
+  left: 24px;
+  z-index: 40;
+  width: calc(360px - 48px);
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 36px 32px 32px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px rgb(32 33 36 / 0.09);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+.ap-panel::-webkit-scrollbar { display: none; }
+/* Beats globals.css's .about-panel width (that number is the whole column; the card sits inside it). */
+.about-panel.ap-panel { width: calc(360px - 48px); }
+
+@media (min-width: 1024px) {
+  .ap-panel { display: flex; }
+}
+
+/* The app's dark theme: the same card, inverted. */
+:root:not([data-theme="light"]) .ap-panel {
+  --card: #1b1b1b;
+  --ink: #f2f2f2;
+  --title: #a3a3a3;
+  --text: #6b6b6b;
+  --faint: #545454;
+  --hover: #bdbdbd;
+  --on: #6dff5c;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px rgb(0 0 0 / 0.35);
+}
+
+.ap-logo {
+  width: 28px;
+  height: auto;
+  margin-bottom: 14px;
+  image-rendering: pixelated;
+}
+
+.ap-title {
+  color: var(--title);
+  font-weight: 500;
+}
+
+.ap-lead {
+  max-width: 30ch;
+}
+
+.ap-about {
+  margin-top: 20px;
+  color: var(--text);
+}
+
+.ap-spacer {
+  flex: 1 1 0;
+  min-height: 40px;
+}
+
+.ap-section + .ap-section { margin-top: 28px; }
+
+/* Section labels (Play a flow, Team): small grey mono caps, kept from the emmiwu.com pass. */
+.ap-heading {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.ap-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ap-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  padding: 2.5px 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+.ap-item:hover { color: var(--hover); }
+.ap-item:focus-visible { outline: none; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+.ap-item[aria-current] { color: var(--ink); }
+.ap-item[aria-current]::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -14px;
+  width: 5px;
+  height: 5px;
+  background: var(--on);
+}
+
+.ap-footer {
+  margin-top: 28px;
+  color: var(--faint);
+}
+
+/* Team names link to each person's site: same grey, ink on hover, a hairline underline. */
+.ap-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--faint);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
+}
+.ap-link:hover,
+.ap-link:focus-visible {
+  outline: none;
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}
+
+/*
+  The intro, after naheeljawaid.com: on load the card fades up, then each part of it comes out of a
+  soft blur one after another (the logo, the title, the tagline word by word, the description, the
+  team, the footer). Plays once per page load; off for reduced motion.
+*/
+@keyframes ap-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes ap-blur-in {
+  from { opacity: 0; filter: blur(14px); }
+}
+@keyframes ap-word-in {
+  from { opacity: 0; filter: blur(12px); transform: translateY(6px) scale(0.9); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ap-panel { animation: ap-card-in 600ms cubic-bezier(0.2, 0, 0, 1) both; }
+  .ap-panel :is(.ap-logo, .ap-title, .ap-about, .ap-section, .ap-footer) {
+    animation: ap-blur-in 700ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+  .ap-panel .ap-logo { animation-delay: 120ms; }
+  .ap-panel .ap-title { animation-delay: 180ms; }
+  .ap-panel .ap-about { animation-delay: 700ms; }
+  .ap-panel .ap-section { animation-delay: 820ms; }
+  .ap-panel .ap-footer { animation-delay: 900ms; }
+  .ap-word {
+    display: inline-block;
+    white-space: pre;
+    animation: ap-word-in 600ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+}
