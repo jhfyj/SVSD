@@ -5,7 +5,6 @@ import { CodeStep, CustomizeProfile, PhoneStep, ProfileView } from "@/components
 import { AddressList, Button, DotTrail, StatusBar, TextInput } from "@/components/ui";
 import { History } from "@/components/journey";
 import { sampleHistory } from "@/lib/journey/history";
-import { sampleProfile } from "@/lib/profile/sample";
 
 /** Compositions of the Figma screens (iPhone 16, 393 × 852) built from the components. */
 const meta: Meta = { title: "Screens", parameters: { layout: "centered" } };
@@ -63,10 +62,9 @@ export const HistoryScreen: StoryObj = {
   name: "History",
   render: () => {
     const now = new Date(2026, 9, 18, 9, 30);
-    const sample = sampleProfile(now);
     return (
       <div className="flex w-[393px] [&>div]:min-h-[852px]">
-        <History journeys={sampleHistory(now.getTime())} totalCalls={sample.totalCalls} sessions={sample.history} month={sample.month} activeDays={sample.activeDays} activeDates={sample.activeDates} />
+        <History journeys={sampleHistory(now.getTime())} now={now} />
       </div>
     );
   },

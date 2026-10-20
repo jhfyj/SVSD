@@ -1,18 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useSyncExternalStore } from "react";
-import { useSession } from "@/lib/auth/session";
 import { formatDuration } from "@/lib/journey/duration";
-import {
-  historyRaw,
-  journeysToShow,
-  loadHistory,
-  repeatJourney,
-  subscribeHistory,
-  viewJourney,
-  type PastJourney,
-} from "@/lib/journey/history";
+import { repeatJourney, viewJourney, type PastJourney } from "@/lib/journey/history";
+import { useJourneys } from "@/lib/journey/useJourneys";
 import { cn } from "../ui/cn";
 
 export type RecentJourneysProps = {
@@ -37,16 +28,9 @@ export function RecentJourneys({
   emptyHint = "Start your first one above. It'll show up here.",
   className,
 }: RecentJourneysProps) {
-  // This account's list, read after hydration (undefined on the server) so it never mismatches.
-  const session = useSession();
-  const phone = session?.phone ?? null;
-  const raw = useSyncExternalStore(subscribeHistory, () => historyRaw(phone), () => undefined);
-  const journeys = useMemo(() => {
-    if (given) return given;
-    if (raw === undefined || session === undefined) return undefined;
-    // Your drives, then the same sample drives the Journey tab shows, so the two lists match.
-    return journeysToShow(loadHistory(raw));
-  }, [given, raw, session]);
+  // Your drives, then the same sample drives the Journey tab shows, so the two lists match.
+  const shown = useJourneys();
+  const journeys = given ?? shown;
 
   // Still reading this device's storage: nothing yet, so the empty state doesn't flash first.
   if (!journeys) return null;

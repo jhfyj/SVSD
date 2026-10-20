@@ -1,24 +1,18 @@
+"use client";
+
 import { ScrambleText } from "@/components/ui/ScrambleText";
 import { ActivityCalendar } from "./ActivityCalendar";
 import { TabBar } from "@/components/ui/TabBar";
 import type { PastJourney } from "@/lib/journey/history";
-import { sampleProfile, type Journey } from "@/lib/profile/sample";
+import { journeyStats, useJourneys } from "@/lib/journey/useJourneys";
 import { RecentJourneys } from "./RecentJourneys";
 import { TopBar } from "./TopBar";
 
 export type HistoryProps = {
-  /** The journeys to list. Leave unset to read the signed-in account's history on this device. */
+  /** The journeys to list and count. Leave unset to read the signed-in account's (as the Journey tab shows them). */
   journeys?: PastJourney[];
-  /** Calls on the radio, all time. Placeholder numbers until calls are recorded. */
-  totalCalls?: number;
-  /** Radio sessions, for minutes on the radio and the longest one. */
-  sessions?: Journey[];
-  /** Any date in the month the activities calendar shows. */
-  month?: Date;
-  /** 1-based days in that month with a call (the Days active stat). */
-  activeDays?: number[];
-  /** Every day with a call, any month, as "YYYY-MM-DD" (the activities calendar). */
-  activeDates?: string[];
+  /** Today, for the calendar's month and Days active (Storybook pins it). */
+  now?: Date;
 };
 
 /** "3H 30M", short enough for a half-width stat. */
@@ -40,20 +34,19 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 }
 
 /**
- * The History tab: your stats (total calls, minutes on the radio, longest session, days active),
- * the activities calendar, then every journey this device keeps, newest first, each with View and
- * Start again. The stats and calendar moved here from the profile.
+ * The History tab: your stats, the activities calendar, then every journey, newest first, each with
+ * View and Start again. Everything is added up from that same list of journeys: the calls are the
+ * ones each journey's recap shows, and a day is active when a journey started on it. So the numbers
+ * always match what's listed (and what the Journey tab shows).
  */
-export function History({ journeys, ...given }: HistoryProps) {
-  const sample = sampleProfile();
-  const totalCalls = given.totalCalls ?? sample.totalCalls;
-  const sessions = given.sessions ?? sample.history;
-  const month = given.month ?? sample.month;
-  const activeDays = given.activeDays ?? sample.activeDays;
-  const activeDates = given.activeDates ?? sample.activeDates;
-
-  const minutes = sessions.reduce((sum, s) => sum + s.minutes, 0);
-  const longest = sessions.reduce((max, s) => Math.max(max, s.minutes), 0);
+export function History({ journeys: given, now: pinned }: HistoryProps) {
+  const shown = useJourneys();
+  const journeys = given ?? shown ?? [];
+  const now = pinned ?? new Date();
+  const stats = journeyStats(journeys, now);
+  // Until this device's journeys are read, the stats show a dash rather than a wrong zero.
+  const ready = !!(given ?? shown);
+  const show = (value: string | number) => (ready ? value : "—");
 
   return (
     <div className="grain flex min-h-dvh w-full max-w-[393px] flex-col bg-background text-foreground">
@@ -64,22 +57,22 @@ export function History({ journeys, ...given }: HistoryProps) {
         <section aria-labelledby="history-stats" className="mt-12 px-11">
           <h2 id="history-stats" className="text-sm text-foreground/70">STATS</h2>
           <div className="mt-[7px] grid grid-cols-2 gap-2">
-            <Stat value={totalCalls.toLocaleString()} label="TOTAL CALLS" />
-            <Stat value={minutes.toLocaleString()} label="MIN ON THE RADIO" />
-            <Stat value={longest ? shortDuration(longest) : "—"} label="LONGEST SESSION" />
-            <Stat value={new Set(activeDays).size} label="DAYS ACTIVE" />
+            <Stat value={show(stats.totalCalls.toLocaleString())} label="TOTAL CALLS" />
+            <Stat value={show(stats.callMinutes.toLocaleString())} label="MIN ON CALLS" />
+            <Stat value={show(stats.longestCall ? shortDuration(stats.longestCall) : "0M")} label="LONGEST CALL" />
+            <Stat value={show(stats.daysActive)} label="DAYS ACTIVE" />
           </div>
         </section>
 
         <section aria-labelledby="history-activities" className="mt-[37px] px-11">
           <h2 id="history-activities" className="text-sm text-foreground/70">ACTIVITIES</h2>
           <div className="mt-[7px] border border-border pb-[25px] pt-2">
-            <ActivityCalendar activeDates={activeDates} today={month} />
+            <ActivityCalendar activeDates={stats.activeDates} today={now} />
           </div>
         </section>
 
         <RecentJourneys
-          journeys={journeys}
+          journeys={given}
           limit={Infinity}
           title="All journeys"
           emptyHint="Start your first one from the Journey tab. It'll show up here."
