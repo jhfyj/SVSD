@@ -23,6 +23,8 @@ export type CustomizeProfileProps = {
  * Customize profile (Figma node 154:1304): pick one of eight LCD pets and your @handle. The picked
  * pet lights up green and bobs in the grid and in the avatar up top; the others stay unlit pixels.
  * The handle starts as a random one (shuffle for another) and can be typed over.
+ * Exactly one phone screen tall: it fills the screen under the status bar (the device frame already
+ * leaves room for it), with Save pinned to the bottom edge, so there's nothing to scroll.
  */
 export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, onSave, onBack, saving, compact = false }: CustomizeProfileProps) {
   const [picked, setPicked] = useState<CharacterId>(initial);
@@ -37,8 +39,8 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
   };
 
   return (
-    <div className={cn("grain flex w-full flex-col bg-background text-foreground", compact ? "h-full" : "min-h-dvh max-w-[393px]")}>
-      <header className={cn("relative flex h-[26px] items-center justify-center", compact ? "mt-2" : "mt-[59px]")}>
+    <div className={cn("grain flex w-full flex-col bg-background text-foreground", compact ? "h-full" : "max-w-[393px]")}>
+      <header className={cn("relative flex h-[26px] items-center justify-center", compact ? "mt-2" : "mt-0")}>
         {onBack && (
           <button
             type="button"
