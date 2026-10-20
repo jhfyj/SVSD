@@ -30,6 +30,8 @@ export type RadioLcdProps = {
   intro?: Intro;
   /** Picking: the intent that'll be kept if nothing's pressed. Connecting: what it's looking for. */
   hint?: string;
+  /** Picking: seconds left before the hint is kept (counts 3, 2, 1). */
+  pickSeconds?: number;
   /** The other person is talking. */
   speaking?: boolean;
   /** You're taking a break from the call. */
@@ -44,13 +46,13 @@ export type RadioLcdProps = {
 };
 
 /** What the small LCD shows for each radio state. Off: your character keeping you company (or blank). */
-export function RadioLcd({ state, peerCharacter, peer, greeting, intro, hint, speaking, away, countdown, companion }: RadioLcdProps) {
+export function RadioLcd({ state, peerCharacter, peer, greeting, intro, hint, pickSeconds = 3, speaking, away, countdown, companion }: RadioLcdProps) {
   if (state === "off") return companion ? <Companion character={companion} /> : null;
   if (state === "pick") {
     return (
       <LcdText>
         <span className="block">WHAT ARE YOU UP FOR?</span>
-        <span className="mt-1 block text-[11px] normal-case">{hint ? `Keeping "${hint}" in 3 s` : "Helps us find your match"}</span>
+        <span className="mt-1 block text-[11px] normal-case">{hint ? `Keeping "${hint}" in ${pickSeconds} s` : "Helps us find your match"}</span>
       </LcdText>
     );
   }

@@ -47,6 +47,9 @@ import { Nightfall, NightLcd } from "./NightDrive";
 import { useNightDrive } from "./useNightDrive";
 import type { NightStart } from "@/lib/radio/nightDrive";
 
+/** How long a remembered intent waits on the pick screen before it's kept. */
+const PICK_KEEP_MS = 3000;
+
 /** Mic and Settings during a call (and Drop/Settings beside a message): square keys, as tall as the row (70px). */
 const CALL_KEY = "w-[70px] shrink-0";
 
@@ -278,6 +281,8 @@ export function RadioScreen({
     setState("connecting");
   };
   const intentInfo = CALL_INTENTS.find((t) => t.id === intent) ?? CALL_INTENTS[0];
+  // Seconds left before a remembered intent is kept (the LCD's countdown). Reset each time you switch on.
+  const [pickLeft, setPickLeft] = useState(PICK_KEEP_MS / 1000);
   const nextCallers = NEXT_CALLERS.filter((c) => !blocked.includes(c.handle));
   const caller =
     calls === 0 || !nextCallers.length
@@ -538,10 +543,17 @@ export function RadioScreen({
   }, [state, timeoutUntil]);
 
   // Picking with a remembered intent: keep it after 3 seconds, so turning on stays one motion while driving.
+  // The LCD counts it down (3, 2, 1) so you can see it's about to go.
   useEffect(() => {
     if (state !== "pick" || !intentSet || companyDemo) return;
-    const t = setTimeout(() => setState("connecting"), 3000);
-    return () => clearTimeout(t);
+    const end = Date.now() + PICK_KEEP_MS;
+    const id = setInterval(() => {
+      const left = Math.ceil((end - Date.now()) / 1000);
+      if (left > 0) return setPickLeft(left);
+      clearInterval(id);
+      setState("connecting");
+    }, 100);
+    return () => clearInterval(id);
   }, [state, intentSet, companyDemo]);
 
   // The radio introduces you both out loud, a page on the LCD per line, then their audio starts.
@@ -821,6 +833,7 @@ export function RadioScreen({
               setNow(0); // The countdown's first tick fills this in.
             }
             // Turning on to find someone asks what you're up for first.
+            setPickLeft(PICK_KEEP_MS / 1000);
             setState(on ? (arrived ? "thanks" : until ? "timeout" : "pick") : "off");
             setGreeting(false);
             setHangingUp(false);
@@ -855,7 +868,7 @@ export function RadioScreen({
           ) : messageOn ? (
             <MessageLcd controls={message} />
           ) : (
-            <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} companion={meCharacter} />
+            <RadioLcd state={state} peerCharacter={caller.character} peer={caller.handle} greeting={greeting} intro={{ me, miles: sharedMiles, page: introPage }} pickSeconds={pickLeft} hint={state === "pick" ? (!companyDemo && intentSet ? intentInfo.key : undefined) : state === "connecting" ? intentInfo.looking : undefined} speaking={speaking && !onBreak} away={onBreak} countdown={timeoutUntil && now ? formatCountdown(timeoutUntil - now) : undefined} companion={meCharacter} />
           )}
           {/* The count steps aside whenever the LCD is about your own voice: recording a reply, or any of
               the drop's screens (YOUR DROP, SORTING, STORY DROPPED), so its icon never sits on that text. */}
