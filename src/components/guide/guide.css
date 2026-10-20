@@ -1,0 +1,59 @@
+/* The guided demo (components/guide/Guide, desktop submission site). Inside the phone only the
+   flow's next tap works; the rest stop looking clickable. The bubble is a soft round light over the
+   next tap, pulsing outward (round: it's a fingertip, like the live pulse). White drawn with
+   difference blending, so it flips to dark on cream and light on the black keys and casing, and
+   carries no signal colour of its own. */
+.guide-on .device-screen :is(button, a[href], [role="switch"], [role="radio"], label) { cursor: default; }
+.guide-on .device-screen [data-guide-ok],
+.guide-on .device-screen [data-guide-ok] * { cursor: pointer; }
+.guide-on .device-screen input[data-guide-ok] { cursor: text; }
+
+.guide-bubble {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: rgb(255 255 255 / 0.3);
+  mix-blend-mode: difference;
+  animation: guide-in 240ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+.guide-bubble-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid #fff;
+}
+.guide-bubble-hint {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  animation: guide-hint-in 240ms cubic-bezier(0.2, 0, 0, 1) both;
+  padding: 2px 6px;
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+@keyframes guide-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+}
+@keyframes guide-hint-in {
+  from { opacity: 0; }
+}
+@keyframes guide-ring {
+  from { opacity: 0.8; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.9); }
+}
+@keyframes guide-breathe {
+  50% { background: rgb(255 255 255 / 0.5); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .guide-bubble { animation: guide-in 240ms cubic-bezier(0.2, 0, 0, 1) both, guide-breathe 1.6s ease-in-out 240ms infinite; }
+  .guide-bubble-ring { animation: guide-ring 1.6s cubic-bezier(0.2, 0, 0, 1) infinite; }
+}

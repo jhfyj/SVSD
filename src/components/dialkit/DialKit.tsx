@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { currentFlow, FLOW_EVENT, guideActive, setCurrentFlow, type FlowNumber } from "@/lib/guide";
 import { signOut, useSession, verifyCode } from "@/lib/auth/session";
 import { saveCharacter } from "@/lib/profile/avatar";
 import { DEFAULT_CHARACTER } from "@/lib/profile/characters";
@@ -459,10 +460,34 @@ export function DialKit() {
   // Every flow is for filming, so starting one always turns the sound back on (the mute is
   // remembered per device, and the hosted site has no panel to see it on).
   const soundOn = useSoundOn();
-  const startFlow = (f: Flow) => {
+  const startFlow = async (f: Flow) => {
     setSoundOn(true);
+    // The guided demo (submission site) follows whichever flow was started last.
+    setCurrentFlow(Number(f.n) as FlowNumber);
+    // Flows 2 to 6 are for someone already signed up; a visitor who skipped Flow 1 gets the demo account.
+    if (f.n !== "1" && !session) await signedIn();
     return f.start ? f.start() : void run(f.steps[0]);
   };
+  // The About column's flow list asks through an event (it doesn't know how flows start). On the
+  // submission site a first visit starts Flow 1 by itself.
+  const startRef = useRef(startFlow);
+  useEffect(() => {
+    startRef.current = startFlow;
+  });
+  useEffect(() => {
+    const byNumber = (n: number) => numbered.find((f) => f.n === String(n));
+    const onFlow = (e: Event) => {
+      const f = byNumber((e as CustomEvent<FlowNumber>).detail);
+      if (f) void startRef.current(f);
+    };
+    window.addEventListener(FLOW_EVENT, onFlow);
+    if (guideActive() && currentFlow() === null) {
+      const first = byNumber(1);
+      if (first) void startRef.current(first);
+    }
+    return () => window.removeEventListener(FLOW_EVENT, onFlow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once; the flows' start functions are read through startRef
+  }, []);
 
   const playBar = (
     <div className="sticky bottom-0 -mx-3 -mb-3 mt-4 border-t border-border bg-surface p-3">
@@ -495,7 +520,7 @@ export function DialKit() {
     return (
       <>
         {picker}
-        <div className="fixed right-4 top-4 z-50 hidden lg:block">
+        <div className={`dk-closed hidden lg:block ${panelFont.className}`}>
           <Chip onClick={toggle}>Dial kit</Chip>
         </div>
       </>
@@ -507,17 +532,17 @@ export function DialKit() {
     {picker}
     <aside
       aria-label="Dial kit"
-      className="fixed right-4 top-4 z-50 hidden max-h-[calc(100dvh-2rem)] w-[260px] overflow-y-auto border border-border bg-surface p-3 font-mono text-foreground lg:block"
+      className={`dk-panel hidden lg:block ${panelFont.className}`}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-bold text-label">DIAL KIT</span>
-        <button type="button" onClick={toggle} className="text-xs text-foreground/70 hover:text-foreground">
-          HIDE
+      <div className="dk-head">
+        <span className="dk-label">Dial kit</span>
+        <button type="button" onClick={toggle} className="dk-link">
+          Hide
         </button>
       </div>
 
       <Group title="Sound">
-        <div className="grid grid-cols-2 gap-1">
+        <div className="dk-seg grid-cols-2">
           <Chip active={!soundOn} onClick={() => setSoundOn(false)}>
             off
           </Chip>
@@ -527,7 +552,7 @@ export function DialKit() {
         </div>
       </Group>
       <Group title="Theme">
-        <div className="grid grid-cols-3 gap-1">
+        <div className="dk-seg grid-cols-3">
           {THEMES.map((t) => (
             <Chip key={t} active={theme === t} onClick={() => pickTheme(t)}>
               {t}
@@ -536,7 +561,7 @@ export function DialKit() {
         </div>
       </Group>
       <Group title="Night amber">
-        <div className="grid grid-cols-2 gap-1">
+        <div className="dk-seg grid-cols-2">
           <Chip active={!amber} onClick={() => pickAmber(false)}>
             off
           </Chip>
@@ -546,8 +571,8 @@ export function DialKit() {
         </div>
       </Group>
 
-      <div className="mb-4 flex items-center justify-between gap-2 border-y border-border py-2">
-        <span className="text-xs text-foreground/70">
+      <div className="dk-todos">
+        <span className="dk-label">
           {newCount} NEW · {changeCount} CHANGE
         </span>
         <Chip active={showTodos} onClick={toggleTodos}>
@@ -560,7 +585,7 @@ export function DialKit() {
         if (!steps.length) return null;
         return (
           <Group key={`${flow.n}-${flow.title}`} title={flow.n ? `${flow.n} · ${flow.title}` : flow.title} time={flow.time}>
-            {showTodos && flow.note && <p className="text-xs text-foreground/70">{flow.note}</p>}
+            {showTodos && flow.note && <p className="dk-note">{flow.note}</p>}
             {steps.map((step) => (
               <StepRow
                 key={step.label}
@@ -639,18 +664,24 @@ function StepRow({ step, showTodos, active, onClick }: { step: Step; showTodos: 
 
 function Group({ title, time, children }: { title: string; time?: string; children: ReactNode }) {
   return (
-    <section className="mb-4 last:mb-0">
-      <h2 className="mb-1 flex items-baseline justify-between text-xs uppercase text-foreground/70">
+    <section className="dk-group">
+      <h2 className="dk-group-title dk-label">
         <span>{title}</span>
-        {time && <span className="tabular-nums">{time}</span>}
+        {time && <span className="dk-time">{time}</span>}
       </h2>
-      <div className="flex flex-col gap-1">{children}</div>
+      <div className="dk-steps">{children}</div>
     </section>
   );
 }
 
 function Tag({ children }: { children: ReactNode }) {
-  return <span className="shrink-0 border border-current px-1 text-xs uppercase leading-4">{children}</span>;
+  return <span className="dk-tag">{children}</span>;
+}
+
+/** Step labels are written in caps for the old boxed keys; the card reads them as a sentence. */
+function sentence(label: string) {
+  const lower = label.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 function Chip({
@@ -676,7 +707,8 @@ function Chip({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        "rounded-token border px-2 py-1 text-left text-xs uppercase transition-colors duration-150 ease-out",
+        // dk-chip: restyled only inside the Dial Kit card (dial-kit.css); the flow picker keeps this look.
+        "dk-chip rounded-token border px-2 py-1 text-left text-xs uppercase transition-colors duration-150 ease-out",
         active ? "border-foreground bg-foreground text-background" : "border-border text-foreground hover:bg-surface-raised",
         "disabled:pointer-events-none disabled:opacity-40",
         className,

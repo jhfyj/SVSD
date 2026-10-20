@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { AboutPanel } from "@/components/AboutPanel";
 import { DialKit } from "@/components/dialkit/DialKit";
 import { DeviceFrame } from "@/components/DeviceFrame";
+import { Guide } from "@/components/guide/Guide";
 import { SoundProvider } from "@/components/sound";
 import { ThemeClock } from "@/components/theme/ThemeClock";
 import { themeScript } from "@/lib/theme";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SoundProvider />
         <Suspense>
           <DialKit />
+          <Guide />
         </Suspense>
       </body>
     </html>
