@@ -3,7 +3,7 @@
 import { ArrowCounterClockwise } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
-import { historyRaw, loadHistory, sampleHistory, subscribeHistory, viewJourney, type PastJourney } from "@/lib/journey/history";
+import { historyRaw, journeysToShow, loadHistory, subscribeHistory, viewJourney, type PastJourney } from "@/lib/journey/history";
 import { tripStories } from "@/lib/journey/stories";
 import { plural } from "@/lib/plural";
 import { cn } from "../ui/cn";
@@ -31,10 +31,8 @@ export function PastJourneys({ journeys: given, onAgain, className }: PastJourne
   const journeys = useMemo(() => {
     if (given) return given;
     if (raw === undefined) return [];
-    const saved = loadHistory(raw);
-    // Until you've driven four times, sample drives fill the rest (never a place you've already been).
-    const been = new Set(saved.map((past) => past.trip.to));
-    return [...saved, ...sampleHistory().filter((past) => !been.has(past.trip.to))].slice(0, LIMIT);
+    // Until you've driven four times, sample drives fill the rest: the same list History shows.
+    return journeysToShow(loadHistory(raw)).slice(0, LIMIT);
   }, [given, raw]);
 
   if (!journeys.length) return null;

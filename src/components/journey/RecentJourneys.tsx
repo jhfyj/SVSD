@@ -6,6 +6,7 @@ import { useSession } from "@/lib/auth/session";
 import { formatDuration } from "@/lib/journey/duration";
 import {
   historyRaw,
+  journeysToShow,
   loadHistory,
   repeatJourney,
   subscribeHistory,
@@ -43,7 +44,8 @@ export function RecentJourneys({
   const journeys = useMemo(() => {
     if (given) return given;
     if (raw === undefined || session === undefined) return undefined;
-    return loadHistory(raw);
+    // Your drives, then the same sample drives the Journey tab shows, so the two lists match.
+    return journeysToShow(loadHistory(raw));
   }, [given, raw, session]);
 
   // Still reading this device's storage: nothing yet, so the empty state doesn't flash first.

@@ -119,3 +119,13 @@ export function sampleHistory(now = Date.now()): PastJourney[] {
     };
   });
 }
+
+/**
+ * The one list every screen shows: your own drives, newest first, then the sample drives (never a
+ * place you've already been). The Journey tab shows the first four of it; History shows all of it,
+ * so the two always agree, and History's placeholder stats never sit over an empty list.
+ */
+export function journeysToShow(saved: PastJourney[], now = Date.now()): PastJourney[] {
+  const been = new Set(saved.map((past) => past.trip.to));
+  return [...saved, ...sampleHistory(now).filter((past) => !been.has(past.trip.to))];
+}
