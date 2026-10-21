@@ -213,6 +213,8 @@
 
 .ap-footer {
   margin-top: 28px;
+  font-size: 12px;
+  line-height: 16px;
   color: var(--faint);
 }
 
