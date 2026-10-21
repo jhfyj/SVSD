@@ -1,3 +1,5 @@
+import { FAKE_MIC } from "@/lib/prototype";
+
 /*
   Saying yes or no out loud to the radio ("Would you like to reply? Reply with yes or no").
   The mic opens as soon as the radio has asked. Where the browser can recognise speech (Chrome,
@@ -30,7 +32,9 @@ type Recognition = {
 };
 
 function recognizer(): (new () => Recognition) | undefined {
-  if (typeof window === "undefined") return undefined;
+  // The prototype's mic is fake, and speech-to-text would ask for the real one: off, so the
+  // listener falls back to hearing any voice as a yes.
+  if (typeof window === "undefined" || FAKE_MIC) return undefined;
   const w = window as unknown as Record<string, (new () => Recognition) | undefined>;
   return w.SpeechRecognition ?? w.webkitSpeechRecognition;
 }

@@ -1,3 +1,4 @@
+import { FAKE_MIC } from "@/lib/prototype";
 
 /** What a drop is sorted into: a question to answer, a story, or a tip about this stretch of road. */
 export type DropKind = "question" | "story" | "tip";
@@ -105,6 +106,8 @@ type Recognition = {
  * transcript when stopped ("" where the browser has no speech recognition, or heard nothing).
  */
 export function transcribe(): { stop: () => Promise<string> } {
+  // The prototype's mic is fake, and Chrome's speech-to-text would ask for the real one: off.
+  if (FAKE_MIC) return { stop: async () => "" };
   const w = typeof window === "undefined" ? null : (window as unknown as Record<string, (new () => Recognition) | undefined>);
   const Ctor = w?.SpeechRecognition ?? w?.webkitSpeechRecognition;
   if (!Ctor) return { stop: async () => "" };

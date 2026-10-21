@@ -1,4 +1,5 @@
 import { isSoundOn } from "../sound";
+import { FAKE_MIC } from "@/lib/prototype";
 import { VOICE_GAIN } from "./levels";
 
 /*
@@ -164,8 +165,30 @@ export type Recording = {
   cancel: () => void;
 };
 
+/** Seconds of talking the fake mic's stand-in voice does before it goes quiet. */
+const FAKE_TALK_S = 3.2;
+
+/**
+ * The fake mic's stand-in voice (lib/prototype FAKE_MIC): about three seconds of talking, syllables
+ * at roughly five a second rising and falling in phrases, then quiet, so a drop or a reply sends
+ * itself the way a real one does.
+ */
+function fakeRecording(): Recording {
+  const start = performance.now();
+  const level: Level = () => {
+    const t = (performance.now() - start) / 1000;
+    if (t > FAKE_TALK_S) return 0.02;
+    const syllable = 0.5 + 0.5 * Math.sin(t * Math.PI * 2 * 4.6);
+    const phrase = 0.6 + 0.4 * Math.sin(t * Math.PI * 2 * 0.7 + 1);
+    return 0.18 + 0.6 * syllable * phrase;
+  };
+  return { level, stop: async () => null, cancel: () => {} };
+}
+
 /** Start recording your reply. Rejects if there's no microphone or it's blocked. */
 export async function recordReply(): Promise<Recording> {
+  // The prototype never opens the real microphone (no permission prompt).
+  if (FAKE_MIC) return fakeRecording();
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   const c = audio();
   const source = c.createMediaStreamSource(stream);
