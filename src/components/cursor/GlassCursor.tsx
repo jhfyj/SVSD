@@ -7,10 +7,13 @@ import "./glass-cursor.css";
   The laptop cursor: a round glass lens instead of the arrow (Jennifer's reference). Only where
   there is a real mouse or trackpad (hover + fine pointer), so phones and the filmed site never
   see it. It follows the pointer, swells a little over anything you can tap (it replaces the
-  pointing hand), presses in on mouse down and springs back on release.
+  pointing hand), shrinks to a clear ring over things to watch, presses in on mouse down and springs
+  back on release.
 */
 
 const TAPPABLE = "button, a[href], input, textarea, select, label, summary, [role='switch'], [role='radio'], [role='button'], [role='tab'], [data-guide-flow]";
+/** Somewhere to look through the lens, not tap (the About card's walking camel): it shrinks to a clear ring. */
+const PEEK = "[data-cursor='peek']";
 const FINE = "(hover: hover) and (pointer: fine)";
 
 export function GlassCursor() {
@@ -37,6 +40,7 @@ export function GlassCursor() {
         const el = e.target instanceof Element ? e.target : null;
         const hot = !!el?.closest(TAPPABLE) && !el.closest(":disabled, [aria-disabled='true']");
         l.classList.toggle("is-hot", hot);
+        l.classList.toggle("is-peek", !!el?.closest(PEEK));
       };
       const down = (e: PointerEvent) => {
         if (e.pointerType !== "touch") l.classList.add("is-down");
