@@ -18,7 +18,7 @@
 }
 .glass-cursor-on .glass-cursor.is-live { opacity: 1; }
 
-/* A grey glass bead: see-through with a little blur and lift, a dark outer edge and a light inner
+/* A grey glass bead: frosted (what is behind it goes soft) with a little lift, a dark outer edge and a light inner
    rim. One light only: it gathers as a soft crescent along the lower-right rim, like the reference.
    The body stays an even grey (no blob in the middle, no second highlight top-left). */
 .glass-cursor-lens {
@@ -29,8 +29,8 @@
   height: 34px;
   border-radius: 9999px;
   background-color: rgb(140 140 146 / 0.24);
-  -webkit-backdrop-filter: blur(1px) brightness(1.08);
-  backdrop-filter: blur(1px) brightness(1.08);
+  -webkit-backdrop-filter: blur(4px) brightness(1.08);
+  backdrop-filter: blur(4px) brightness(1.08);
   border: 1px solid rgb(0 0 0 / 0.38);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.22),
