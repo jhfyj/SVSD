@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
-import { useRadioExtra } from "./radioFit";
+import { useRadioFit } from "./radioFit";
 
 /*
   The load-in from the "Starting your radio" splash into the radio. The screen first appears as
@@ -49,7 +49,7 @@ export function RadioIntro({ children, className, skip = false }: { children: Re
     const timer = setTimeout(() => setDone(true), INTRO_MS + 50);
     return () => clearTimeout(timer);
   }, [skip]);
-  const extra = useRadioExtra();
+  const { extra } = useRadioFit();
   const vars = { "--casing-at": `${CASING_AT}ms`, height: 852 + extra } as CSSProperties;
 
   return (
@@ -104,10 +104,10 @@ function useIntroSounds(on: boolean) {
 function Frame({ part, at, flash }: { part: Part; at: number; flash: number }) {
   const [x, y0, w, h0] = part.box;
   // On a phone the map takes the extra height and the console parts below it move down by as much.
-  const extra = useRadioExtra();
+  const { extra, lift } = useRadioFit();
   const isMap = y0 < 585;
-  const y = isMap ? y0 : y0 + extra;
-  const h = isMap ? h0 + extra : h0;
+  const y = isMap ? y0 - lift : y0 + extra;
+  const h = isMap ? h0 + extra + lift : h0;
   const style = { left: x, top: y, width: w, height: h, "--at": `${at}ms`, "--flash": `${flash}ms` } as CSSProperties;
   return (
     <div className="radio-intro-frame absolute" style={style}>

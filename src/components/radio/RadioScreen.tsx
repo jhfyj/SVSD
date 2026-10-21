@@ -23,7 +23,7 @@ import { LcdScreen } from "./LcdScreen";
 import { Led } from "./Led";
 import { introLines, RadioLcd, type CallState } from "./RadioLcd";
 import { RadioSettings } from "./RadioSettings";
-import { useRadioExtra } from "./radioFit";
+import { useRadioFit } from "./radioFit";
 import { RadioCallSettings, type ReportReason } from "./RadioCallSettings";
 import { blockHandle, CALL_INTENTS, saveRadioSettings, useRadioSettings, type CallIntent } from "@/lib/radio-settings";
 import { playVoice, type Level } from "@/lib/radio/voice";
@@ -353,8 +353,8 @@ export function RadioScreen({
   const root = useRef<HTMLDivElement>(null);
   // On a real phone the radio fills the screen: the map takes up the extra (or gives it back), and the
   // console moves down (or up) with it. 0 inside the drawn phone.
-  const extra = useRadioExtra();
-  const screen = { ...SCREEN, height: SCREEN.height + extra };
+  const { extra, lift } = useRadioFit();
+  const screen = { ...SCREEN, top: SCREEN.top - lift, height: SCREEN.height + extra + lift };
 
   // Pickups collected on the map fly into the LCD, which keeps count.
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -748,7 +748,7 @@ export function RadioScreen({
           demo={demo}
           onCollect={onCollect}
           className="absolute inset-0"
-          fallback={<PlaceholderMap travellers={travellers} drops={drop.drops} />}
+          fallback={<PlaceholderMap travellers={travellers} drops={drop.drops} top={screen.top} />}
           // A message playing: their voice comes down from the top; your reply (or a drop) rises from the
           // bottom in your colour. It sits under the turn banner so it never hides the directions.
           overlay={
@@ -1106,7 +1106,7 @@ function QuestionDemoLcd({ stage }: { stage: QuestionStage }) {
 }
 
 /** The dithered map from Figma, shown if the browser can't draw the live map (no WebGL). */
-function PlaceholderMap({ travellers, drops }: { travellers: Traveller[]; drops: Drop[] }) {
+function PlaceholderMap({ travellers, drops, top = SCREEN.top }: { travellers: Traveller[]; drops: Drop[]; top?: number }) {
   // Where you are on the placeholder: drops leave from here and slide back down the road.
   const you = travellers.find((t) => t.ahead === 0) ?? travellers[0];
   return (
@@ -1121,7 +1121,7 @@ function PlaceholderMap({ travellers, drops }: { travellers: Traveller[]; drops:
         priority
         unoptimized
         className="absolute max-w-none [filter:var(--map-filter)] [image-rendering:pixelated]"
-        style={{ left: -SCREEN.left, top: -SCREEN.top }}
+        style={{ left: -SCREEN.left, top: -top }}
       />
       </div>
       {/* Only you: other drivers are never shown on the map. */}
@@ -1130,12 +1130,12 @@ function PlaceholderMap({ travellers, drops }: { travellers: Traveller[]; drops:
           color={you.color}
           label="You"
           className="absolute"
-          style={{ left: you.x - SCREEN.left, top: you.y - SCREEN.top, width: 19.8, height: 19.8 }}
+          style={{ left: you.x - SCREEN.left, top: you.y - top, width: 19.8, height: 19.8 }}
         />
       )}
       {you &&
         drops.map((d) => (
-          <LeftBehind key={d.id} kind={d.kind} from={{ x: you.x - SCREEN.left + 9.9, y: you.y - SCREEN.top + 9.9 }} />
+          <LeftBehind key={d.id} kind={d.kind} from={{ x: you.x - SCREEN.left + 9.9, y: you.y - top + 9.9 }} />
         ))}
     </>
   );
