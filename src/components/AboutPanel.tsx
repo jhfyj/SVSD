@@ -18,7 +18,7 @@ import "./about-panel.css";
 /** Width of the column, in px. DeviceFrame and globals.css use the same number. */
 export const ABOUT_WIDTH = 360;
 
-const TAGLINE = "Stories told by everyone on the road tonight.";
+const TAGLINE = "Stories for the long way home.";
 /** The intro (about-panel.css, after naheeljawaid.com): when the tagline's words start, and the gap between them, in ms. */
 const WORDS_AT = 260;
 const WORD_STEP = 55;
