@@ -6,6 +6,7 @@ import { CharacterSprite } from "./CharacterSprite";
 import { AllowAccessView } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
 import { LcdIcon } from "./LcdIcon";
+import { PickLanguage } from "./PickLanguage";
 import { CodeStep, PhoneSignIn, PhoneStep } from "./SignIn";
 import { ProfileView } from "./Profile";
 
@@ -67,6 +68,16 @@ export const Customize: StoryObj = {
 export const CustomizePicked: StoryObj = {
   name: "Customize profile, Tako picked",
   render: () => <CustomizeProfile initial="turtle" onSave={() => {}} onBack={() => {}} />,
+};
+
+export const Language: StoryObj = {
+  name: "Pick language",
+  render: () => <PickLanguage onSave={() => {}} onBack={() => {}} />,
+};
+
+export const LanguagePicked: StoryObj = {
+  name: "Pick language, picked",
+  render: () => <PickLanguage initial="es" onSave={() => {}} onBack={() => {}} />,
 };
 
 /** All eight characters with both animation frames side by side. */
