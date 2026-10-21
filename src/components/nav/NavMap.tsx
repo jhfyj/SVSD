@@ -9,6 +9,7 @@ import type { DemoDrive, Pickup } from "@/lib/demo/storyDrive";
 import { distanceBetween, routeBetween, type LatLng, type Route } from "@/lib/journey/geo";
 import { useJourney } from "@/lib/journey/session";
 import { DEMO_DESTINATION, DEMO_ROUTE } from "@/lib/journey/demoRoute";
+import { FAKE_LOCATION } from "@/lib/prototype";
 import { MAP_FADE_MS, mapStyle, mixPalette, PAINTED, palette, type Palette } from "@/lib/nav/mapStyle";
 import { headingAt, locate, measure, offset, pointAt, slice, type Path } from "@/lib/nav/path";
 import type { DropKind } from "@/lib/radio/drops";
@@ -189,8 +190,9 @@ export function NavMap({ travellers, messages = [], onReach, drops = [], fallbac
   const start = path?.points[0] ?? journey?.destination ?? { lat: 37.7749, lng: -122.4194 };
 
   const live = useLivePosition(simSpeed === null && !demo);
-  // No location to follow (or a scripted demo): drive the route on its own so there's something to see.
-  const simulate = path !== null && (!!demo || simSpeed !== null || live.status === "error");
+  // No location to follow (or a scripted demo, or the prototype's parked fake location): drive the
+  // route on its own so there's something to see.
+  const simulate = path !== null && (!!demo || simSpeed !== null || FAKE_LOCATION || live.status === "error");
   const speed = demo?.speed ?? SIM_SPEED * (simSpeed ?? 2);
 
   // Pickups waiting along the road, and the sparkles left where they were collected.

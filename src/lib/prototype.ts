@@ -8,3 +8,12 @@
  * Set it to false to use the real microphone again.
  */
 export const FAKE_MIC = true;
+
+/**
+ * FAKE_LOCATION: the demo never reads the real location, so no browser ever asks for it. Allowing
+ * location just turns the row on; you're always where the script's drive starts (Santa Monica), so
+ * Destination draws your trail from there and the radio's map shows you there before a trip; and
+ * on the road the map drives the route on its own, as it does with no location to follow.
+ * Set it to false to use the real location again.
+ */
+export const FAKE_LOCATION = true;
