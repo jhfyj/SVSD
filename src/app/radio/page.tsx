@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { FitScreen } from "./FitScreen";
 import { Radio } from "./Radio";
 
 export default function RadioPage() {
@@ -9,7 +10,10 @@ export default function RadioPage() {
     // and clipped the keys below.
     <main className="-mt-[var(--status-bar-height,0px)] flex flex-1 justify-center">
       <Suspense>
-        <Radio />
+        {/* On a real phone the radio shrinks to fit the screen; in the drawn phone it stays 1:1. */}
+        <FitScreen>
+          <Radio />
+        </FitScreen>
       </Suspense>
     </main>
   );
