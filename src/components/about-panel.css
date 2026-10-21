@@ -65,55 +65,79 @@
 }
 
 /*
-  The camel walks while you hover it or the name beside it (CaravanCamel.tsx has the spec). Each part holds a pose for
-  one 150ms frame (step-end), four frames to a stride, one grid pixel (32 units) per move. Letting go
-  stops it on the spot: it's stop-motion, so it snaps back to standing like a sprite would.
+  The camel walks while you hover it or the name beside it (CaravanCamel.tsx has the spec). One
+  stride is 1200ms; every part keys off it. Lengths are the camel's own units (one pixel is 32,
+  the logo is 563 wide), so they scale with it. Each part starts its loop at the point where it
+  passes through standing, so the walk picks up from rest instead of jumping into a pose.
+  The walk runs while the svg has data-walking; CaravanCamel sets it and eases the camel back to
+  standing when you leave (a removed CSS animation would snap).
 */
 .ap-brand { width: fit-content; }
 
-.camel-road { opacity: 0; transition: opacity 100ms ease-out; }
+.camel-road { opacity: 0; transition: opacity 200ms ease-out; }
+/* The road keeps sliding as it fades out, so it never jumps back. */
+.camel-road-dots { animation: camel-road 1200ms linear infinite paused; }
 
-@keyframes camel-leg-back {
-  0% { transform: translate(32px, -32px); }
-  25%, 100% { transform: none; }
+.camel-leg-back { transform-origin: 96px 288px; }
+.camel-leg-front { transform-origin: 320px 288px; }
+.camel-head { transform-origin: 400px 160px; }
+.camel-pack-sway { transform-origin: 224px 128px; }
+
+/*
+  A leg: planted, it sweeps from forward to back at a steady pace (the road's pace, so the foot
+  doesn't skate: 2 x 192 x sin 11.5° = 77 units in 720ms, and the road does 128 in 1200ms). Then it
+  lifts and swings forward again. Feet strike at 0% (back) and 50% (front).
+*/
+@keyframes camel-leg {
+  0% { transform: translateY(0) rotate(-11.5deg); animation-timing-function: linear; }
+  60% { transform: translateY(0) rotate(11.5deg); animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
+  80% { transform: translateY(-24px) rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
+  100% { transform: translateY(0) rotate(-11.5deg); }
 }
-@keyframes camel-leg-front {
-  0% { transform: none; }
-  50% { transform: translate(32px, -32px); }
-  75%, 100% { transform: none; }
-}
-/* Down a pixel on each footfall. */
+/* The body sinks as each foot takes the weight and rises over it (twice a stride). Down only, so the hips stay covered. */
 @keyframes camel-torso {
-  0% { transform: none; }
-  25% { transform: translateY(32px); }
-  50% { transform: none; }
-  75%, 100% { transform: translateY(32px); }
+  0%, 100% { transform: translateY(14px); }
+  15% { transform: translateY(16px); }
+  65% { transform: translateY(0); }
 }
-/* The head lags the body by a frame, so it nods once a stride. */
+/* The head nods with the body, a beat behind it. */
 @keyframes camel-head {
-  0% { transform: none; }
-  50%, 100% { transform: translateY(32px); }
+  0%, 100% { transform: rotate(4deg); }
+  30% { transform: rotate(6deg); }
+  80% { transform: rotate(0deg); }
 }
-/* The pack stays up as the body drops under it: a hop on every footfall. */
+/*
+  The pack rides on the hump. When the body drops away it floats for a moment, then lands, sinks
+  into the hump a little and settles (measured from the body, twice a stride).
+*/
 @keyframes camel-pack {
-  0% { transform: none; }
-  25% { transform: translateY(-32px); }
-  50% { transform: none; }
-  75%, 100% { transform: translateY(-32px); }
+  0%, 100% { transform: translateY(-16px); }
+  12% { transform: translateY(-20px); }
+  32% { transform: translateY(6px); }
+  50%, 65% { transform: translateY(0); }
+  85% { transform: translateY(-9px); }
 }
-/* One dot gap per stride, a pixel a frame, so the road keeps pace with the feet. */
+/* And it rocks on its base, back and forth once a stride, sliding a little with each rock. */
+@keyframes camel-pack-sway {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(6px) rotate(5deg); }
+  75% { transform: translateX(-6px) rotate(-5deg); }
+}
+/* The road slides back a dot gap a stride, at the planted foot's pace. */
 @keyframes camel-road {
   to { transform: translateX(-128px); }
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .ap-brand:hover .camel-road { opacity: 1; transition-duration: 150ms; }
-  .ap-brand:hover .camel-leg-back { animation: camel-leg-back 600ms step-end infinite; }
-  .ap-brand:hover .camel-leg-front { animation: camel-leg-front 600ms step-end infinite; }
-  .ap-brand:hover .camel-torso { animation: camel-torso 600ms step-end infinite; }
-  .ap-brand:hover .camel-head { animation: camel-head 600ms step-end infinite; }
-  .ap-brand:hover .camel-pack { animation: camel-pack 600ms step-end infinite; }
-  .ap-brand:hover .camel-road-dots { animation: camel-road 600ms steps(4) infinite; }
+  .camel[data-walking] .camel-road { opacity: 1; }
+  /* The back leg starts mid-stance (standing straight), the front leg half a stride behind it. */
+  .camel[data-walking] .camel-leg-back { animation: camel-leg 1200ms infinite; animation-delay: -360ms; }
+  .camel[data-walking] .camel-leg-front { animation: camel-leg 1200ms infinite; animation-delay: -960ms; }
+  .camel[data-walking] .camel-torso { animation: camel-torso 600ms cubic-bezier(0.45, 0, 0.55, 1) infinite; animation-delay: -390ms; }
+  .camel[data-walking] .camel-head { animation: camel-head 600ms cubic-bezier(0.45, 0, 0.55, 1) infinite; animation-delay: -390ms; }
+  .camel[data-walking] .camel-pack { animation: camel-pack 600ms cubic-bezier(0.45, 0, 0.55, 1) infinite; animation-delay: -390ms; }
+  .camel[data-walking] .camel-pack-sway { animation: camel-pack-sway 1200ms cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+  .camel[data-walking] .camel-road-dots { animation-play-state: running; }
 }
 
 .ap-title {

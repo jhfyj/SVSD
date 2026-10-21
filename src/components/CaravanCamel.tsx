@@ -1,15 +1,20 @@
-import { useId, type ReactElement } from "react";
+"use client";
+
+import { useEffect, useId, useRef, type ReactElement } from "react";
 
 /*
   The Caravan camel (public/caravan-logo.svg), drawn inline from its pixel grid so its parts can
-  move. Hover it and it walks the road: the legs step one at a time, the body bobs on each footfall,
-  the head nods a beat behind, the pack hops on its back and a dotted road slides by underneath.
-  Every move is one pixel on a held frame (stop-motion, DESIGN.md §9.2). Styles: about-panel.css.
+  move. Hover it and it walks the road: the legs swing from the hip, the body sinks on each
+  footfall, the head nods a beat behind, the pack rides the bob and sways, and a dotted road runs
+  out ahead and slides by underneath. The pixels stay square; they just move between the gridlines.
+  It walks while the pointer is over the nearest [data-camel-walk] (or the camel itself), and eases
+  back to standing when it leaves. Styles: about-panel.css.
 
   Camel walk — hover (fine pointers only)
-    pivot:   none; each part steps one grid pixel (32 units)
-    travel:  a lifted foot goes up 1 and forward 1; body down 1 on footfalls; head dips 1 late; pack lifts 1
-    curve:   step-end, 4 frames of 150ms   time: 600ms a stride, looping while hovered
+    pivot:   legs at the hip, head where it meets the neck, the pack at the middle of its base
+    travel:  legs ±11.5° (a planted foot slides back at the road's speed), a swinging foot lifts 24;
+             body sinks 16 on each footfall; head dips 6°; pack lags the body by up to 20 and rocks ±5°
+    curve:   ease-in-out swings, linear stance and road   time: 1200ms a stride, looping while hovered
     light:   the faces travel with their part, so the light from the top left stays put
     sound:   none (the About card sits outside the product)
     reduced: stands still
@@ -92,11 +97,20 @@ const PARTS = (() => {
       part.front.push(<rect key={`f${col},${row}`} x={x} y={y} width={PX} height={PX} fill={front} stroke={front} />);
     }),
   );
+  // One more row of each leg tucked behind the body, so a swinging leg never opens a gap at the hip.
+  [...CAMEL[8]].forEach((kind, col) => {
+    if (kind === ".") return;
+    const [front] = FACES[kind];
+    parts[partOf(col, 8)].front.unshift(<rect key={`hip${col}`} x={col * PX} y={8 * PX} width={PX} height={PX} fill={front} />);
+  });
   return parts;
 })();
 
-/** The road's dots: one stride (4 pixels) apart, wider than the camel so it can slide. */
-const ROAD = Array.from({ length: 8 }, (_, i) => i * 4 * PX);
+/** The road's dots, a stride's travel (128) apart: from just behind the camel to well out in front. */
+const ROAD = Array.from({ length: 13 }, (_, i) => (i - 1) * 128);
+/** Where the road shows, in the camel's units; it fades in behind and away into the distance ahead. */
+const ROAD_FROM = -128;
+const ROAD_TO = 1280;
 
 function Layer({ face }: { face: "back" | "front" }) {
   return (
@@ -106,16 +120,55 @@ function Layer({ face }: { face: "back" | "front" }) {
       <g className="camel-torso">
         {PARTS.body[face]}
         <g className="camel-head">{PARTS.head[face]}</g>
-        <g className="camel-pack">{PARTS.pack[face]}</g>
+        <g className="camel-pack">
+          <g className="camel-pack-sway">{PARTS.pack[face]}</g>
+        </g>
       </g>
     </>
   );
 }
 
+/** The parts that move, and how they come back to standing. */
+const MOVING = ".camel-leg-back, .camel-leg-front, .camel-torso, .camel-head, .camel-pack, .camel-pack-sway";
+const SETTLE = { duration: 480, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };
+
 export function CaravanCamel({ className = "" }: { className?: string }) {
   const fade = useId();
+  const svg = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const camel = svg.current;
+    if (!camel) return;
+    const area = (camel.closest("[data-camel-walk]") ?? camel) as HTMLElement;
+    const parts = [...camel.querySelectorAll<SVGGElement>(MOVING)];
+    let settling: Animation[] = [];
+
+    const walk = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
+      settling.forEach((a) => a.cancel());
+      settling = [];
+      camel.setAttribute("data-walking", "");
+    };
+    // Read each part's pose before the walk stops, then ease it from there to standing.
+    const stop = () => {
+      if (!camel.hasAttribute("data-walking")) return;
+      const poses = parts.map((p) => getComputedStyle(p).transform);
+      camel.removeAttribute("data-walking");
+      settling = parts.map((p, i) => p.animate([{ transform: poses[i] }, { transform: "none" }], SETTLE));
+    };
+
+    area.addEventListener("pointerenter", walk);
+    area.addEventListener("pointerleave", stop);
+    return () => {
+      area.removeEventListener("pointerenter", walk);
+      area.removeEventListener("pointerleave", stop);
+      settling.forEach((a) => a.cancel());
+    };
+  }, []);
+
   return (
     <svg
+      ref={svg}
       viewBox="-8 -1.6 563.2 483.2"
       overflow="visible"
       aria-hidden="true"
@@ -127,12 +180,12 @@ export function CaravanCamel({ className = "" }: { className?: string }) {
       <defs>
         <linearGradient id={`${fade}g`} x1="0" x2="1">
           <stop offset="0" stopColor="#fff" stopOpacity="0" />
-          <stop offset="0.25" stopColor="#fff" />
-          <stop offset="0.75" stopColor="#fff" />
+          <stop offset="0.1" stopColor="#fff" />
+          <stop offset="0.45" stopColor="#fff" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
-        <mask id={fade} maskUnits="userSpaceOnUse" x="-64" y="480" width="640" height="64">
-          <rect x="-64" y="480" width="640" height="64" fill={`url(#${fade}g)`} />
+        <mask id={fade} maskUnits="userSpaceOnUse" x={ROAD_FROM} y="480" width={ROAD_TO - ROAD_FROM} height="64">
+          <rect x={ROAD_FROM} y="480" width={ROAD_TO - ROAD_FROM} height="64" fill={`url(#${fade}g)`} />
         </mask>
       </defs>
       <g className="camel-road" mask={`url(#${fade})`}>
