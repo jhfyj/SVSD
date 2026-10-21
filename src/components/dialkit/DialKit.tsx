@@ -399,8 +399,9 @@ export function DialKit() {
   // the app itself carries you through the rest (NEXT, Save, Start journey...): nothing plays on a
   // timer. Flow 1 signs out first so it runs as a new person would see it.
   const numbered = flows.filter((f) => f.n);
-  // All flows (About card only, not the phone's picker): the demo account on the home screen, with
-  // the guide off so every key works and you can wander through everything.
+  // All flows (the About card's last entry, and the long key under 1-6 in the phone's picker): the
+  // demo account on the home screen, with the guide off so every key works and you can wander
+  // through everything.
   const allFlows: Flow = {
     n: String(ALL_FLOWS),
     title: "All flows",
@@ -444,7 +445,7 @@ export function DialKit() {
   if (!picking) return null;
   return (
     <FlowPicker
-      flows={numbered}
+      flows={[...numbered, allFlows]}
       onPick={(f) => {
         setPicking(false);
         startFlow(f);
@@ -474,11 +475,17 @@ export function FlowPicker<F extends Pick<Flow, "n" | "title">>({
       <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[393px] border-t border-border bg-surface px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
         <h2 className="mb-2 text-xs uppercase text-foreground/70">Start a flow</h2>
         <div className="grid grid-cols-6 gap-1.5">
-          {flows.map((f) => (
-            <Chip key={f.n} onClick={() => onPick(f)} className="h-12 text-center! text-base!" title={`${f.n} · ${f.title}`}>
-              {f.n}
-            </Chip>
-          ))}
+          {flows.map((f) =>
+            f.n === String(ALL_FLOWS) ? (
+              <Chip key={f.n} onClick={() => onPick(f)} className="col-span-6 h-12 text-center! text-sm!" title={f.title}>
+                {f.title}
+              </Chip>
+            ) : (
+              <Chip key={f.n} onClick={() => onPick(f)} className="h-12 text-center! text-base!" title={`${f.n} · ${f.title}`}>
+                {f.n}
+              </Chip>
+            ),
+          )}
         </div>
       </div>
     </div>

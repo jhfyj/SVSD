@@ -45,6 +45,12 @@ body::-webkit-scrollbar {
   flex: 0 0 auto;
 }
 
+/* Inside the drawn phone there's no real notch or home bar (the frame draws its own), so the
+   tab bar and other bottom edges add no safe-area room. On a real phone (below) they do. */
+.device-screen {
+  --safe-bottom: 0px;
+}
+
 .device-frame {
   position: absolute;
   left: 0;
@@ -188,6 +194,42 @@ body::-webkit-scrollbar {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* On a real phone the app is the whole screen, the way it's filmed: no drawn phone round it, no
+   fake 9:41 status bar, no scaled-down copy. The phone's own notch and home bar set the room at
+   the top and bottom. (The drawn phone is for laptops and tablets.) */
+@media (max-width: 599px) {
+  .device-stage {
+    display: block;
+    min-height: 0;
+    padding: 0;
+  }
+  .device-frame-scale {
+    width: 100% !important;
+    height: 100dvh !important;
+  }
+  .device-frame {
+    position: fixed;
+    inset: 0;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
+  }
+  .device-frame-art,
+  .device-status-bar {
+    display: none;
+  }
+  .device-screen {
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 0;
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+  .device-screen-content {
+    --status-bar-height: env(safe-area-inset-top);
+  }
 }
 
 /*

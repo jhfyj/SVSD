@@ -26,7 +26,7 @@ export function TabBar({ current, className }: { current?: Tab; className?: stri
       aria-label="Main"
       // The housing: what shows round a key's edges as it tips back.
       className={cn(
-        "sticky bottom-0 z-10 flex w-full pb-[env(safe-area-inset-bottom)] [background:var(--button-gradient-pressed)] shadow-[var(--button-pressed-shadow)]",
+        "sticky bottom-0 z-10 flex w-full pb-[var(--safe-bottom,env(safe-area-inset-bottom))] [background:var(--button-gradient-pressed)] shadow-[var(--button-pressed-shadow)]",
         className,
       )}
     >
