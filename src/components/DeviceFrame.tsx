@@ -24,9 +24,9 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
       const wide = width >= WIDE;
-      // On a wide screen the About card takes the left edge and the Dial Kit the right (globals.css
-      // .device-stage). Sized for the room between the two, so the phone keeps its size when the kit hides.
-      const room = wide ? width - 2 * ABOUT_WIDTH : width;
+      // On a wide screen the About card takes the left edge (ABOUT_WIDTH, card plus its 24px inset and
+      // 40px gap) and 40px is kept clear on the right (globals.css .device-stage); the phone centres in that room.
+      const room = wide ? width - ABOUT_WIDTH - 16 - 40 : width;
       setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (room - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
     };
     fit();

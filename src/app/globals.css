@@ -31,13 +31,13 @@ body::-webkit-scrollbar {
 }
 
 /* Wide screens: the About card (components/AboutPanel, 24px in, 312px wide) is the only panel, on
-   the left. The phone centres on the whole screen: the same room is kept clear on both sides, so
-   it stays 40px clear of the card (DeviceFrame sizes it for that room). Same breakpoint as lg (1024px). */
+   the left. The phone centres in the room to the right of the card, not on the whole screen: 40px kept
+   clear of the card and of the right edge (DeviceFrame sizes it for that room). Same breakpoint as lg (1024px). */
 .about-panel {
   width: 360px;
 }
 @media (min-width: 1024px) {
-  .device-stage { padding-inline: calc(24px + 312px + 40px); }
+  .device-stage { padding-left: calc(24px + 312px + 40px); padding-right: 40px; }
 }
 
 .device-frame-scale {
