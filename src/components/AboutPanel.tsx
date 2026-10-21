@@ -23,6 +23,9 @@ const TAGLINE = "Stories for the long way home.";
 const WORDS_AT = 260;
 const WORD_STEP = 55;
 
+/** The Caravan slideshow (github.com/jhfyj/svsd-deck), hosted on Vercel. */
+const DECK_URL = "https://svsd-deck.vercel.app";
+
 /** The team, each name linking to their own site. */
 const TEAM = [
   { name: "Jennifer", href: "https://hfyj-art.com" },
@@ -78,6 +81,13 @@ export function AboutPanel() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section aria-label="Slideshow" className="ap-section">
+        <span className="ap-heading">Slideshow</span>
+        <a href={DECK_URL} target="_blank" rel="noopener noreferrer" className="ap-link">
+          View the slides
+        </a>
       </section>
 
       <section aria-label="Team" className="ap-section">
