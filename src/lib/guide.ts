@@ -50,7 +50,7 @@ export const GUIDE_FLOWS: GuideFlow[] = [
   {
     n: 1,
     title: "Getting on the road",
-    blurb: "Sign up in under a minute: three cards, a phone number, and a roadside avatar that keeps you anonymous.",
+    blurb: "Sign up in under a minute: three cards, a phone number, a roadside avatar that keeps you anonymous, and your language.",
     next: ({ path, find, findAll }) => {
       if (path === "/welcome") return { target: find("button[aria-label^='Caravan is loading']") };
       if (path === "/overview") return { target: find("a", /^\s*(NEXT|LET.S GO)/) };
@@ -63,11 +63,21 @@ export const GUIDE_FLOWS: GuideFlow[] = [
         const code = find("input[aria-label='Verification code']");
         if (code) return { target: code, hint: "Any 6 digits" };
         const save = find("button", /^\s*SAVE\s*$/);
-        if (save) return { target: enabled(save), allow: [...findAll("[role='radiogroup'][aria-label='Character'] button"), find("button[aria-label='Random username']"), find("input")] };
+        if (save)
+          return {
+            target: enabled(save),
+            allow: [
+              ...findAll("[role='radiogroup'][aria-label='Character'] button"),
+              ...findAll("[role='radiogroup'][aria-label='Language'] button"),
+              find("button[aria-label='Random username']"),
+              find("input"),
+            ],
+          };
         const go = find("button", /^\s*(CONTINUE|LET'S GO|DONE)\s*$/);
         if (go) return { target: go, allow: findAll("[role='switch']") };
+        // Signed up and on the profile: flow 1 ends here.
+        if (find("button[aria-label='Change character']")) return { done: true };
       }
-      if (path === "/") return { done: true };
       return {};
     },
   },

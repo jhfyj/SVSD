@@ -21,9 +21,15 @@ const SECOND = ["Owl", "Comet", "Mile", "Moth", "Coyote", "Fox", "Lantern", "Rav
 
 const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
 
-/** A fresh random handle, without the @ (e.g. MidnightComet07). */
+/**
+ * A fresh random handle, without the @ (e.g. MidnightComet07). Some pairs run past HANDLE_MAX
+ * (MidnightTumbleweed14 is 20), which would grey out Save, so those are drawn again.
+ */
 export function randomHandle() {
-  return `${pick(FIRST)}${pick(SECOND)}${String(Math.floor(Math.random() * 100)).padStart(2, "0")}`;
+  for (;;) {
+    const handle = `${pick(FIRST)}${pick(SECOND)}${String(Math.floor(Math.random() * 100)).padStart(2, "0")}`;
+    if (handle.length <= HANDLE_MAX) return handle;
+  }
 }
 
 /** What's typed, minus a leading @ and anything a handle can't hold. */
@@ -33,7 +39,9 @@ export function cleanHandle(typed: string) {
 
 export function handleError(handle: string): string | null {
   if (VALID.test(handle)) return null;
-  return handle.length < 3 ? "At least 3 letters or numbers." : "Letters, numbers and _ only.";
+  if (handle.length < 3) return "At least 3 letters or numbers.";
+  if (handle.length > HANDLE_MAX) return `Up to ${HANDLE_MAX} letters or numbers.`;
+  return "Letters, numbers and _ only.";
 }
 
 /** Stand-in for accounts that haven't picked one: @traveller + the phone's last 4 digits. */

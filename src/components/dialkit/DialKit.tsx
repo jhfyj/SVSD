@@ -165,9 +165,9 @@ export function DialKit() {
           href: "/profile?welcome=1",
           go: newAccount,
           todo: "change",
-          note: "Save goes straight to Start your journey. Add picking a handle (card 3 promises one).",
+          note: "Save goes to Pick language, then Allow access and the profile.",
         },
-        { label: "Start your journey", href: "/" },
+        { label: "Profile", href: "/profile" },
       ],
     },
     {

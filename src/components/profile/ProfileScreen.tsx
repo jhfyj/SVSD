@@ -31,8 +31,11 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(openSettings);
   const language = useLanguage(session?.phone);
-  // Sign-up steps after the avatar is saved: "language" shows Pick language; "avatar" is Back from it.
-  const [step, setStep] = useState<"avatar" | "language" | null>(null);
+  // Sign-up steps after the avatar is saved: "language" shows Pick language; "avatar" is Back from it;
+  // "done" is after Pick language's SAVE, so `welcome` stops forcing the avatar step while the address
+  // drops ?welcome=1.
+  const [step, setStep] = useState<"avatar" | "language" | "done" | null>(null);
+  const signUp = welcome && step !== "done";
 
   if (session === undefined || (session && (character === undefined || onboarded === undefined || handle === undefined))) {
     return (
@@ -49,16 +52,18 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
         initial={language ?? undefined}
         onSave={(id) => {
           saveLanguage(session.phone, id);
-          router.push("/");
+          // On to the profile (Allow access first, the first time it opens).
+          setStep("done");
+          router.replace("/profile");
         }}
         onBack={() => setStep("avatar")}
       />
     );
   }
 
-  if (!character || editing || welcome || step === "avatar") {
-    // Signing up: once the avatar is picked, on to Pick language, then Start your journey.
-    const signingUp = !character || welcome || step === "avatar";
+  if (!character || editing || signUp || step === "avatar") {
+    // Signing up: once the avatar is picked, on to Pick language, then the profile.
+    const signingUp = !character || signUp || step === "avatar";
     return (
       <CustomizeProfile
         initial={character ?? undefined}
@@ -71,7 +76,7 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
           setEditing(false);
         }}
         // Backing out of sign-up returns to the phone screen; editing just closes.
-        onBack={character && !welcome ? () => setEditing(false) : signOut}
+        onBack={character && !signUp ? () => setEditing(false) : signOut}
       />
     );
   }
