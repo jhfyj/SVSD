@@ -24,7 +24,7 @@ import "./guide.css";
 */
 
 /** How long a visitor can sit still before the bubble shows. */
-const IDLE_MS = 4000;
+const IDLE_MS = 10000;
 /** On a fresh page load, how long to leave React to hydrate before touching the page. */
 const HYDRATE_MS = 1200;
 /** How often the screen is looked at again. */

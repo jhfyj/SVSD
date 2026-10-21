@@ -274,7 +274,7 @@ The unit is 4px. Use only these steps:
 - **Top:** most Screens open with the top bar (`h-14`): pixel weather icon + clock, nothing else. Sign-in and verification have no top bar. Titles sit below it and scramble in.
 - **Bottom:** one primary action pinned to the bottom of the column, `pb-edge-bottom` (56) from the edge. On Screens with the [tab bar](#83-hardware-components), the tab bar is that edge: it comes last in the column and sticks to the bottom while the Screen scrolls.
 - **About card:** the only panel beside the phone on wide screens: what Caravan is, Play a flow (the six guided flows, then All flows, where every key works) and the team. It's hidden at phone width, where a two-finger hold opens the flow picker instead, and is never part of the product UI.
-- **Guide:** any flow can be played at any time, and every key in the phone always works. The guide never locks anything; it only points: after 4 s idle a pulsing round bubble sits over the flow's next tap.
+- **Guide:** any flow can be played at any time, and every key in the phone always works. The guide never locks anything; it only points: after 10 s idle a pulsing round bubble sits over the flow's next tap.
 - **Cursor (laptop only):** a round grey glass lens replaces the arrow wherever there's a mouse or trackpad. It swells a little over anything tappable, presses in on mouse down and springs back on release. Touch screens never show it. Like the About card, it's part of the submission site, not the product UI.
 
 ### 5.3 Console geometry
