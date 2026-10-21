@@ -25,8 +25,9 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
       const height = viewport?.height ?? window.innerHeight;
       const wide = width >= WIDE;
       // On a wide screen the About card takes the left edge (ABOUT_WIDTH, card plus its 24px inset and
-      // 40px gap) and 40px is kept clear on the right (globals.css .device-stage); the phone centres in that room.
-      const room = wide ? width - ABOUT_WIDTH - 16 - 40 : width;
+      // 40px gap) and the same room is kept clear on the right (globals.css .device-stage), so the phone
+      // sits in the centre of the whole screen.
+      const room = wide ? width - 2 * (ABOUT_WIDTH + 16) : width;
       setScale(Math.min(wide ? WIDE_MAX_SCALE : 1, (room - 32) / FRAME_WIDTH, (height - (wide ? WIDE_EDGE_Y : EDGE_Y)) / FRAME_HEIGHT));
     };
     fit();
