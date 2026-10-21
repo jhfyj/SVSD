@@ -24,7 +24,7 @@ const WORDS_AT = 260;
 const WORD_STEP = 55;
 
 /** The Caravan slideshow (github.com/jhfyj/svsd-deck), hosted on Vercel. */
-const DECK_URL = "https://svsd-deck.vercel.app";
+const DECK_URL = "https://caravan-deck.vercel.app/#1";
 
 /** The team, each name linking to their own site. */
 const TEAM = [
