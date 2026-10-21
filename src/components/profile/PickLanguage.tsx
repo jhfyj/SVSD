@@ -15,8 +15,9 @@ export type PickLanguageProps = {
 /**
  * Pick language: the sign-up step right after Customize profile. One list of languages, each in its
  * own script with the English name under it; the picked one lights up with the same green square
- * and glow as a picked character. Same frame as Customize profile: one phone screen tall, title row
- * with a back arrow, SAVE pinned to the bottom edge.
+ * and glow as a picked character. The pick sets both the app's language and who you get paired with.
+ * One phone screen tall, title row with a back arrow (dropped 40px so it clears the status bar), SAVE
+ * pinned to the bottom edge.
  */
 export function PickLanguage({ initial = DEFAULT_LANGUAGE, onSave, onBack }: PickLanguageProps) {
   const [picked, setPicked] = useState<LanguageId>(initial);
@@ -30,7 +31,7 @@ export function PickLanguage({ initial = DEFAULT_LANGUAGE, onSave, onBack }: Pic
 
   return (
     <div className="grain flex w-full max-w-[393px] flex-col bg-background text-foreground">
-      <header className="relative mt-0 flex h-[26px] items-center justify-center">
+      <header className="relative mt-10 flex h-[26px] items-center justify-center">
         {onBack && (
           <button
             type="button"
@@ -45,7 +46,7 @@ export function PickLanguage({ initial = DEFAULT_LANGUAGE, onSave, onBack }: Pic
       </header>
 
       <p className="mx-auto mt-[29px] w-[315px] max-w-[calc(100%-24px)] text-base text-foreground/70">
-        The language you talk in on the road.
+        Sets the app’s language and who you get paired with on the road.
       </p>
 
       <div
