@@ -1,12 +1,8 @@
-/* The guided demo (components/guide/Guide, desktop submission site). Inside the phone only the
-   flow's next tap works; the rest stop looking clickable. The bubble is a soft round light over the
+/* The guided demo (components/guide/Guide, desktop submission site). Everything stays tappable;
+   the guide only points the way. The bubble is a soft round light over the
    next tap, pulsing outward (round: it's a fingertip, like the live pulse). White drawn with
    difference blending, so it flips to dark on cream and light on the black keys and casing, and
    carries no signal colour of its own. */
-.guide-on .device-screen :is(button, a[href], [role="switch"], [role="radio"], label) { cursor: default; }
-.guide-on .device-screen [data-guide-ok],
-.guide-on .device-screen [data-guide-ok] * { cursor: pointer; }
-.guide-on .device-screen input[data-guide-ok] { cursor: text; }
 
 .guide-bubble {
   position: fixed;

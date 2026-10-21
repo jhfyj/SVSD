@@ -16,12 +16,11 @@ import {
 import "./guide.css";
 
 /*
-  The guided demo on the submission site (see lib/guide). While a flow plays on a wide screen:
-  - Inside the phone, only the flow's next tap works. Taps on any other key, link or field are
-    swallowed before the app sees them. Taps on plain screen (not a control) still go through, so
-    Night mode's "tap anywhere to start the sound" works.
-  - After IDLE_MS without a tap or key press, a round bubble pulses over the next thing to tap (or,
-    once the flow is over, over the next flow in the About column).
+  The guided demo on the submission site (see lib/guide). While a flow plays on a wide screen,
+  nothing is locked: every key, link and field in the phone works, and every flow in the About
+  column can be played at any time. The guide only points the way: after IDLE_MS without a tap or
+  key press, a round bubble pulses over the flow's next tap (or, once the flow is over, over the
+  next flow in the About column).
 */
 
 /** How long a visitor can sit still before the bubble shows. */
@@ -31,7 +30,6 @@ const HYDRATE_MS = 1200;
 /** How often the screen is looked at again. */
 const TICK_MS = 200;
 
-const CONTROL = "button, a[href], input, textarea, select, label, [role='switch'], [role='radio'], [role='button']";
 const OK_ATTR = "data-guide-ok";
 
 export function Guide() {
@@ -116,31 +114,18 @@ export function Guide() {
     };
   }, [flow, path, params]);
 
-  // Any tap or key press hides the bubble and restarts the wait; taps on the wrong control inside the
-  // phone are swallowed. Registered on document in the capture phase, so the app never hears them
-  // (window-level listeners, like the voices' audio wake-up, still do).
+  // Any tap or key press hides the bubble and restarts the wait. Nothing is blocked: the tap goes
+  // through to the app as usual.
   useEffect(() => {
     if (!flow) return;
     const touched = () => {
       lastTouch.current = Date.now();
       setBubble(null);
     };
-    const guard = (e: Event) => {
-      touched();
-      const el = e.target instanceof Element ? e.target : null;
-      if (!el?.closest(".device-screen")) return;
-      const control = el.closest(CONTROL);
-      if (!control) return;
-      const ok = [step.current.target, ...(step.current.allow ?? [])].filter(Boolean) as Element[];
-      if (ok.some((a) => a.contains(control) || (control.tagName === "LABEL" && control.contains(a)))) return;
-      e.preventDefault();
-      e.stopPropagation();
-    };
-    const events = ["pointerdown", "mousedown", "touchstart", "click", "pointerup", "mouseup"] as const;
-    events.forEach((ev) => document.addEventListener(ev, guard, { capture: true, passive: false }));
+    document.addEventListener("pointerdown", touched, { capture: true, passive: true });
     document.addEventListener("keydown", touched, true);
     return () => {
-      events.forEach((ev) => document.removeEventListener(ev, guard, true));
+      document.removeEventListener("pointerdown", touched, true);
       document.removeEventListener("keydown", touched, true);
     };
   }, [flow]);

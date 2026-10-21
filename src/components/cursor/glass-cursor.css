@@ -1,0 +1,72 @@
+/* The glass lens cursor (components/cursor/GlassCursor). Laptops only: the class goes on <html>
+   only when there is a mouse or trackpad, so touch screens keep no cursor at all. */
+
+.glass-cursor-on,
+.glass-cursor-on * {
+  cursor: none !important;
+}
+
+.glass-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  will-change: transform;
+}
+.glass-cursor-on .glass-cursor.is-live { opacity: 1; }
+
+/* A grey glass bead: see-through with a little blur and lift, a dark outer edge and a light inner
+   rim, and the light pooling low on the right like the reference. */
+.glass-cursor-lens {
+  position: absolute;
+  left: -17px;
+  top: -17px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 72% 68%, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.04) 58%, transparent 72%),
+    rgb(128 128 132 / 0.22);
+  -webkit-backdrop-filter: blur(1px) saturate(1.2) brightness(1.06);
+  backdrop-filter: blur(1px) saturate(1.2) brightness(1.06);
+  border: 1px solid rgb(0 0 0 / 0.38);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.28),
+    inset 1px 1px 4px rgb(255 255 255 / 0.3),
+    0 3px 10px rgb(0 0 0 / 0.28);
+  transform: scale(1);
+  /* Release: springs back past full size and settles. */
+  transition:
+    transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+/* Over anything you can tap: a touch bigger and brighter (it stands in for the pointing hand). */
+.glass-cursor-lens.is-hot {
+  transform: scale(1.18);
+  background-color: rgb(150 150 154 / 0.28);
+}
+
+/* Mouse down: the bead presses in, quick, and the shadow tucks under it. */
+.glass-cursor-lens.is-down,
+.glass-cursor-lens.is-hot.is-down {
+  transform: scale(0.78);
+  background-color: rgb(165 165 170 / 0.4);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.36),
+    inset 1px 1px 4px rgb(255 255 255 / 0.36),
+    0 1px 4px rgb(0 0 0 / 0.3);
+  transition:
+    transform 110ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 110ms ease,
+    box-shadow 110ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-cursor-lens,
+  .glass-cursor-lens.is-down { transition-duration: 0ms; }
+}

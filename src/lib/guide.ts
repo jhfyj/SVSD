@@ -1,12 +1,12 @@
 /*
   The guided demo for the submission site (desktop only). A visitor plays one of the six flows from
-  the About column; inside the phone only the next thing to tap works, and if they wait a few
-  seconds a round bubble shows where it is (components/guide/Guide). The phone (real touch) keeps
+  the About column (any of them, in any order); everything in the phone stays tappable, and if they
+  wait a few seconds a round bubble shows the next tap (components/guide/Guide). The phone (real touch) keeps
   the two-finger hold and none of this.
 
   Each flow's `next` looks at the phone screen as it is right now and returns what to tap next:
-  `target` gets the bubble, `allow` can also be tapped but gets no bubble (the avatar choices, the
-  permission switches). Nothing returned = nothing to tap: the flow is talking or driving.
+  `target` gets the bubble; `allow` lists other things that are part of the step (the avatar
+  choices, the permission switches). Nothing returned = no bubble: the flow is talking or driving.
 */
 
 /** 1 to 6 are the guided flows; 7 is All flows, the free play-through with every key working. */

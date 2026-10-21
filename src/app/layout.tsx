@@ -5,6 +5,7 @@ import { AboutPanel } from "@/components/AboutPanel";
 import { DialKit } from "@/components/dialkit/DialKit";
 import { DeviceFrame } from "@/components/DeviceFrame";
 import { Guide } from "@/components/guide/Guide";
+import { GlassCursor } from "@/components/cursor/GlassCursor";
 import { SoundProvider } from "@/components/sound";
 import { ThemeClock } from "@/components/theme/ThemeClock";
 import { themeScript } from "@/lib/theme";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AboutPanel />
         <DeviceFrame>{children}</DeviceFrame>
         <ThemeClock />
+        <GlassCursor />
         <SoundProvider />
         <Suspense>
           <DialKit />
