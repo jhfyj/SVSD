@@ -40,7 +40,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
 
   return (
     <div className={cn("grain flex w-full flex-col bg-background text-foreground", compact ? "h-full" : "max-w-[393px]")}>
-      <header className={cn("relative flex h-[26px] items-center justify-center", compact ? "mt-2" : "mt-0")}>
+      <header className={cn("relative flex h-[26px] items-center justify-center", compact ? "mt-2" : "mt-10")}>
         {onBack && (
           <button
             type="button"
@@ -54,7 +54,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
         <h1 className="text-xl">CUSTOMIZE PROFILE</h1>
       </header>
 
-      <div className={cn("flex justify-center", compact ? "mt-2" : "mt-[29px]")}>
+      <div className={cn("flex justify-center", compact ? "mt-2" : "mt-6")}>
         <div className={cn("flex items-center justify-center overflow-hidden rounded-full bg-lcd-green text-lcd-green-ink shadow-[var(--lcd-inset)]", compact ? "size-[80px]" : "size-[106px]")}>
           <CharacterSprite key={picked} character={picked} pixel={compact ? 3.3 : 4.4} className="opacity-80" />
         </div>
@@ -148,7 +148,7 @@ export function CustomizeProfile({ initial = DEFAULT_CHARACTER, initialHandle, o
         })}
       </div>
 
-      <div className={cn("mt-auto flex justify-center", compact ? "pb-2 pt-2" : "px-edge pb-edge-bottom pt-8")}>
+      <div className={cn("mt-auto flex justify-center", compact ? "pb-2 pt-2" : "px-edge pb-edge-bottom pt-5")}>
         <button
           type="button"
           onClick={() => onSave(picked, handle)}
