@@ -12,6 +12,7 @@
   --ink: #1d1e1f;
   --title: #7e7e7e;
   --text: #a9a9a9;
+  --link: #8c8c8c; /* the slides + team links: a step under the title, a step over the body text */
   --faint: #c4c4c4;
   --hover: #6f6f6f;
   --on: #2fd11a;
@@ -50,6 +51,7 @@
   --ink: #f2f2f2;
   --title: #a3a3a3;
   --text: #6b6b6b;
+  --link: #929292;
   --faint: #545454;
   --hover: #bdbdbd;
   --on: #6dff5c;
@@ -214,9 +216,9 @@
   color: var(--faint);
 }
 
-/* Team names link to each person's site: same grey, ink on hover, a hairline underline. */
+/* View the slides + team names: a touch lighter than the title so they read as links, ink on hover, a hairline underline. */
 .ap-link {
-  color: inherit;
+  color: var(--link);
   text-decoration: underline;
   text-decoration-color: var(--faint);
   text-decoration-thickness: 1px;
