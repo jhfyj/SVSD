@@ -90,7 +90,16 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
       />
     );
   }
-  if (settings) return <AllowAccess firstTime={false} onDone={() => setSettings(false)} onBack={() => setSettings(false)} />;
+  if (settings)
+    return (
+      <AllowAccess
+        firstTime={false}
+        language={language ?? undefined}
+        onLanguage={(id) => saveLanguage(session.phone, id)}
+        onDone={() => setSettings(false)}
+        onBack={() => setSettings(false)}
+      />
+    );
 
   return (
     <ProfileView

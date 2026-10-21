@@ -3,8 +3,10 @@
 import { ArrowLeft } from "@phosphor-icons/react";
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { ToggleSwitch } from "../radio/ToggleSwitch";
+import { LanguageSetting } from "./LanguageSetting";
 import { PixelIcon } from "./LcdIcon";
 import { usePermission, type PermissionKind, type PermissionState } from "@/lib/permissions";
+import { DEFAULT_LANGUAGE, type LanguageId } from "@/lib/profile/language";
 
 const ITEMS: { kind: PermissionKind; label: string; why: string; delay: number }[] = [
   { kind: "microphone", label: "MICROPHONE", why: "Talk and reply.", delay: 0 },
@@ -112,10 +114,13 @@ export type AllowAccessViewProps = {
   onBack?: () => void;
   /** The first time it's a step in sign-up; from Settings it's just a page. */
   firstTime?: boolean;
+  /** Settings only: the account's language, with a dropdown to switch it. */
+  language?: LanguageId;
+  onLanguage?: (language: LanguageId) => void;
 };
 
 /** Allow access: shown once after sign-up, and from Settings on the profile. */
-export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = true }: AllowAccessViewProps) {
+export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = true, language, onLanguage }: AllowAccessViewProps) {
   const [saved, save] = useSwitches();
   // Sign-up always opens with every switch OFF (even for a second test account on this device);
   // Settings shows what was flipped. Either way, flips are saved for Settings.
@@ -157,6 +162,8 @@ export function AllowAccessView({ states, onAllow, onDone, onBack, firstTime = t
         {ITEMS.map(({ kind }) => (
           <AccessRow key={kind} kind={kind} state={states[kind]} on={isOn(kind)} onToggle={(next) => toggle(kind, next)} />
         ))}
+        {/* Sign-up already asked on Pick language; Settings is where you change it. */}
+        {!firstTime && onLanguage && <LanguageSetting value={language ?? DEFAULT_LANGUAGE} onChange={onLanguage} />}
       </ul>
       <div className="mt-auto flex flex-col items-center gap-2 px-edge pb-edge-bottom pt-8">
         {firstTime && !allOn && <span className="text-xs text-foreground/70">You can skip and turn them on later.</span>}

@@ -1,6 +1,7 @@
 import type { CSSProperties, ComponentType, SVGProps } from "react";
 import {
   IconBell,
+  IconEarth,
   IconLocation2,
   IconMicrophone,
   IconMsgWriting,
@@ -24,6 +25,8 @@ const ICONS = {
   microphone: IconMicrophone,
   notifications: IconBell,
   location: IconLocation2,
+  /** Settings: the language row. */
+  language: IconEarth,
 } satisfies Record<string, ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>>;
 
 export type PixelIconName = keyof typeof ICONS;
