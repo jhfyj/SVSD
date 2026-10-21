@@ -84,9 +84,10 @@ body::-webkit-scrollbar {
   -ms-overflow-style: none;
 }
 
+/* No overscroll-behavior here: on every clipped element (truncate, line-clamp) it stops the wheel
+   from chaining up to the screen, so scrolling dies over them. The screen and its content set it. */
 .device-screen,
 .device-screen * {
-  overscroll-behavior: none;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
