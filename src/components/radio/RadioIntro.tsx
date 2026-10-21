@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { cue } from "@/lib/sound";
 import { cn } from "../ui/cn";
+import { useRadioExtra } from "./radioFit";
 
 /*
   The load-in from the "Starting your radio" splash into the radio. The screen first appears as
@@ -48,10 +49,11 @@ export function RadioIntro({ children, className, skip = false }: { children: Re
     const timer = setTimeout(() => setDone(true), INTRO_MS + 50);
     return () => clearTimeout(timer);
   }, [skip]);
-  const vars = { "--casing-at": `${CASING_AT}ms` } as CSSProperties;
+  const extra = useRadioExtra();
+  const vars = { "--casing-at": `${CASING_AT}ms`, height: 852 + extra } as CSSProperties;
 
   return (
-    <div className={cn("relative h-[852px] w-[393px] overflow-hidden bg-background", !done && "radio-intro", className)} style={vars}>
+    <div className={cn("relative w-[393px] overflow-hidden bg-background", !done && "radio-intro", className)} style={vars}>
       {/* The real radio, under the blueprint the whole time */}
       {children}
 
@@ -100,7 +102,12 @@ function useIntroSounds(on: boolean) {
  * real part behind.
  */
 function Frame({ part, at, flash }: { part: Part; at: number; flash: number }) {
-  const [x, y, w, h] = part.box;
+  const [x, y0, w, h0] = part.box;
+  // On a phone the map takes the extra height and the console parts below it move down by as much.
+  const extra = useRadioExtra();
+  const isMap = y0 < 585;
+  const y = isMap ? y0 : y0 + extra;
+  const h = isMap ? h0 + extra : h0;
   const style = { left: x, top: y, width: w, height: h, "--at": `${at}ms`, "--flash": `${flash}ms` } as CSSProperties;
   return (
     <div className="radio-intro-frame absolute" style={style}>
