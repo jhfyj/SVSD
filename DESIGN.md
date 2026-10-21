@@ -275,7 +275,7 @@ The unit is 4px. Use only these steps:
 - **Bottom:** one primary action pinned to the bottom of the column, `pb-edge-bottom` (56) from the edge. On Screens with the [tab bar](#83-hardware-components), the tab bar is that edge: it comes last in the column and sticks to the bottom while the Screen scrolls.
 - **About card:** the only panel beside the phone on wide screens: what Caravan is, Play a flow (the six guided flows, then All flows, where every key works) and the team. It's hidden at phone width, where a two-finger hold opens the flow picker instead, and is never part of the product UI.
 - **Guide:** any flow can be played at any time, and every key in the phone always works. The guide never locks anything; it only points: after 10 s idle a pulsing round bubble sits over the flow's next tap.
-- **Cursor (laptop only):** a round grey glass lens replaces the arrow wherever there's a mouse or trackpad. It swells a little over anything tappable, presses in on mouse down and springs back on release. Touch screens never show it. Like the About card, it's part of the submission site, not the product UI.
+- **Cursor (laptop only):** a round grey glass lens replaces the arrow wherever there's a mouse or trackpad. It swells a little over anything tappable, shrinks to a small clear ring over something to watch (`data-cursor="peek"`: the About card's camel), presses in on mouse down and springs back on release. Touch screens never show it. Like the About card, it's part of the submission site, not the product UI.
 
 ### 5.3 Console geometry
 
@@ -528,6 +528,7 @@ Every sound goes through `lib/sound.ts` ([cuelume](https://www.npmjs.com/package
 | `Nightfall` (Night falls) | A **moment**: the pixel sun sinks 560px in `steps(112)` (one sprite pixel at a time) over 2400ms while the map's amber wash and the casing's dimming fade in `ease-out`; then the radio dips and flickers back on in amber, 480ms `step-end`, and the theme switches on the black frame. Reduced motion: straight to NIGHT MODE ON | ✅ |
 | `NightLcd` | NIGHT MODE ON flashes in (`lcd-flash`), the meter steps every 100ms, the z's reuse the LCD dots' 1.6s steps | ✅ |
 | `CollectedTally` | A pickup flashes in (`lcd-flash`). The count steps aside while YOUR REPLY or YOUR DROP records; once you've sent a reply to that pickup (Flow 2's book, Flow 4's question) it's answered and comes out of the count, so at REPLY SENT the corner comes back without it. Skipping or saying no keeps it | ✅ |
+| `CaravanCamel` (About card logo) | Hover it or the name and it walks: a foot lifts and steps forward, the body drops a pixel on each footfall, the head nods a frame late, the pack hops, the dotted road slides one pixel a frame. 4 frames × 150ms, `step-end`, one grid pixel per move; stops on the spot when you leave. Fine pointers only; still for reduced motion | ✅ |
 | `Button`, `MenuRow`, `SegmentedTabs`, options | `transition-colors` / `transition-opacity` `duration-150 ease-out` | ✅ |
 
 ---

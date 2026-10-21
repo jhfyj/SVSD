@@ -2,6 +2,7 @@
 
 import { Radio_Canada_Big } from "next/font/google";
 import { useSyncExternalStore } from "react";
+import { CaravanCamel } from "@/components/CaravanCamel";
 import { currentFlow, PANEL_FLOWS, requestFlow, subscribeGuide } from "@/lib/guide";
 import "./about-panel.css";
 
@@ -38,9 +39,11 @@ export function AboutPanel() {
   return (
     <aside aria-label="About Caravan" className={`about-panel ap-panel ${radioCanadaBig.className}`}>
       <header>
-        {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG, nothing to optimise */}
-        <img src="/caravan-logo.svg" alt="" aria-hidden="true" className="ap-logo" />
-        <h1 className="ap-title">Caravan</h1>
+        {/* Hover the camel or the name and the camel walks (about-panel.css); the lens cursor makes way to watch. */}
+        <div className="ap-brand" data-cursor="peek">
+          <CaravanCamel className="ap-logo" />
+          <h1 className="ap-title">Caravan</h1>
+        </div>
         {/* Word by word out of a blur, after naheeljawaid.com's "Select a project". */}
         <p className="ap-lead" aria-label={TAGLINE}>
           {TAGLINE.split(" ").map((w, i) => (

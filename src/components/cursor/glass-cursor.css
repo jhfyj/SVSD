@@ -50,6 +50,16 @@
   background-color: rgb(150 150 154 / 0.28);
 }
 
+/* Over something to watch (data-cursor="peek"): a small clear ring, no frosting, so it doesn't hide what's under it. */
+.glass-cursor-lens.is-peek {
+  transform: scale(0.4);
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.glass-cursor-lens.is-peek.is-down { transform: scale(0.34); }
+
 /* Mouse down: the bead presses in, quick, and the shadow tucks under it. */
 .glass-cursor-lens.is-down,
 .glass-cursor-lens.is-hot.is-down {

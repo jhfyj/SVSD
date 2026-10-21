@@ -57,10 +57,63 @@
 }
 
 .ap-logo {
+  display: block;
   width: 28px;
   height: auto;
-  margin-bottom: 14px;
-  image-rendering: pixelated;
+  margin-bottom: 13px;
+  color: var(--faint); /* the road under the camel */
+}
+
+/*
+  The camel walks while you hover it or the name beside it (CaravanCamel.tsx has the spec). Each part holds a pose for
+  one 150ms frame (step-end), four frames to a stride, one grid pixel (32 units) per move. Letting go
+  stops it on the spot: it's stop-motion, so it snaps back to standing like a sprite would.
+*/
+.ap-brand { width: fit-content; }
+
+.camel-road { opacity: 0; transition: opacity 100ms ease-out; }
+
+@keyframes camel-leg-back {
+  0% { transform: translate(32px, -32px); }
+  25%, 100% { transform: none; }
+}
+@keyframes camel-leg-front {
+  0% { transform: none; }
+  50% { transform: translate(32px, -32px); }
+  75%, 100% { transform: none; }
+}
+/* Down a pixel on each footfall. */
+@keyframes camel-torso {
+  0% { transform: none; }
+  25% { transform: translateY(32px); }
+  50% { transform: none; }
+  75%, 100% { transform: translateY(32px); }
+}
+/* The head lags the body by a frame, so it nods once a stride. */
+@keyframes camel-head {
+  0% { transform: none; }
+  50%, 100% { transform: translateY(32px); }
+}
+/* The pack stays up as the body drops under it: a hop on every footfall. */
+@keyframes camel-pack {
+  0% { transform: none; }
+  25% { transform: translateY(-32px); }
+  50% { transform: none; }
+  75%, 100% { transform: translateY(-32px); }
+}
+/* One dot gap per stride, a pixel a frame, so the road keeps pace with the feet. */
+@keyframes camel-road {
+  to { transform: translateX(-128px); }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .ap-brand:hover .camel-road { opacity: 1; transition-duration: 150ms; }
+  .ap-brand:hover .camel-leg-back { animation: camel-leg-back 600ms step-end infinite; }
+  .ap-brand:hover .camel-leg-front { animation: camel-leg-front 600ms step-end infinite; }
+  .ap-brand:hover .camel-torso { animation: camel-torso 600ms step-end infinite; }
+  .ap-brand:hover .camel-head { animation: camel-head 600ms step-end infinite; }
+  .ap-brand:hover .camel-pack { animation: camel-pack 600ms step-end infinite; }
+  .ap-brand:hover .camel-road-dots { animation: camel-road 600ms steps(4) infinite; }
 }
 
 .ap-title {
