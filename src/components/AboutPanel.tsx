@@ -40,7 +40,7 @@ export function AboutPanel() {
     <aside aria-label="About Caravan" className={`about-panel ap-panel ${radioCanadaBig.className}`}>
       <header>
         {/* Hover the camel or the name and the camel walks (about-panel.css); the lens cursor makes way to watch. */}
-        <div className="ap-brand" data-cursor="peek">
+        <div className="ap-brand" data-cursor="peek" data-camel-walk>
           <CaravanCamel className="ap-logo" />
           <h1 className="ap-title">Caravan</h1>
         </div>
