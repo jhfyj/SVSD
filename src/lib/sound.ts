@@ -59,6 +59,12 @@ export function startSound() {
   on = stored();
   setEnabled(on);
   listeners.forEach((l) => l());
+  // Chrome's autofill sends a keydown with no `key`, and cuelume's typing sound reads
+  // `event.key.length`, which throws. Stop those on the window, before cuelume sees them.
+  const dropKeyless = (e: KeyboardEvent) => {
+    if (typeof e.key !== "string") e.stopImmediatePropagation();
+  };
+  window.addEventListener("keydown", dropKeyless, true);
   const unbind = bind();
   // Unlock during the real user gesture so delayed radio load-in cues can sound reliably.
   const unlockOnGesture = () => {
@@ -68,6 +74,7 @@ export function startSound() {
   document.addEventListener("keydown", unlockOnGesture, true);
   return () => {
     unbind();
+    window.removeEventListener("keydown", dropKeyless, true);
     document.removeEventListener("pointerdown", unlockOnGesture, true);
     document.removeEventListener("keydown", unlockOnGesture, true);
   };
