@@ -34,7 +34,7 @@ export function ToggleSwitch({ on, onChange, label = "Radio", labels = true, cla
         {/* The lit half of the track: only shows once the knob has slid off it. */}
         <span
           className={cn(
-            "absolute left-1 top-1/2 h-3 w-5 -translate-y-1/2 bg-[var(--key-lit)] [filter:var(--key-lit-glow)]",
+            "absolute left-1 top-1/2 h-3 w-5 -translate-y-1/2 bg-[var(--key-lit)] [filter:var(--key-lit-glow-soft)]",
             "transition-opacity duration-150 ease-out",
             on ? "opacity-100" : "opacity-0",
           )}
