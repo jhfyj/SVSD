@@ -10,7 +10,6 @@ export const LANGUAGES = [
   { id: "en", name: "English", english: "English" },
   { id: "es", name: "Español", english: "Spanish" },
   { id: "zh", name: "中文", english: "Chinese" },
-  { id: "tl", name: "Tagalog", english: "Tagalog" },
   { id: "vi", name: "Tiếng Việt", english: "Vietnamese" },
   { id: "ko", name: "한국어", english: "Korean" },
   { id: "pa", name: "ਪੰਜਾਬੀ", english: "Punjabi" },
