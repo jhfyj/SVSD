@@ -7,6 +7,7 @@ import { forgetCharacter, saveCharacter, useCharacter } from "@/lib/profile/avat
 import { fallbackHandle, forgetHandle, saveHandle, useHandle } from "@/lib/profile/handle";
 import { forgetLanguage, saveLanguage, useLanguage } from "@/lib/profile/language";
 import { forgetOnboarded, markOnboarded, useOnboarded } from "@/lib/profile/onboarding";
+import { forgetPlan, savePlan, usePlan } from "@/lib/profile/plan";
 import { TopBar } from "../journey/TopBar";
 import { AllowAccess } from "./AllowAccess";
 import { CustomizeProfile } from "./CustomizeProfile";
@@ -31,6 +32,7 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(openSettings);
   const language = useLanguage(session?.phone);
+  const plan = usePlan(session?.phone);
   // Sign-up steps after the avatar is saved: "language" shows Pick language; "avatar" is Back from it;
   // "done" is after Pick language's SAVE, so `welcome` stops forcing the avatar step while the address
   // drops ?welcome=1.
@@ -97,6 +99,8 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
       onEditCharacter={() => setEditing(true)}
       onSettings={() => setSettings(true)}
       joinedAt={new Date(session.joinedAt)}
+      plan={plan}
+      onChangePlan={(next) => savePlan(session.phone, next)}
       onSignOut={() => {
         signOut();
         router.push("/");
@@ -106,6 +110,7 @@ export function ProfileScreen({ openSettings = false, welcome = false }: { openS
         forgetHandle(session.phone);
         forgetOnboarded(session.phone);
         forgetLanguage(session.phone);
+        forgetPlan(session.phone);
         deleteAccount();
         router.push("/");
       }}
