@@ -229,6 +229,9 @@ export function DialKit() {
       n: "3",
       title: "Company: one stranger",
       time: "1:45",
+      // A new t= each start, so the radio starts over (switch off, the drive from the top) even when
+      // another flow left it on.
+      start: () => companyDrive(),
       steps: [
         {
           label: "Company · one stranger",
@@ -267,6 +270,8 @@ export function DialKit() {
       n: "4",
       title: "Answer a question",
       time: "2:30",
+      // A new t= each start: the radio off, the 3D question mark still ahead on the road.
+      start: () => questionDrive(),
       steps: [
         {
           label: "Question unlocks",
@@ -388,6 +393,15 @@ export function DialKit() {
       ],
     },
   ];
+
+  const companyDrive = () => {
+    arrival.reset();
+    router.push(`/radio?demo=company&t=${Date.now()}`);
+  };
+  const questionDrive = () => {
+    arrival.reset();
+    router.push(`/radio?demo=question&t=${Date.now()}`);
+  };
 
   const run = async (step: Step) => {
     if (step.radio) arrival.reset();
